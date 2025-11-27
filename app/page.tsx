@@ -89,7 +89,89 @@ export default function LandingPage() {
         )}
       </AnimatePresence>
 
-      <div ref={containerRef} className="bg-[#050505] text-[#e1e1e1] selection:bg-white selection:text-black overflow-x-hidden">
+      {/* Dynamic Background: Real Sunrise → Daytime → Sunset → Space */}
+      <div className="fixed inset-0 -z-10 bg-black">
+        {/* Sunrise Image - Hero Section Only */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            opacity: useTransform(scrollYProgress, [0, 0.05, 0.2], [0.5, 0.5, 0]),
+            backgroundImage: 'url("https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=1920&q=80")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+
+        {/* Daytime Sky - Body Section Start */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            opacity: useTransform(scrollYProgress, [0.15, 0.3, 0.55], [0, 0.7, 0.5]),
+            backgroundImage: 'url("https://images.unsplash.com/photo-1601297183305-6df142704ea2?w=1920&q=80")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+
+        {/* Sunset Image - Body Section End */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            opacity: useTransform(scrollYProgress, [0.5, 0.65, 0.85], [0, 0.7, 0.3]),
+            backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+
+        {/* Space/Galaxy Image - Footer Only */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            opacity: useTransform(scrollYProgress, [0.8, 0.95, 1], [0, 0.7, 0.7]),
+            backgroundImage: 'url("https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1920&q=80")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+
+        {/* Dark overlay to keep it subtle */}
+        <div className="absolute inset-0 bg-black/60" />
+      </div>
+
+      {/* Twinkling Stars for space section */}
+      <motion.div
+        className="fixed inset-0 -z-5 pointer-events-none"
+        style={{
+          opacity: useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 0.8, 1])
+        }}
+      >
+        {[...Array(150)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bg-white rounded-full"
+            style={{
+              width: Math.random() * 2 + 0.5 + 'px',
+              height: Math.random() * 2 + 0.5 + 'px',
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              opacity: Math.random() * 0.8 + 0.2,
+            }}
+            animate={{
+              opacity: [Math.random() * 0.3, Math.random() * 0.9, Math.random() * 0.3],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: Math.random() * 4 + 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+      </motion.div>
+
+      <div ref={containerRef} className="relative text-[#e1e1e1] selection:bg-white selection:text-black overflow-x-hidden">
 
         <nav className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 md:px-8 py-6 mix-blend-difference">
           <MagneticButton>
@@ -171,7 +253,6 @@ export default function LandingPage() {
         </section>
 
         <section className="relative min-h-[400vh] py-20 md:py-40 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#050505] via-[#111] to-[#050505]" />
 
           <div className="h-[60vh] md:h-[80vh] flex items-center justify-center relative">
             <motion.div style={{ x: isMobile ? 0 : x1, scale: scale1 }} className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none">
