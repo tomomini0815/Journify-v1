@@ -14,10 +14,23 @@ const basePath = process.env.NODE_ENV === 'production' ? '/Journify-v1' : '';
 export default function LandingPage() {
   const containerRef = useRef(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [touchedImages, setTouchedImages] = useState<Set<string>>(new Set())
   const isMobile = useMediaQuery("(max-width: 768px)")
 
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
+
+  const handleImageTouch = (imageId: string) => {
+    setTouchedImages(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(imageId)) {
+        newSet.delete(imageId)
+      } else {
+        newSet.add(imageId)
+      }
+      return newSet
+    })
+  }
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -200,32 +213,60 @@ export default function LandingPage() {
           <div className="absolute inset-0 z-0 overflow-hidden">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] md:w-[60vw] md:h-[60vw] bg-gradient-to-br from-amber-900/20 to-purple-900/20 rounded-full blur-[120px]" />
 
-            <motion.div style={{ x: useParallax(mouseX, -20), y: useParallax(mouseY, -20) }} className="absolute top-[10%] left-[5%] w-[35vw] h-[25vw] md:w-[20vw] md:h-[15vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20">
-              <Image src={`${basePath}/images/party.png`} alt="Success Party" fill className="object-cover rounded-xl grayscale hover:grayscale-0 transition-all duration-500" />
+            <motion.div
+              style={{ x: useParallax(mouseX, -20), y: useParallax(mouseY, -20) }}
+              className="absolute top-[10%] left-[5%] w-[35vw] h-[25vw] md:w-[20vw] md:h-[15vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
+              onTouchStart={() => isMobile && handleImageTouch('hero-party')}
+            >
+              <Image src={`${basePath}/images/party.png`} alt="Success Party" fill className={`object-cover rounded-xl ${touchedImages.has('hero-party') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
-            <motion.div style={{ x: useParallax(mouseX, 30), y: useParallax(mouseY, 10) }} className="absolute top-[12%] right-[5%] w-[38vw] h-[24vw] md:w-[22vw] md:h-[14vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20">
-              <Image src={`${basePath}/images/jet.png`} alt="Private Jet" fill className="object-cover rounded-xl grayscale hover:grayscale-0 transition-all duration-500" />
+            <motion.div
+              style={{ x: useParallax(mouseX, 30), y: useParallax(mouseY, 10) }}
+              className="absolute top-[12%] right-[5%] w-[38vw] h-[24vw] md:w-[22vw] md:h-[14vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
+              onTouchStart={() => isMobile && handleImageTouch('hero-jet')}
+            >
+              <Image src={`${basePath}/images/jet.png`} alt="Private Jet" fill className={`object-cover rounded-xl ${touchedImages.has('hero-jet') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
-            <motion.div style={{ x: useParallax(mouseX, 15), y: useParallax(mouseY, -15) }} className="absolute bottom-[15%] left-[5%] w-[30vw] h-[30vw] md:w-[18vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20">
-              <Image src={`${basePath}/images/deal.png`} alt="Business Deal" fill className="object-cover rounded-xl grayscale hover:grayscale-0 transition-all duration-500" />
+            <motion.div
+              style={{ x: useParallax(mouseX, 15), y: useParallax(mouseY, -15) }}
+              className="absolute bottom-[15%] left-[5%] w-[30vw] h-[30vw] md:w-[18vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
+              onTouchStart={() => isMobile && handleImageTouch('hero-deal')}
+            >
+              <Image src={`${basePath}/images/deal.png`} alt="Business Deal" fill className={`object-cover rounded-xl ${touchedImages.has('hero-deal') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
-            <motion.div style={{ x: useParallax(mouseX, -25), y: useParallax(mouseY, 25) }} className="absolute bottom-[20%] right-[5%] w-[40vw] h-[28vw] md:w-[25vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20">
-              <Image src={`${basePath}/images/beach.png`} alt="Beautiful Scenery" fill className="object-cover rounded-xl grayscale hover:grayscale-0 transition-all duration-500" />
+            <motion.div
+              style={{ x: useParallax(mouseX, -25), y: useParallax(mouseY, 25) }}
+              className="absolute bottom-[20%] right-[5%] w-[40vw] h-[28vw] md:w-[25vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
+              onTouchStart={() => isMobile && handleImageTouch('hero-beach')}
+            >
+              <Image src={`${basePath}/images/beach.png`} alt="Beautiful Scenery" fill className={`object-cover rounded-xl ${touchedImages.has('hero-beach') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
-            <motion.div style={{ x: useParallax(mouseX, -40), y: useParallax(mouseY, 10) }} className="absolute top-[40%] left-[-10%] md:left-[-5%] w-[25vw] h-[35vw] md:w-[15vw] md:h-[20vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20">
-              <Image src={`${basePath}/images/family.png`} alt="Happy Family" fill className="object-cover rounded-xl grayscale hover:grayscale-0 transition-all duration-500" />
+            <motion.div
+              style={{ x: useParallax(mouseX, -40), y: useParallax(mouseY, 10) }}
+              className="absolute top-[40%] left-[-10%] md:left-[-5%] w-[25vw] h-[35vw] md:w-[15vw] md:h-[20vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
+              onTouchStart={() => isMobile && handleImageTouch('hero-family')}
+            >
+              <Image src={`${basePath}/images/family.png`} alt="Happy Family" fill className={`object-cover rounded-xl ${touchedImages.has('hero-family') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
-            <motion.div style={{ x: useParallax(mouseX, 40), y: useParallax(mouseY, -30) }} className="absolute top-[35%] right-[-5%] md:right-[-2%] w-[28vw] h-[38vw] md:w-[16vw] md:h-[22vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20">
-              <Image src={`${basePath}/images/horizon.png`} alt="Horizon" fill className="object-cover rounded-xl grayscale hover:grayscale-0 transition-all duration-500" />
+            <motion.div
+              style={{ x: useParallax(mouseX, 40), y: useParallax(mouseY, -30) }}
+              className="absolute top-[35%] right-[-5%] md:right-[-2%] w-[28vw] h-[38vw] md:w-[16vw] md:h-[22vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
+              onTouchStart={() => isMobile && handleImageTouch('hero-horizon')}
+            >
+              <Image src={`${basePath}/images/horizon.png`} alt="Horizon" fill className={`object-cover rounded-xl ${touchedImages.has('hero-horizon') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
-            <motion.div style={{ x: useParallax(mouseX, 0), y: useParallax(mouseY, 50) }} className="absolute bottom-[5%] left-[30%] w-[40vw] h-[25vw] md:w-[20vw] md:h-[12vw] opacity-40 hover:opacity-100 transition-opacity duration-500 hover:z-20">
-              <Image src={`${basePath}/images/home.png`} alt="Luxury Villa" fill className="object-cover rounded-xl grayscale hover:grayscale-0 transition-all duration-500" />
+            <motion.div
+              style={{ x: useParallax(mouseX, 0), y: useParallax(mouseY, 50) }}
+              className="absolute bottom-[5%] left-[30%] w-[40vw] h-[25vw] md:w-[20vw] md:h-[12vw] opacity-40 hover:opacity-100 transition-opacity duration-500 hover:z-20"
+              onTouchStart={() => isMobile && handleImageTouch('hero-home')}
+            >
+              <Image src={`${basePath}/images/home.png`} alt="Luxury Villa" fill className={`object-cover rounded-xl ${touchedImages.has('hero-home') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
           </div>
 
@@ -257,8 +298,12 @@ export default function LandingPage() {
         <section className="relative min-h-[400vh] py-20 md:py-40 overflow-hidden">
 
           <div className="h-[60vh] md:h-[80vh] flex items-center justify-center relative">
-            <motion.div style={{ x: isMobile ? 0 : x1, scale: scale1 }} className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none">
-              <Image src={`${basePath}/images/home.png`} alt="Luxury Home" fill className="object-cover rounded-3xl shadow-2xl grayscale group-hover:grayscale-0 transition-all duration-700 ease-out" />
+            <motion.div
+              style={{ x: isMobile ? 0 : x1, scale: scale1 }}
+              className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
+              onTouchStart={() => isMobile && handleImageTouch('scurve-home1')}
+            >
+              <Image src={`${basePath}/images/home.png`} alt="Luxury Home" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-home1') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
@@ -289,8 +334,12 @@ export default function LandingPage() {
           </div>
 
           <div className="h-[60vh] md:h-[80vh] flex items-center justify-center relative">
-            <motion.div style={{ x: isMobile ? 0 : x3, scale: scale3 }} className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none">
-              <Image src={`${basePath}/images/party.png`} alt="Celebration" fill className="object-cover rounded-3xl shadow-2xl grayscale group-hover:grayscale-0 transition-all duration-700 ease-out" />
+            <motion.div
+              style={{ x: isMobile ? 0 : x3, scale: scale3 }}
+              className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
+              onTouchStart={() => isMobile && handleImageTouch('scurve-party')}
+            >
+              <Image src={`${basePath}/images/party.png`} alt="Celebration" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
@@ -321,8 +370,12 @@ export default function LandingPage() {
           </div>
 
           <div className="h-[60vh] md:h-[80vh] flex items-center justify-center relative">
-            <motion.div style={{ x: isMobile ? 0 : x5, scale: scale5 }} className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none">
-              <Image src={`${basePath}/images/beach.png`} alt="Travel" fill className="object-cover rounded-3xl shadow-2xl grayscale group-hover:grayscale-0 transition-all duration-700 ease-out" />
+            <motion.div
+              style={{ x: isMobile ? 0 : x5, scale: scale5 }}
+              className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
+              onTouchStart={() => isMobile && handleImageTouch('scurve-beach')}
+            >
+              <Image src={`${basePath}/images/beach.png`} alt="Travel" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-beach') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, 40, 0], y: [0, 40, 0] }}
