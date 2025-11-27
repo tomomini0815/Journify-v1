@@ -199,7 +199,7 @@ export default function LandingPage() {
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <p className="text-base md:text-lg text-white/60">AI-powered insights that reveal hidden patterns in your emotional well-being.</p>
+                  <p className="text-base md:text-lg text-white/60">AIがあなたの感情パターンを分析し、隠れた傾向を明らかにします。</p>
                 </div>
               </MagneticButton>
             </motion.div>
@@ -231,7 +231,7 @@ export default function LandingPage() {
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <p className="text-base md:text-lg text-white/60">Break down ambitious dreams into actionable, daily steps.</p>
+                  <p className="text-base md:text-lg text-white/60">大きな夢を、日々の実行可能なステップに分解します。</p>
                 </div>
               </MagneticButton>
             </motion.div>
@@ -263,7 +263,7 @@ export default function LandingPage() {
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <p className="text-base md:text-lg text-white/60">Seamlessly integrate your tasks with Google, Outlook, and Apple Calendar.</p>
+                  <p className="text-base md:text-lg text-white/60">Google、Outlook、Appleカレンダーとシームレスに連携します。</p>
                 </div>
               </MagneticButton>
             </motion.div>
