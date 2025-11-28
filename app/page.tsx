@@ -193,19 +193,15 @@ export default function LandingPage() {
             <div className="text-xl font-bold tracking-tighter cursor-pointer">JOURNIFY®</div>
           </MagneticButton>
 
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide">
+          <div className="flex items-center gap-4 md:gap-8 text-sm font-medium tracking-wide">
             <MagneticButton>
               <Link href="/login" className="hover:underline underline-offset-4 cursor-none">LOGIN</Link>
             </MagneticButton>
             <MagneticButton>
-              <Link href="/signup" className="px-5 py-2 bg-white text-black rounded-full hover:bg-gray-200 transition-colors cursor-none">
+              <Link href="/signup" className="px-3 md:px-5 py-2 bg-white text-black rounded-full hover:bg-gray-200 transition-colors cursor-none text-xs md:text-sm">
                 GET STARTED
               </Link>
             </MagneticButton>
-          </div>
-
-          <div className="md:hidden">
-            <Menu className="w-6 h-6" />
           </div>
         </nav>
 
