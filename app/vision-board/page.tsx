@@ -24,7 +24,7 @@ interface Affirmation {
 interface Letter {
     id: number
     content: string
-    openDate: string
+    period: "1year" | "5years" | "10years"
     createdAt: string
 }
 
@@ -52,14 +52,20 @@ export default function VisionBoardPage() {
 
     // Letter State
     const [letters, setLetters] = useState<Letter[]>([])
+    const [letterPeriod, setLetterPeriod] = useState<"1year" | "5years" | "10years">("1year")
     const [letterContent, setLetterContent] = useState("")
-    const [letterOpenDate, setLetterOpenDate] = useState("")
 
     const tabs = [
         { id: "collage" as Tab, name: "イメージコラージュ", icon: ImageIcon },
         { id: "dreams" as Tab, name: "夢リスト", icon: List },
         { id: "affirmations" as Tab, name: "アファメーション", icon: MessageSquare },
-        { id: "letter" as Tab, name: "未来への手紙", icon: Mail },
+        { id: "letter" as Tab, name: "未来の自分への手紙", icon: Mail },
+    ]
+
+    const letterPeriods = [
+        { id: "1year" as const, label: "1年後" },
+        { id: "5years" as const, label: "5年後" },
+        { id: "10years" as const, label: "10年後" },
     ]
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,16 +110,24 @@ export default function VisionBoardPage() {
     }
 
     const saveLetter = () => {
-        if (letterContent.trim() && letterOpenDate) {
+        if (letterContent.trim()) {
             setLetters([...letters, {
                 id: Date.now(),
                 content: letterContent,
-                openDate: letterOpenDate,
+                period: letterPeriod,
                 createdAt: new Date().toISOString()
             }])
             setLetterContent("")
-            setLetterOpenDate("")
         }
+    }
+
+    const deleteLetter = (id: number) => {
+        setLetters(letters.filter(l => l.id !== id))
+    }
+
+    const getPeriodLabel = (period: "1year" | "5years" | "10years") => {
+        const labels = { "1year": "1年後", "5years": "5年後", "10years": "10年後" }
+        return labels[period]
     }
 
     return (
@@ -297,22 +311,29 @@ export default function VisionBoardPage() {
                         <h2 className="text-xl font-bold mb-4">未来の自分への手紙</h2>
                         <p className="text-white/60 mb-6">未来の自分に向けてメッセージを書きましょう</p>
 
+                        {/* Period Tabs */}
+                        <div className="flex gap-2 mb-6 bg-black/20 p-1 rounded-xl">
+                            {letterPeriods.map((period) => (
+                                <button
+                                    key={period.id}
+                                    onClick={() => setLetterPeriod(period.id)}
+                                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${letterPeriod === period.id
+                                            ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white border border-emerald-500/30"
+                                            : "text-white/60 hover:text-white hover:bg-white/5"
+                                        }`}
+                                >
+                                    {period.label}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="space-y-4 mb-6">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">開封日</label>
-                                <Input
-                                    type="date"
-                                    value={letterOpenDate}
-                                    onChange={(e) => setLetterOpenDate(e.target.value)}
-                                    className="bg-white/5 border-white/10 focus:border-emerald-400 rounded-xl [color-scheme:dark]"
-                                />
-                            </div>
                             <div>
                                 <label className="block text-sm font-medium mb-2">手紙の内容</label>
                                 <textarea
                                     value={letterContent}
                                     onChange={(e) => setLetterContent(e.target.value)}
-                                    placeholder="未来の自分へのメッセージを書いてください..."
+                                    placeholder={`${getPeriodLabel(letterPeriod)}の自分へのメッセージを書いてください...`}
                                     rows={8}
                                     className="w-full px-4 py-3 bg-white/5 border border-white/10 focus:border-emerald-400 rounded-xl resize-none focus:outline-none transition-colors"
                                 />
@@ -325,25 +346,28 @@ export default function VisionBoardPage() {
                             </Button>
                         </div>
 
-                        {letters.length > 0 && (
+                        {letters.filter(l => l.period === letterPeriod).length > 0 && (
                             <div className="space-y-3">
-                                <h3 className="font-bold text-lg mb-3">保存された手紙</h3>
-                                {letters.map((letter) => (
+                                <h3 className="font-bold text-lg mb-3">保存された手紙 ({getPeriodLabel(letterPeriod)})</h3>
+                                {letters.filter(l => l.period === letterPeriod).map((letter) => (
                                     <motion.div
                                         key={letter.id}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="p-4 bg-white/5 rounded-xl border border-white/10"
+                                        className="p-4 bg-white/5 rounded-xl border border-white/10 relative"
                                     >
                                         <div className="flex justify-between items-start mb-2">
-                                            <span className="text-sm text-white/60">
-                                                開封日: {new Date(letter.openDate).toLocaleDateString('ja-JP')}
-                                            </span>
                                             <span className="text-xs text-white/40">
                                                 作成: {new Date(letter.createdAt).toLocaleDateString('ja-JP')}
                                             </span>
+                                            <button
+                                                onClick={() => deleteLetter(letter.id)}
+                                                className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4 text-red-400" />
+                                            </button>
                                         </div>
-                                        <p className="text-white/80 line-clamp-3">{letter.content}</p>
+                                        <p className="text-white/80 whitespace-pre-wrap">{letter.content}</p>
                                     </motion.div>
                                 ))}
                             </div>
