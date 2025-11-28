@@ -87,13 +87,13 @@ export default function GoalsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-4xl font-bold mb-2">目標</h1>
+                    <h1 className="text-2xl md:text-4xl font-bold mb-2">目標</h1>
                     <p className="text-white/60">進捗を追跡し、夢を実現する</p>
                 </motion.div>
 
                 <Button
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-xl"
+                    className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl"
                 >
                     <Plus className="w-5 h-5 mr-2" />
                     目標を追加
@@ -101,7 +101,7 @@ export default function GoalsPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -109,7 +109,7 @@ export default function GoalsPage() {
                     className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
                 >
                     <p className="text-white/60 text-sm mb-1">総目標数</p>
-                    <p className="text-3xl font-bold">{goals.length}</p>
+                    <p className="text-2xl md:text-3xl font-bold">{goals.length}</p>
                 </motion.div>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -118,7 +118,7 @@ export default function GoalsPage() {
                     className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
                 >
                     <p className="text-white/60 text-sm mb-1">達成済み</p>
-                    <p className="text-3xl font-bold text-green-400">
+                    <p className="text-2xl md:text-3xl font-bold text-green-400">
                         {goals.filter(g => g.completed).length}
                     </p>
                 </motion.div>
@@ -129,7 +129,7 @@ export default function GoalsPage() {
                     className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
                 >
                     <p className="text-white/60 text-sm mb-1">進行中</p>
-                    <p className="text-3xl font-bold text-blue-400">
+                    <p className="text-2xl md:text-3xl font-bold text-blue-400">
                         {goals.filter(g => !g.completed).length}
                     </p>
                 </motion.div>
@@ -184,7 +184,7 @@ export default function GoalsPage() {
                                         </div>
                                         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                                             <div
-                                                className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
+                                                className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-500"
                                                 style={{ width: `${goal.progress}%` }}
                                             />
                                         </div>

@@ -29,12 +29,12 @@ export default function DashboardPage() {
                 transition={{ duration: 0.5 }}
                 className="mb-8"
             >
-                <h1 className="text-4xl font-bold mb-2">おかえりなさい！ 👋</h1>
+                <h1 className="text-2xl md:text-4xl font-bold mb-2">おかえりなさい！ 👋</h1>
                 <p className="text-white/60">今日のあなたの旅の様子</p>
             </motion.div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <StatCard
                     icon={BookOpen}
                     label="今月の記録数"
@@ -82,7 +82,7 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
+                    className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
                 >
                     <div className="flex items-center justify-between mb-6">
                         <div>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
                         </div>
                         <Link
                             href="/journal"
-                            className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                            className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
                         >
                             すべて表示 →
                         </Link>
@@ -118,7 +118,7 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
+                    className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
                 >
                     <div className="flex items-center justify-between mb-6">
                         <div>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
                         </div>
                         <Link
                             href="/goals"
-                            className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                            className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
                         >
                             すべて表示 →
                         </Link>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                                     <div
-                                        className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
+                                        className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-500"
                                         style={{ width: `${goal.progress}%` }}
                                     />
                                 </div>
@@ -161,11 +161,11 @@ function StatCard({ icon: Icon, label, value, trend, delay }: any) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay }}
-            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-colors"
+            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:from-white/15 hover:to-white/10 transition-colors"
         >
             <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                    <Icon className="w-5 h-5 text-purple-400" />
+                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-lg">
+                    <Icon className="w-5 h-5 text-emerald-400" />
                 </div>
                 <span className="text-sm text-green-400">{trend}</span>
             </div>

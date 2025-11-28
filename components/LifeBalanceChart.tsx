@@ -62,7 +62,7 @@ const CustomDot = (props: any) => {
             fill={color}
             stroke="#fff"
             strokeWidth={2}
-            filter="drop-shadow(0 0 6px rgba(168, 85, 247, 0.6))"
+            filter="drop-shadow(0 0 6px rgba(59, 130, 246, 0.6))"
         />
     )
 }
@@ -115,16 +115,16 @@ export function LifeBalanceChart() {
                 <p className="text-white/60 text-sm">9つの項目で人生の充実度を可視化</p>
             </div>
 
-            <div className="h-[400px] relative">
+            <div className="h-[300px] sm:h-[400px] relative">
                 {/* 背景のグロー効果 */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10 rounded-2xl blur-3xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-indigo-500/10 rounded-2xl blur-3xl"></div>
 
                 <ResponsiveContainer width="100%" height="100%">
                     <RadarChart data={rawData}>
                         <defs>
                             <linearGradient id="radarGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="#ec4899" stopOpacity={0.1} />
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1} />
                             </linearGradient>
                         </defs>
                         <PolarGrid stroke="rgba(255, 255, 255, 0.15)" strokeWidth={1.5} />
@@ -142,7 +142,7 @@ export function LifeBalanceChart() {
                         <Radar
                             name="幸福度"
                             dataKey="value"
-                            stroke="#a855f7"
+                            stroke="#3b82f6"
                             fill="url(#radarGradient)"
                             fillOpacity={0.6}
                             strokeWidth={3}
@@ -154,7 +154,7 @@ export function LifeBalanceChart() {
             </div>
 
             {/* Color Legend - 9つの項目を色付きで表示 */}
-            <div className="grid grid-cols-3 gap-2 mt-6 pt-6 border-t border-white/10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-6 pt-6 border-t border-white/10">
                 {rawData.map((item) => (
                     <div key={item.category} className="flex items-center gap-2">
                         <div
@@ -170,7 +170,7 @@ export function LifeBalanceChart() {
             <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
                 <div>
                     <p className="text-white/60 text-xs mb-1">平均値</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                         {average}
                     </p>
                 </div>
@@ -182,7 +182,7 @@ export function LifeBalanceChart() {
                     >
                         {highest.category}
                     </p>
-                    <p className="text-lg font-bold">{highest.value}</p>
+                    <p className="text-lg sm:text-lg font-bold">{highest.value}</p>
                 </div>
                 <div>
                     <p className="text-white/60 text-xs mb-1">改善点</p>
@@ -192,7 +192,7 @@ export function LifeBalanceChart() {
                     >
                         {lowest.category}
                     </p>
-                    <p className="text-lg font-bold">{lowest.value}</p>
+                    <p className="text-lg sm:text-lg font-bold">{lowest.value}</p>
                 </div>
             </div>
         </motion.div>

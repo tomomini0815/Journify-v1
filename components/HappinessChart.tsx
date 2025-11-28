@@ -217,8 +217,8 @@ export function HappinessChart() {
                                 key={r}
                                 onClick={() => setRange(r as TimeRange)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${range === r
-                                        ? "bg-white/10 text-white shadow-sm"
-                                        : "text-white/40 hover:text-white/80 hover:bg-white/5"
+                                    ? "bg-white/10 text-white shadow-sm"
+                                    : "text-white/40 hover:text-white/80 hover:bg-white/5"
                                     }`}
                                 style={range === r && r !== "ALL" ? { color: colorThemes[r as keyof typeof colorThemes].main, backgroundColor: 'rgba(255,255,255,0.1)' } : {}}
                             >
@@ -229,7 +229,7 @@ export function HappinessChart() {
                 </div>
             </div>
 
-            <div className="h-[400px] relative">
+            <div className="h-[300px] sm:h-[400px] relative">
                 {/* 背景のグロー効果 */}
                 <div className={`absolute inset-0 bg-gradient-to-t ${!isAll ? currentTheme?.gradient : 'from-white/5'} via-transparent to-transparent rounded-2xl transition-colors duration-500`}></div>
 
@@ -291,7 +291,7 @@ export function HappinessChart() {
             </div>
 
             {/* 凡例 (Legend) */}
-            <div className="grid grid-cols-5 gap-2 mt-6 pt-6 border-t border-white/10">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-6 pt-6 border-t border-white/10">
                 {(Object.keys(colorThemes) as Array<keyof typeof colorThemes>).map((key) => (
                     <div
                         key={key}
@@ -312,18 +312,18 @@ export function HappinessChart() {
                     <>
                         <div>
                             <p className="text-white/60 text-xs mb-1">現在</p>
-                            <p className="text-2xl font-bold text-white">
+                            <p className="text-xl sm:text-2xl font-bold text-white">
                                 {stats.current} <span className="text-sm font-normal text-white/40">/ 100</span>
                             </p>
                         </div>
                         <div>
                             <p className="text-white/60 text-xs mb-1">平均 ({colorThemes[range].label})</p>
-                            <p className="text-2xl font-bold" style={{ color: currentTheme?.stroke }}>{stats.average}</p>
+                            <p className="text-xl sm:text-2xl font-bold" style={{ color: currentTheme?.stroke }}>{stats.average}</p>
                         </div>
                         <div>
                             <p className="text-white/60 text-xs mb-1">トレンド</p>
                             <div className="flex items-baseline gap-1">
-                                <p className={`text-2xl font-bold ${stats.trend >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                <p className={`text-xl sm:text-2xl font-bold ${stats.trend >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                     {stats.trend >= 0 ? '+' : ''}{stats.trend}%
                                 </p>
                             </div>

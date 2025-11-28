@@ -4,7 +4,7 @@ import { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
-import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare } from "lucide-react"
+import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 
@@ -17,6 +17,7 @@ const navigation = [
     { name: "ジャーナル", href: "/journal", icon: BookOpen },
     { name: "目標", href: "/goals", icon: Target },
     { name: "タスク", href: "/tasks", icon: CheckSquare },
+    { name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
     { name: "プロフィール", href: "/profile", icon: User },
 ]
 
@@ -60,7 +61,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     {isActive && (
                                         <motion.div
                                             layoutId="activeNav"
-                                            className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl"
+                                            className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-teal-500/30 to-cyan-500/30 rounded-xl border border-white/10"
                                             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                         />
                                     )}

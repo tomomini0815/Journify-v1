@@ -76,7 +76,7 @@ export function AddGoalModal({ isOpen, onClose, onAdd }: AddGoalModalProps) {
                                         placeholder="例: 週に3回運動する"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
-                                        className="bg-white/5 border-white/10 focus:border-purple-400 rounded-xl"
+                                        className="bg-white/5 border-white/10 focus:border-emerald-400 rounded-xl"
                                         required
                                     />
                                 </div>
@@ -92,7 +92,7 @@ export function AddGoalModal({ isOpen, onClose, onAdd }: AddGoalModalProps) {
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         rows={3}
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 focus:border-purple-400 rounded-xl resize-none focus:outline-none transition-colors"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 focus:border-emerald-400 rounded-xl resize-none focus:outline-none transition-colors"
                                     />
                                 </div>
 
@@ -106,7 +106,7 @@ export function AddGoalModal({ isOpen, onClose, onAdd }: AddGoalModalProps) {
                                         type="date"
                                         value={deadline}
                                         onChange={(e) => setDeadline(e.target.value)}
-                                        className="bg-white/5 border-white/10 focus:border-purple-400 rounded-xl"
+                                        className="bg-white/5 border-white/10 focus:border-emerald-400 rounded-xl"
                                     />
                                 </div>
 
@@ -120,7 +120,7 @@ export function AddGoalModal({ isOpen, onClose, onAdd }: AddGoalModalProps) {
                                                 type="button"
                                                 onClick={() => setPriority(p.id)}
                                                 className={`flex-1 py-2 rounded-lg transition-all ${priority === p.id
-                                                    ? "bg-purple-500 text-white"
+                                                    ? "bg-emerald-500 text-white"
                                                     : "bg-white/5 text-white/60 hover:bg-white/10"
                                                     }`}
                                             >
@@ -142,7 +142,7 @@ export function AddGoalModal({ isOpen, onClose, onAdd }: AddGoalModalProps) {
                                     </Button>
                                     <Button
                                         type="submit"
-                                        className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-xl"
+                                        className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl"
                                     >
                                         <Plus className="w-4 h-4 mr-2" />
                                         目標を追加

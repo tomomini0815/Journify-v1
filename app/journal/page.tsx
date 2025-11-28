@@ -83,7 +83,7 @@ export default function JournalPage() {
                         placeholder="ジャーナルを検索..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-11 bg-white/5 border-white/10 focus:border-purple-400 h-12 rounded-xl"
+                        className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
                     />
                 </div>
 
@@ -107,7 +107,7 @@ export default function JournalPage() {
 
                 {/* New Entry Button */}
                 <Link href="/journal/new">
-                    <Button className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 h-12 rounded-xl">
+                    <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 h-12 rounded-xl">
                         <Plus className="w-5 h-5 mr-2" />
                         新規記録
                     </Button>
@@ -128,7 +128,7 @@ export default function JournalPage() {
                                 {/* Header */}
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">
-                                        <h3 className="font-semibold text-lg mb-1 group-hover:text-purple-400 transition-colors">
+                                        <h3 className="font-semibold text-lg mb-1 group-hover:text-emerald-400 transition-colors">
                                             {entry.title}
                                         </h3>
                                         <p className="text-sm text-white/60">{new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
@@ -146,7 +146,7 @@ export default function JournalPage() {
                                     {entry.tags.map((tag) => (
                                         <span
                                             key={tag}
-                                            className="px-3 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full"
+                                            className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full"
                                         >
                                             {tag}
                                         </span>

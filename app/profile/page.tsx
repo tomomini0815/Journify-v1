@@ -31,7 +31,7 @@ export default function ProfilePage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
                 >
-                    <h1 className="text-4xl font-bold mb-2">プロフィール</h1>
+                    <h1 className="text-2xl md:text-4xl font-bold mb-2">プロフィール</h1>
                     <p className="text-white/60">アカウント情報と設定を管理</p>
                 </motion.div>
 
@@ -44,7 +44,7 @@ export default function ProfilePage() {
                 >
                     <div className="flex items-center gap-6">
                         <div className="relative group">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-3xl font-bold">
+                            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-2xl md:text-3xl font-bold">
                                 {name.charAt(0)}
                             </div>
                             <button className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -66,8 +66,8 @@ export default function ProfilePage() {
                     className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 mb-6"
                 >
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-purple-500/20 rounded-lg">
-                            <User className="w-5 h-5 text-purple-400" />
+                        <div className="p-2 bg-emerald-500/20 rounded-lg">
+                            <User className="w-5 h-5 text-emerald-400" />
                         </div>
                         <h3 className="text-xl font-bold">個人情報</h3>
                     </div>
@@ -81,7 +81,7 @@ export default function ProfilePage() {
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
                             />
                         </div>
 
@@ -93,7 +93,7 @@ export default function ProfilePage() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
                             />
                         </div>
 
@@ -105,7 +105,7 @@ export default function ProfilePage() {
                                 value={bio}
                                 onChange={(e) => setBio(e.target.value)}
                                 rows={3}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500/50 transition-colors resize-none"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors resize-none"
                             />
                         </div>
                     </div>
@@ -119,8 +119,8 @@ export default function ProfilePage() {
                     className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 mb-6"
                 >
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-blue-500/20 rounded-lg">
-                            <Palette className="w-5 h-5 text-blue-400" />
+                        <div className="p-2 bg-cyan-500/20 rounded-lg">
+                            <Palette className="w-5 h-5 text-cyan-400" />
                         </div>
                         <h3 className="text-xl font-bold">環境設定</h3>
                     </div>
@@ -136,7 +136,7 @@ export default function ProfilePage() {
                             </div>
                             <button
                                 onClick={() => setNotifications(!notifications)}
-                                className={`relative w-12 h-6 rounded-full transition-colors ${notifications ? "bg-purple-500" : "bg-white/20"
+                                className={`relative w-12 h-6 rounded-full transition-colors ${notifications ? "bg-emerald-500" : "bg-white/20"
                                     }`}
                             >
                                 <div
@@ -156,7 +156,7 @@ export default function ProfilePage() {
                             </div>
                             <button
                                 onClick={() => setEmailUpdates(!emailUpdates)}
-                                className={`relative w-12 h-6 rounded-full transition-colors ${emailUpdates ? "bg-purple-500" : "bg-white/20"
+                                className={`relative w-12 h-6 rounded-full transition-colors ${emailUpdates ? "bg-emerald-500" : "bg-white/20"
                                     }`}
                             >
                                 <div
@@ -174,7 +174,7 @@ export default function ProfilePage() {
                             <select
                                 value={language}
                                 onChange={(e) => setLanguage(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
                             >
                                 <option value="ja">日本語</option>
                                 <option value="en">English</option>
@@ -200,19 +200,19 @@ export default function ProfilePage() {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="p-4 bg-white/5 rounded-xl text-center">
-                            <p className="text-3xl font-bold text-purple-400 mb-1">127</p>
+                            <p className="text-2xl md:text-3xl font-bold text-emerald-400 mb-1">127</p>
                             <p className="text-sm text-white/60">総記録数</p>
                         </div>
                         <div className="p-4 bg-white/5 rounded-xl text-center">
-                            <p className="text-3xl font-bold text-blue-400 mb-1">45</p>
+                            <p className="text-2xl md:text-3xl font-bold text-cyan-400 mb-1">45</p>
                             <p className="text-sm text-white/60">連続日数</p>
                         </div>
                         <div className="p-4 bg-white/5 rounded-xl text-center">
-                            <p className="text-3xl font-bold text-emerald-400 mb-1">8</p>
+                            <p className="text-2xl md:text-3xl font-bold text-emerald-400 mb-1">8</p>
                             <p className="text-sm text-white/60">達成した目標</p>
                         </div>
                         <div className="p-4 bg-white/5 rounded-xl text-center">
-                            <p className="text-3xl font-bold text-amber-400 mb-1">156</p>
+                            <p className="text-2xl md:text-3xl font-bold text-amber-400 mb-1">156</p>
                             <p className="text-sm text-white/60">利用日数</p>
                         </div>
                     </div>
@@ -248,7 +248,7 @@ export default function ProfilePage() {
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Save className="w-5 h-5" />
                         {isSaving ? "保存中..." : "変更を保存"}

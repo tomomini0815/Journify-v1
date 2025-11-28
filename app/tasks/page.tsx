@@ -120,7 +120,7 @@ export default function TasksPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mb-8 relative overflow-hidden"
+                    className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mb-8 relative overflow-hidden"
                 >
                     <div className="relative z-10 flex items-center justify-between mb-4">
                         <div>
@@ -133,7 +133,7 @@ export default function TasksPage() {
                     {/* Progress Bar */}
                     <div className="h-3 bg-black/20 rounded-full overflow-hidden">
                         <motion.div
-                            className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                            className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500"
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
                             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -141,7 +141,7 @@ export default function TasksPage() {
                     </div>
 
                     {/* Background decoration */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-fuchsia-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                 </motion.div>
 
                 {/* Add Task Form */}
@@ -158,7 +158,7 @@ export default function TasksPage() {
                             value={newTask}
                             onChange={(e) => setNewTask(e.target.value)}
                             placeholder="新しいタスクを追加..."
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-4 text-white placeholder:text-white/40 focus:outline-none focus:border-violet-500/50 focus:bg-white/10 transition-all"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-4 text-white placeholder:text-white/40 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
                         />
                     </div>
                     <div className="relative w-48">
@@ -166,13 +166,13 @@ export default function TasksPage() {
                             type="datetime-local"
                             value={scheduledDate}
                             onChange={(e) => setScheduledDate(e.target.value)}
-                            className="w-full h-full bg-white/5 border border-white/10 rounded-2xl px-4 text-white text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/10 transition-all [color-scheme:dark]"
+                            className="w-full h-full bg-white/5 border border-white/10 rounded-2xl px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all [color-scheme:dark]"
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={!newTask.trim()}
-                        className="aspect-square bg-white/10 hover:bg-violet-500 text-white rounded-2xl flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-white/10 w-[58px]"
+                        className="aspect-square bg-white/10 hover:bg-emerald-500 text-white rounded-2xl flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-white/10 w-[58px]"
                     >
                         <Plus className="w-6 h-6" />
                     </button>
@@ -189,16 +189,16 @@ export default function TasksPage() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className={`group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${task.completed
-                                        ? "bg-white/5 border-white/5"
-                                        : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
+                                    ? "bg-white/5 border-white/5"
+                                    : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
                                     }`}
                             >
                                 <div className="flex items-center gap-4 flex-1">
                                     <button
                                         onClick={() => toggleTask(task.id)}
                                         className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.completed
-                                                ? "bg-violet-500 border-violet-500 text-white"
-                                                : "border-white/40 hover:border-violet-500 text-transparent"
+                                            ? "bg-emerald-500 border-emerald-500 text-white"
+                                            : "border-white/40 hover:border-emerald-500 text-transparent"
                                             }`}
                                     >
                                         <Check className="w-4 h-4" />
@@ -209,7 +209,7 @@ export default function TasksPage() {
                                             {task.text}
                                         </span>
                                         {task.scheduledDate && (
-                                            <div className="flex items-center gap-1 text-xs text-violet-300/80 mt-1">
+                                            <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
                                                 <Calendar className="w-3 h-3" />
                                                 <span>{task.scheduledDate.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                             </div>
@@ -225,7 +225,7 @@ export default function TasksPage() {
                                                 e.stopPropagation()
                                                 setActiveCalendarMenu(activeCalendarMenu === task.id ? null : task.id)
                                             }}
-                                            className="p-2 text-white/40 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
+                                            className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
                                             title="カレンダーに追加"
                                         >
                                             <CalendarPlus className="w-4 h-4" />
