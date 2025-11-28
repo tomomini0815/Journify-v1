@@ -186,6 +186,38 @@ export default function LandingPage() {
         ))}
       </motion.div>
 
+      {/* Shooting Stars for space section */}
+      <motion.div
+        className="fixed inset-0 -z-5 pointer-events-none overflow-hidden"
+        style={{
+          opacity: useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 1, 1])
+        }}
+      >
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={`shooting-${i}`}
+            className="absolute w-1 h-1 bg-white rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 50}%`,
+              boxShadow: '0 0 4px 2px rgba(255, 255, 255, 0.8)',
+            }}
+            animate={{
+              x: [0, -300],
+              y: [0, 200],
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              repeatDelay: Math.random() * 8 + 4,
+              delay: Math.random() * 5,
+              ease: "easeOut",
+            }}
+          />
+        ))}
+      </motion.div>
+
       <div ref={containerRef} className="relative text-[#e1e1e1] selection:bg-white selection:text-black overflow-x-hidden">
 
         <nav className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 md:px-8 py-6 mix-blend-difference">
@@ -401,6 +433,34 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
+        </section>
+
+        {/* Final Message Section */}
+        <section className="relative py-32 md:py-48 px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto"
+          >
+            <h2 className="text-4xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+              あなたの物語は、今日から始まる
+            </h2>
+            <p className="text-lg md:text-2xl text-white/70 mb-12 leading-relaxed">
+              一歩ずつ、確実に。<br />
+              あなたの夢を現実に変える旅を、<br className="md:hidden" />
+              今ここから始めましょう。
+            </p>
+            <MagneticButton>
+              <Link
+                href="/signup"
+                className="inline-block px-8 md:px-12 py-4 md:py-5 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white text-lg md:text-xl font-medium rounded-full transition-all cursor-none shadow-lg hover:shadow-2xl"
+              >
+                無料で始める
+              </Link>
+            </MagneticButton>
+          </motion.div>
         </section>
 
         <footer className="py-12 md:py-20 px-6 md:px-8 border-t border-white/10 text-center">
