@@ -214,7 +214,7 @@ export default function LandingPage() {
               className="absolute top-[10%] left-[5%] w-[35vw] h-[25vw] md:w-[20vw] md:h-[15vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-party')}
             >
-              <Image src={`${basePath}/images/party.png`} alt="Success Party" fill className={`object-cover rounded-xl ${touchedImages.has('hero-party') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`${basePath}/images/japanese_party.png`} alt="Success Party" fill className={`object-cover rounded-xl ${touchedImages.has('hero-party') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -222,7 +222,7 @@ export default function LandingPage() {
               className="absolute top-[12%] right-[5%] w-[38vw] h-[24vw] md:w-[22vw] md:h-[14vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-jet')}
             >
-              <Image src={`${basePath}/images/jet.png`} alt="Private Jet" fill className={`object-cover rounded-xl ${touchedImages.has('hero-jet') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`${basePath}/images/japanese_travel_luxury.png`} alt="Private Jet" fill className={`object-cover rounded-xl ${touchedImages.has('hero-jet') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -230,7 +230,7 @@ export default function LandingPage() {
               className="absolute bottom-[15%] left-[5%] w-[30vw] h-[30vw] md:w-[18vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-deal')}
             >
-              <Image src={`${basePath}/images/deal.png`} alt="Business Deal" fill className={`object-cover rounded-xl ${touchedImages.has('hero-deal') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`${basePath}/images/japanese_business_deal.png`} alt="Business Deal" fill className={`object-cover rounded-xl ${touchedImages.has('hero-deal') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -335,7 +335,7 @@ export default function LandingPage() {
               className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
               onTouchStart={() => isMobile && handleImageTouch('scurve-party')}
             >
-              <Image src={`${basePath}/images/party.png`} alt="Celebration" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+              <Image src={`${basePath}/images/japanese_party.png`} alt="Celebration" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, -30, 0], y: [0, 30, 0] }}

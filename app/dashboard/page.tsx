@@ -112,45 +112,45 @@ export default function DashboardPage() {
                         ))}
                     </div>
                 </motion.div>
-            </div>
 
-            {/* Goal Progress */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
-            >
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h3 className="text-xl font-bold mb-1">目標の進捗</h3>
-                        <p className="text-white/60 text-sm">達成への道のり</p>
-                    </div>
-                    <Link
-                        href="/goals"
-                        className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
-                    >
-                        すべて表示 →
-                    </Link>
-                </div>
-
-                <div className="space-y-4">
-                    {goals.map((goal) => (
-                        <div key={goal.id} className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <h4 className="font-medium">{goal.title}</h4>
-                                <span className="text-sm text-white/60">{goal.progress}%</span>
-                            </div>
-                            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
-                                    style={{ width: `${goal.progress}%` }}
-                                />
-                            </div>
+                {/* Goal Progress */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
+                >
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-xl font-bold mb-1">目標の進捗</h3>
+                            <p className="text-white/60 text-sm">達成への道のり</p>
                         </div>
-                    ))}
-                </div>
-            </motion.div>
+                        <Link
+                            href="/goals"
+                            className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                        >
+                            すべて表示 →
+                        </Link>
+                    </div>
+
+                    <div className="space-y-4">
+                        {goals.map((goal) => (
+                            <div key={goal.id} className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-medium">{goal.title}</h4>
+                                    <span className="text-sm text-white/60">{goal.progress}%</span>
+                                </div>
+                                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
+                                        style={{ width: `${goal.progress}%` }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            </div>
         </DashboardLayout>
     )
 }
