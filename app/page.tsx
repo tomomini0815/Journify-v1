@@ -198,13 +198,13 @@ export default function LandingPage() {
             key={`shooting-${i}`}
             className="absolute w-1 h-1 bg-white rounded-full"
             style={{
-              left: `${Math.random() * 100}%`,
+              left: `${Math.random() * 30}%`,
               top: `${Math.random() * 50}%`,
               boxShadow: '0 0 4px 2px rgba(255, 255, 255, 0.8)',
             }}
             animate={{
-              x: [0, -300],
-              y: [0, 200],
+              x: [0, 300],
+              y: [0, 150],
               opacity: [0, 1, 1, 0],
             }}
             transition={{
@@ -444,8 +444,8 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="max-w-4xl mx-auto"
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-              あなたの物語は、今日から始まる
+            <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white">
+              あなたの物語は、<br className="md:hidden" />今日から始まる
             </h2>
             <p className="text-lg md:text-2xl text-white/70 mb-12 leading-relaxed">
               一歩ずつ、確実に。<br />
@@ -455,7 +455,7 @@ export default function LandingPage() {
             <MagneticButton>
               <Link
                 href="/signup"
-                className="inline-block px-8 md:px-12 py-4 md:py-5 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white text-lg md:text-xl font-medium rounded-full transition-all cursor-none shadow-lg hover:shadow-2xl"
+                className="inline-block px-8 md:px-12 py-4 md:py-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-white/30 text-white text-lg md:text-xl font-medium rounded-full transition-all cursor-none"
               >
                 無料で始める
               </Link>
