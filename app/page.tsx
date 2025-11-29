@@ -246,7 +246,7 @@ export default function LandingPage() {
               className="absolute top-[10%] left-[5%] w-[35vw] h-[25vw] md:w-[20vw] md:h-[15vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-party')}
             >
-              <Image src={`${basePath}/images/japanese_party.png`} alt="Success Party" fill className={`object-cover rounded-xl ${touchedImages.has('hero-party') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`${basePath}/images/japanese_celebration.png`} alt="Success Party" fill className={`object-cover rounded-xl ${touchedImages.has('hero-party') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -270,7 +270,7 @@ export default function LandingPage() {
               className="absolute bottom-[20%] right-[5%] w-[40vw] h-[28vw] md:w-[25vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-beach')}
             >
-              <Image src={`${basePath}/images/beach.png`} alt="Beautiful Scenery" fill className={`object-cover rounded-xl ${touchedImages.has('hero-beach') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`${basePath}/images/beach.png`} alt="Beach" fill className={`object-cover rounded-xl ${touchedImages.has('hero-beach') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -278,7 +278,7 @@ export default function LandingPage() {
               className="absolute top-[40%] left-[-10%] md:left-[-5%] w-[25vw] h-[35vw] md:w-[15vw] md:h-[20vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-family')}
             >
-              <Image src={`${basePath}/images/family.png`} alt="Happy Family" fill className={`object-cover rounded-xl ${touchedImages.has('hero-family') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`${basePath}/images/japanese_family.png`} alt="Happy Family" fill className={`object-cover rounded-xl ${touchedImages.has('hero-family') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -286,7 +286,7 @@ export default function LandingPage() {
               className="absolute top-[35%] right-[-5%] md:right-[-2%] w-[28vw] h-[38vw] md:w-[16vw] md:h-[22vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-horizon')}
             >
-              <Image src={`${basePath}/images/horizon.png`} alt="Horizon" fill className={`object-cover rounded-xl ${touchedImages.has('hero-horizon') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`${basePath}/images/mountain_freedom.png`} alt="Horizon" fill className={`object-cover rounded-xl ${touchedImages.has('hero-horizon') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -367,7 +367,7 @@ export default function LandingPage() {
               className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
               onTouchStart={() => isMobile && handleImageTouch('scurve-party')}
             >
-              <Image src={`${basePath}/images/japanese_party.png`} alt="Celebration" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+              <Image src={`${basePath}/images/japanese_celebration.png`} alt="Celebration" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
@@ -403,7 +403,7 @@ export default function LandingPage() {
               className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
               onTouchStart={() => isMobile && handleImageTouch('scurve-beach')}
             >
-              <Image src={`${basePath}/images/beach.png`} alt="Travel" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-beach') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+              <Image src={`${basePath}/images/beach.png`} alt="Beach" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-beach') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, 40, 0], y: [0, 40, 0] }}
@@ -442,9 +442,9 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
             viewport={{ once: true }}
-            className="max-w-4xl mx-auto"
+            className="max-w-5xl mx-auto"
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white">
+            <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white md:whitespace-nowrap">
               あなたの物語は、<br className="md:hidden" />今日から始まる
             </h2>
             <p className="text-lg md:text-2xl text-white/70 mb-12 leading-relaxed">
