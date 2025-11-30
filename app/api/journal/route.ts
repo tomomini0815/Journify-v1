@@ -40,6 +40,25 @@ export async function POST(request: Request) {
 
         console.log("Creating journal with data:", { title, content, mood, energy, stress, sleep, activities, tags, userId: user.id })
 
+        // Ensure user exists in Prisma
+        let dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+        })
+
+        if (!dbUser) {
+            console.log("User not found in Prisma, creating...", user.id)
+            if (!user.email) {
+                return NextResponse.json({ error: "User email is required" }, { status: 400 })
+            }
+            dbUser = await prisma.user.create({
+                data: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.user_metadata?.name || null,
+                },
+            })
+        }
+
         const journal = await prisma.journalEntry.create({
             data: {
                 title,
