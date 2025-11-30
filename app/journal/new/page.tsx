@@ -74,9 +74,13 @@ export default function NewJournalPage() {
                 }),
             })
 
+
             if (!response.ok) {
-                throw new Error("保存に失敗しました")
+                const errorData = await response.json().catch(() => ({}))
+                console.error("Save failed:", errorData)
+                throw new Error(errorData.details || errorData.error || "保存に失敗しました")
             }
+
 
             // Life Balanceスコアを再計算
             try {
