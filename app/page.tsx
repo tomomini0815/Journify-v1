@@ -9,7 +9,6 @@ import CustomCursor from "@/components/CustomCursor"
 import MagneticButton from "@/components/MagneticButton"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
-const basePath = process.env.NODE_ENV === 'production' ? '/Journify-v1' : '';
 
 export default function LandingPage() {
   const containerRef = useRef(null)
@@ -104,7 +103,7 @@ export default function LandingPage() {
         )}
       </AnimatePresence>
 
-      {/* Dynamic Background: Real Sunrise → Daytime → Sunset → Space */}
+      {/* Dynamic Background: Real Sunrise ↁEDaytime ↁESunset ↁESpace */}
       <div className="fixed inset-0 -z-10 bg-black">
         {/* Sunrise Image - Hero Section Only */}
         <motion.div
@@ -246,7 +245,7 @@ export default function LandingPage() {
               className="absolute top-[10%] left-[5%] w-[35vw] h-[25vw] md:w-[20vw] md:h-[15vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-party')}
             >
-              <Image src={`${basePath}/images/japanese_celebration.png`} alt="Success Party" fill className={`object-cover rounded-xl ${touchedImages.has('hero-party') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`/images/japanese_celebration.png`} alt="Success Party" fill className={`object-cover rounded-xl ${touchedImages.has('hero-party') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -254,7 +253,7 @@ export default function LandingPage() {
               className="absolute top-[12%] right-[5%] w-[38vw] h-[24vw] md:w-[22vw] md:h-[14vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-jet')}
             >
-              <Image src={`${basePath}/images/japanese_travel_luxury.png`} alt="Private Jet" fill className={`object-cover rounded-xl ${touchedImages.has('hero-jet') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`/images/japanese_travel_luxury.png`} alt="Private Jet" fill className={`object-cover rounded-xl ${touchedImages.has('hero-jet') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -262,7 +261,7 @@ export default function LandingPage() {
               className="absolute bottom-[15%] left-[5%] w-[30vw] h-[30vw] md:w-[18vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-deal')}
             >
-              <Image src={`${basePath}/images/japanese_business_deal.png`} alt="Business Deal" fill className={`object-cover rounded-xl ${touchedImages.has('hero-deal') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`/images/japanese_business_deal.png`} alt="Business Deal" fill className={`object-cover rounded-xl ${touchedImages.has('hero-deal') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -270,7 +269,7 @@ export default function LandingPage() {
               className="absolute bottom-[20%] right-[5%] w-[40vw] h-[28vw] md:w-[25vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-beach')}
             >
-              <Image src={`${basePath}/images/beach.png`} alt="Beach" fill className={`object-cover rounded-xl ${touchedImages.has('hero-beach') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`/images/beach.png`} alt="Beach" fill className={`object-cover rounded-xl ${touchedImages.has('hero-beach') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -278,7 +277,7 @@ export default function LandingPage() {
               className="absolute top-[40%] left-[-10%] md:left-[-5%] w-[25vw] h-[35vw] md:w-[15vw] md:h-[20vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-family')}
             >
-              <Image src={`${basePath}/images/japanese_family.png`} alt="Happy Family" fill className={`object-cover rounded-xl ${touchedImages.has('hero-family') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`/images/japanese_family.png`} alt="Happy Family" fill className={`object-cover rounded-xl ${touchedImages.has('hero-family') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -286,7 +285,7 @@ export default function LandingPage() {
               className="absolute top-[35%] right-[-5%] md:right-[-2%] w-[28vw] h-[38vw] md:w-[16vw] md:h-[22vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-horizon')}
             >
-              <Image src={`${basePath}/images/mountain_freedom.png`} alt="Horizon" fill className={`object-cover rounded-xl ${touchedImages.has('hero-horizon') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`/images/mountain_freedom.png`} alt="Horizon" fill className={`object-cover rounded-xl ${touchedImages.has('hero-horizon') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
 
             <motion.div
@@ -294,7 +293,7 @@ export default function LandingPage() {
               className="absolute bottom-[5%] left-[30%] w-[40vw] h-[25vw] md:w-[20vw] md:h-[12vw] opacity-40 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-home')}
             >
-              <Image src={`${basePath}/images/home.png`} alt="Luxury Villa" fill className={`object-cover rounded-xl ${touchedImages.has('hero-home') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
+              <Image src={`/images/home.png`} alt="Luxury Villa" fill className={`object-cover rounded-xl ${touchedImages.has('hero-home') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
             </motion.div>
           </div>
 
@@ -316,9 +315,9 @@ export default function LandingPage() {
               transition={{ delay: 2.8, duration: 0.8 }}
               className="mt-8 md:mt-10 space-y-2 text-base md:text-xl font-medium tracking-widest text-white/90"
             >
-              <p>日々の努力が、確かな未来を築く。</p>
-              <p>あなたの野心を記録し、</p>
-              <p>理想の自分へと歩み出そう。</p>
+              <p>日、E�E努力が、確かな未来を築く、E/p>
+              <p>あなた�E野忁E��記録し、E/p>
+              <p>琁E��の自刁E��と歩み出そう、E/p>
             </motion.div>
           </div>
         </section>
@@ -331,7 +330,7 @@ export default function LandingPage() {
               className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
               onTouchStart={() => isMobile && handleImageTouch('scurve-home1')}
             >
-              <Image src={`${basePath}/images/home.png`} alt="Luxury Home" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-home1') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+              <Image src={`/images/home.png`} alt="Luxury Home" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-home1') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
@@ -355,7 +354,7 @@ export default function LandingPage() {
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <p className="text-base md:text-lg text-white/60">AIがあなたの感情パターンを分析し、隠れた傾向を明らかにします。</p>
+                  <p className="text-base md:text-lg text-white/60">AIがあなた�E感情パターンを�E析し、E��れた傾向を明らかにします、E/p>
                 </div>
               </MagneticButton>
             </motion.div>
@@ -367,7 +366,7 @@ export default function LandingPage() {
               className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
               onTouchStart={() => isMobile && handleImageTouch('scurve-party')}
             >
-              <Image src={`${basePath}/images/japanese_celebration.png`} alt="Celebration" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+              <Image src={`/images/japanese_celebration.png`} alt="Celebration" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
@@ -391,7 +390,7 @@ export default function LandingPage() {
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <p className="text-base md:text-lg text-white/60">大きな夢を、日々の実行可能なステップに分解します。</p>
+                  <p className="text-base md:text-lg text-white/60">大きな夢を、日、E�E実行可能なスチE��プに刁E��します、E/p>
                 </div>
               </MagneticButton>
             </motion.div>
@@ -403,7 +402,7 @@ export default function LandingPage() {
               className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
               onTouchStart={() => isMobile && handleImageTouch('scurve-beach')}
             >
-              <Image src={`${basePath}/images/beach.png`} alt="Beach" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-beach') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+              <Image src={`/images/beach.png`} alt="Beach" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-beach') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
             </motion.div>
             <motion.div
               animate={{ x: [0, 40, 0], y: [0, 40, 0] }}
@@ -427,7 +426,7 @@ export default function LandingPage() {
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <p className="text-base md:text-lg text-white/60">Google、Outlook、Appleカレンダーとシームレスに連携します。</p>
+                  <p className="text-base md:text-lg text-white/60">Google、Outlook、Appleカレンダーとシームレスに連携します、E/p>
                 </div>
               </MagneticButton>
             </motion.div>
@@ -445,19 +444,19 @@ export default function LandingPage() {
             className="max-w-5xl mx-auto"
           >
             <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white md:whitespace-nowrap">
-              あなたの物語は、<br className="md:hidden" />今日から始まる
+              あなた�E物語�E、Ebr className="md:hidden" />今日から始まめE
             </h2>
             <p className="text-lg md:text-2xl text-white/70 mb-12 leading-relaxed">
-              一歩ずつ、確実に。<br />
-              あなたの夢を現実に変える旅を、<br className="md:hidden" />
-              今ここから始めましょう。
+              一歩ずつ、確実に、Ebr />
+              あなた�E夢を現実に変える旅を、Ebr className="md:hidden" />
+              今ここから始めましょぁE��E
             </p>
             <MagneticButton>
               <Link
                 href="/signup"
                 className="inline-block px-8 md:px-12 py-4 md:py-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-white/30 text-white text-lg md:text-xl font-medium rounded-full transition-all cursor-none"
               >
-                無料で始める
+                無料で始めめE
               </Link>
             </MagneticButton>
           </motion.div>
