@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Trash2, Check, Calendar, Clock, CalendarPlus, MoreVertical, X } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
@@ -14,40 +14,111 @@ type Task = {
 }
 
 export default function TasksPage() {
-    const [tasks, setTasks] = useState<Task[]>([
-        { id: "1", text: "朝の瞑想を行う", completed: true, createdAt: new Date(), scheduledDate: new Date() },
-        { id: "2", text: "週次レポートを作成する", completed: false, createdAt: new Date() },
-        { id: "3", text: "ジムに行く", completed: false, createdAt: new Date(), scheduledDate: new Date(Date.now() + 86400000) },
-    ])
+    const [tasks, setTasks] = useState<Task[]>([])
     const [newTask, setNewTask] = useState("")
     const [scheduledDate, setScheduledDate] = useState("")
     const [activeCalendarMenu, setActiveCalendarMenu] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState("")
 
-    const addTask = (e: React.FormEvent) => {
+    useEffect(() => {
+        fetchTasks()
+    }, [])
+
+    const fetchTasks = async () => {
+        try {
+            const res = await fetch("/api/tasks")
+            if (res.ok) {
+                const data = await res.json()
+                const mappedTasks = data.map((t: any) => ({
+                    ...t,
+                    createdAt: new Date(t.createdAt),
+                    scheduledDate: t.scheduledDate ? new Date(t.scheduledDate) : undefined
+                }))
+                setTasks(mappedTasks)
+            } else {
+                throw new Error("タスクの取得に失敗しました")
+            }
+        } catch (error) {
+            console.error("Failed to fetch tasks", error)
+            setError("タスクの読み込み中にエラーが発生しました")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const addTask = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!newTask.trim()) return
 
-        const task: Task = {
-            id: Date.now().toString(),
-            text: newTask,
-            completed: false,
-            createdAt: new Date(),
-            scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined
+        try {
+            const res = await fetch("/api/tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: newTask,
+                    scheduledDate: scheduledDate || null
+                }),
+            })
+
+            if (res.ok) {
+                const task = await res.json()
+                setTasks([{
+                    ...task,
+                    createdAt: new Date(task.createdAt),
+                    scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : undefined
+                }, ...tasks])
+                setNewTask("")
+                setScheduledDate("")
+                setError("")
+            } else {
+                throw new Error("タスクの追加に失敗しました")
+            }
+        } catch (error) {
+            console.error("Failed to add task", error)
+            setError("タスクの追加に失敗しました。サーバーを再起動してみてください。")
         }
-
-        setTasks([task, ...tasks])
-        setNewTask("")
-        setScheduledDate("")
     }
 
-    const toggleTask = (id: string) => {
+    const toggleTask = async (id: string) => {
+        const task = tasks.find(t => t.id === id)
+        if (!task) return
+
+        const newCompleted = !task.completed
+
+        // Optimistic update
         setTasks(tasks.map(t =>
-            t.id === id ? { ...t, completed: !t.completed } : t
+            t.id === id ? { ...t, completed: newCompleted } : t
         ))
+
+        try {
+            await fetch(`/api/tasks/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ completed: newCompleted }),
+            })
+        } catch (error) {
+            console.error("Failed to toggle task", error)
+            // Revert on error
+            setTasks(tasks.map(t =>
+                t.id === id ? { ...t, completed: !newCompleted } : t
+            ))
+        }
     }
 
-    const deleteTask = (id: string) => {
-        setTasks(tasks.filter(t => t.id !== id))
+    const deleteTask = async (id: string) => {
+        if (!confirm("本当にこのタスクを削除しますか？")) return
+
+        try {
+            const res = await fetch(`/api/tasks/${id}`, {
+                method: "DELETE",
+            })
+            if (res.ok) {
+                setTasks(tasks.filter(t => t.id !== id))
+            }
+        } catch (error) {
+            console.error("Failed to delete task", error)
+        }
     }
 
     // カレンダー連携用URL生成
@@ -107,6 +178,14 @@ export default function TasksPage() {
     const completedCount = tasks.filter(t => t.completed).length
     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0
 
+    if (isLoading) {
+        return (
+            <DashboardLayout>
+                <div className="text-center py-12 text-white/60">読み込み中...</div>
+            </DashboardLayout>
+        )
+    }
+
     return (
         <DashboardLayout>
             <div className="max-w-4xl mx-auto" onClick={() => setActiveCalendarMenu(null)}>
@@ -115,6 +194,17 @@ export default function TasksPage() {
                     <h1 className="text-3xl font-bold text-white mb-2">日々のタスク</h1>
                     <p className="text-white/60">小さな達成の積み重ねが、大きな成長につながります。</p>
                 </div>
+
+                {/* Error Message */}
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-2xl text-red-200"
+                    >
+                        {error}
+                    </motion.div>
+                )}
 
                 {/* Progress Card */}
                 <motion.div

@@ -1,25 +1,83 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { motion } from "framer-motion"
 import { User, Mail, Calendar, Bell, Lock, Palette, Globe, Save, Camera } from "lucide-react"
 
 export default function ProfilePage() {
-    const [name, setName] = useState("田中 太郎")
-    const [email, setEmail] = useState("tanaka@example.com")
-    const [bio, setBio] = useState("日々の成長を記録し、理想の自分を目指しています。")
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [bio, setBio] = useState("")
     const [notifications, setNotifications] = useState(true)
     const [emailUpdates, setEmailUpdates] = useState(false)
-    const [theme, setTheme] = useState("dark")
     const [language, setLanguage] = useState("ja")
     const [isSaving, setIsSaving] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState("")
+
+    useEffect(() => {
+        fetchProfile()
+    }, [])
+
+    const fetchProfile = async () => {
+        try {
+            const res = await fetch("/api/profile")
+            if (res.ok) {
+                const data = await res.json()
+                setName(data.name || "")
+                setEmail(data.email || "")
+                setBio(data.bio || "")
+                if (data.preferences) {
+                    setNotifications(data.preferences.notifications ?? true)
+                    setEmailUpdates(data.preferences.emailUpdates ?? false)
+                    setLanguage(data.preferences.language || "ja")
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch profile", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     const handleSave = async () => {
         setIsSaving(true)
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setIsSaving(false)
+        setError("")
+
+        try {
+            const response = await fetch("/api/profile", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name,
+                    bio,
+                    preferences: {
+                        notifications,
+                        emailUpdates,
+                        language,
+                    },
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error("保存に失敗しました")
+            }
+        } catch (err: any) {
+            setError(err.message || "保存中にエラーが発生しました")
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <DashboardLayout>
+                <div className="text-center py-12 text-white/60">読み込み中...</div>
+            </DashboardLayout>
+        )
     }
 
     return (
@@ -34,6 +92,17 @@ export default function ProfilePage() {
                     <h1 className="text-2xl md:text-4xl font-bold mb-2">プロフィール</h1>
                     <p className="text-white/60">アカウント情報と設定を管理</p>
                 </motion.div>
+
+                {/* Error Message */}
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-2xl text-red-200"
+                    >
+                        {error}
+                    </motion.div>
+                )}
 
                 {/* Profile Picture Section */}
                 <motion.div
@@ -92,8 +161,8 @@ export default function ProfilePage() {
                             <input
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                disabled
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/60 cursor-not-allowed"
                             />
                         </div>
 

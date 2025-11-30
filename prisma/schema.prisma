@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id
+  email     String   @unique
+  name      String?
+  bio       String?
+  avatarUrl String?
+  preferences Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  journals        JournalEntry[]
+  goals           Goal[]
+  lifeBalance     LifeBalanceEntry[]
+  happiness       HappinessEntry[]
+  visionBoardItems VisionBoardItem[]
+  tasks           Task[]
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String
+  tags      String[]
+  mood      Int?     // 1-5: 気分評価
+  energy    Int?     // 1-5: エネルギーレベル
+  stress    Int?     // 1-5: ストレスレベル
+  sleep     Int?     // 1-5: 睡眠の質
+  activities Json?   // { exercise: true, socializing: false, ... }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Goal {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  progress    Int      @default(0)
+  priority    String   @default("medium")
+  targetDate  DateTime?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LifeBalanceEntry {
+  id        String   @id @default(uuid())
+  category  String
+  score     Int
+  date      DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model HappinessEntry {
+  id        String   @id @default(uuid())
+  score     Int
+  date      DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VisionBoardItem {
+  id        String   @id @default(uuid())
+  type      String   // "image", "dream", "affirmation", "letter"
+  content   String   // URL for image, text for others
+  metadata  Json?    // For extra data like position, size, or letter open date
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Task {
+  id            String    @id @default(uuid())
+  text          String
+  completed     Boolean   @default(false)
+  scheduledDate DateTime?
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

@@ -2,6 +2,8 @@
 
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
+import CharacterCount from "@tiptap/extension-character-count"
+
 import Placeholder from "@tiptap/extension-placeholder"
 import { motion } from "framer-motion"
 import { Bold, Italic, List, ListOrdered, Heading2 } from "lucide-react"
@@ -18,6 +20,7 @@ export function JournalEditor({ content = "", onChange }: JournalEditorProps) {
             Placeholder.configure({
                 placeholder: "あなたの思考を書き始めてください...",
             }),
+            CharacterCount,
         ],
         content,
         immediatelyRender: false,

@@ -1,8 +1,8 @@
 "use client"
 
-import { ReactNode } from "react"
+import { ReactNode, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -24,6 +24,26 @@ const navigation = [
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const pathname = usePathname()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [user, setUser] = useState<any>(null)
+    const router = useRouter()
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { createClient } = await import("@/lib/supabase/client")
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            setUser(user)
+        }
+        getUser()
+    }, [])
+
+    const handleLogout = async () => {
+        const { createClient } = await import("@/lib/supabase/client")
+        const supabase = createClient()
+        await supabase.auth.signOut()
+        router.push("/login")
+        router.refresh()
+    }
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -61,8 +81,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     {isActive && (
                                         <motion.div
                                             layoutId="activeNav"
-                                            className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-teal-500/30 to-cyan-500/30 rounded-xl border border-white/10"
-                                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                            className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-xl border border-white/10"
+                                            transition={{ type: "spring", bounce: 0.2, duration: 0.2 }}
                                         />
                                     )}
                                     <Icon className="mr-3 flex-shrink-0 h-5 w-5 relative z-10" />
@@ -74,7 +94,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                     {/* Logout */}
                     <div className="flex-shrink-0 px-3 pb-4">
-                        <button className="group flex items-center w-full px-3 py-3 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                        <button
+                            onClick={handleLogout}
+                            className="group flex items-center w-full px-3 py-3 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                        >
                             <LogOut className="mr-3 h-5 w-5" />
                             <span>ログアウト</span>
                         </button>
@@ -129,7 +152,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                 )
                             })}
                         </nav>
-                        <button className="flex items-center px-4 py-3 text-base font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center px-4 py-3 text-base font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                        >
                             <LogOut className="mr-3 h-6 w-6" />
                             <span>ログアウト</span>
                         </button>

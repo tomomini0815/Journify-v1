@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { AddGoalModal } from "@/components/AddGoalModal"
 import { motion } from "framer-motion"
@@ -19,54 +19,106 @@ interface Goal {
 
 export default function GoalsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [goals, setGoals] = useState<Goal[]>([
-        {
-            id: 1,
-            title: "週に3回運動する",
-            description: "ジムに行くか、自宅で運動を週に少なくとも3回行う",
-            deadline: "2025-03-31",
-            priority: "high",
-            progress: 75,
-            completed: false,
-        },
-        {
-            id: 2,
-            title: "今月☆2冊の本を読む",
-            description: "少なくとも2冊のノンフィクションを読み終える",
-            deadline: "2025-03-31",
-            priority: "medium",
-            progress: 50,
-            completed: false,
-        },
-        {
-            id: 3,
-            title: "毎日瑁想する",
-            description: "毎朝10分間の瑁想を習慣にする",
-            deadline: "2025-12-31",
-            priority: "high",
-            progress: 90,
-            completed: false,
-        },
-    ])
+    const [goals, setGoals] = useState<Goal[]>([])
+    const [isLoading, setIsLoading] = useState(true)
 
-    const handleAddGoal = (newGoal: Omit<Goal, "id" | "progress" | "completed">) => {
-        const goal: Goal = {
-            ...newGoal,
-            id: goals.length + 1,
-            progress: 0,
-            completed: false,
+    useEffect(() => {
+        fetchGoals()
+    }, [])
+
+    const fetchGoals = async () => {
+        try {
+            const res = await fetch("/api/goals")
+            if (res.ok) {
+                const data = await res.json()
+                const mappedGoals = data.map((g: any) => ({
+                    id: g.id,
+                    title: g.title,
+                    description: g.description || "",
+                    deadline: g.targetDate ? new Date(g.targetDate).toISOString().split('T')[0] : "",
+                    priority: g.priority || "medium",
+                    progress: g.progress,
+                    completed: g.progress === 100,
+                }))
+                setGoals(mappedGoals)
+            }
+        } catch (error) {
+            console.error("Failed to fetch goals", error)
+        } finally {
+            setIsLoading(false)
         }
-        setGoals([...goals, goal])
     }
 
-    const toggleComplete = (id: number) => {
-        setGoals(goals.map(goal =>
-            goal.id === id ? { ...goal, completed: !goal.completed } : goal
+    const handleAddGoal = async (newGoal: Omit<Goal, "id" | "progress" | "completed">) => {
+        try {
+            const res = await fetch("/api/goals", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: newGoal.title,
+                    description: newGoal.description,
+                    targetDate: newGoal.deadline,
+                    priority: newGoal.priority,
+                    progress: 0,
+                }),
+            })
+            if (res.ok) {
+                fetchGoals()
+            }
+        } catch (error) {
+            console.error("Failed to add goal", error)
+        }
+    }
+
+    const updateProgress = async (id: number, newProgress: number) => {
+        // Optimistic update
+        const goal = goals.find(g => g.id === id)
+        if (!goal) return
+
+        const newCompleted = newProgress === 100
+
+        setGoals(goals.map(g =>
+            g.id === id ? { ...g, progress: newProgress, completed: newCompleted } : g
         ))
+
+        try {
+            await fetch(`/api/goals/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    progress: newProgress,
+                }),
+            })
+        } catch (error) {
+            console.error("Failed to update goal progress", error)
+            // Revert on error
+            setGoals(goals.map(g => g.id === id ? goal : g))
+        }
     }
 
-    const deleteGoal = (id: number) => {
-        setGoals(goals.filter(goal => goal.id !== id))
+    const toggleComplete = async (id: number) => {
+        const goal = goals.find(g => g.id === id)
+        if (!goal) return
+
+        const newCompleted = !goal.completed
+        const newProgress = newCompleted ? 100 : 0 // Toggle between 0 and 100 if clicked directly
+
+        updateProgress(id, newProgress)
+    }
+
+    const deleteGoal = async (id: number) => {
+        if (!confirm("本当にこの目標を削除しますか？")) return
+
+        try {
+            const res = await fetch(`/api/goals/${id}`, {
+                method: "DELETE",
+            })
+            if (res.ok) {
+                setGoals(goals.filter(goal => goal.id !== id))
+            }
+        } catch (error) {
+            console.error("Failed to delete goal", error)
+        }
     }
 
     const getPriorityColor = (priority: string) => {
@@ -76,6 +128,23 @@ export default function GoalsPage() {
             case "low": return "text-green-400 bg-green-500/20"
             default: return "text-white/60 bg-white/10"
         }
+    }
+
+    const getPriorityLabel = (priority: string) => {
+        switch (priority) {
+            case "high": return "高"
+            case "medium": return "中"
+            case "low": return "低"
+            default: return priority
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <DashboardLayout>
+                <div className="text-center py-12 text-white/60">読み込み中...</div>
+            </DashboardLayout>
+        )
     }
 
     return (
@@ -137,81 +206,92 @@ export default function GoalsPage() {
 
             {/* Goals List */}
             <div className="space-y-4">
-                {goals.map((goal, index) => (
-                    <motion.div
-                        key={goal.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 ${goal.completed ? "opacity-60" : ""
-                            }`}
-                    >
-                        <div className="flex items-start gap-4">
-                            {/* Checkbox */}
-                            <button
-                                onClick={() => toggleComplete(goal.id)}
-                                className="mt-1 flex-shrink-0"
-                            >
-                                {goal.completed ? (
-                                    <CheckCircle2 className="w-6 h-6 text-green-400" />
-                                ) : (
-                                    <Circle className="w-6 h-6 text-white/40 hover:text-white/60 transition-colors" />
-                                )}
-                            </button>
+                {goals.length === 0 ? (
+                    <div className="text-center py-12 text-white/60">
+                        目標がまだありません。新しい目標を追加しましょう！
+                    </div>
+                ) : (
+                    goals.map((goal, index) => (
+                        <motion.div
+                            key={goal.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 ${goal.completed ? "opacity-60" : ""
+                                }`}
+                        >
+                            <div className="flex items-start gap-4">
+                                {/* Checkbox */}
+                                <button
+                                    onClick={() => toggleComplete(goal.id)}
+                                    className="mt-1 flex-shrink-0"
+                                >
+                                    {goal.completed ? (
+                                        <CheckCircle2 className="w-6 h-6 text-green-400" />
+                                    ) : (
+                                        <Circle className="w-6 h-6 text-white/40 hover:text-white/60 transition-colors" />
+                                    )}
+                                </button>
 
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className="flex-1">
-                                        <h3 className={`text-lg font-semibold mb-1 ${goal.completed ? "line-through" : ""}`}>
-                                            {goal.title}
-                                        </h3>
-                                        <p className="text-white/60 text-sm mb-3">{goal.description}</p>
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex-1">
+                                            <h3 className={`text-lg font-semibold mb-1 ${goal.completed ? "line-through" : ""}`}>
+                                                {goal.title}
+                                            </h3>
+                                            <p className="text-white/60 text-sm mb-3">{goal.description}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getPriorityColor(goal.priority)}`}>
+                                                {getPriorityLabel(goal.priority)}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getPriorityColor(goal.priority)}`}>
-                                            {goal.priority}
-                                        </span>
-                                    </div>
-                                </div>
 
-                                {/* Progress Bar */}
-                                {!goal.completed && (
+                                    {/* Progress Slider */}
                                     <div className="mb-3">
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-sm text-white/60">進捗状況</span>
                                             <span className="text-sm font-medium">{goal.progress}%</span>
                                         </div>
-                                        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+
+                                        <div className="relative h-6 flex items-center">
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                step="10"
+                                                value={goal.progress}
+                                                onChange={(e) => updateProgress(goal.id, parseInt(e.target.value))}
+                                                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                                            />
                                             <div
-                                                className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-500"
+                                                className="absolute left-0 top-1/2 -translate-y-1/2 h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-lg pointer-events-none"
                                                 style={{ width: `${goal.progress}%` }}
                                             />
                                         </div>
                                     </div>
-                                )}
 
-                                {/* Footer */}
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm text-white/40">
-                                        期限: {new Date(goal.deadline).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                    </p>
-                                    <div className="flex gap-2">
-                                        <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                                            <Edit className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => deleteGoal(goal.id)}
-                                            className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                    {/* Footer */}
+                                    <div className="flex items-center justify-between mt-4">
+                                        <p className="text-sm text-white/40">
+                                            期限: {goal.deadline ? new Date(goal.deadline).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', year: 'numeric' }) : '設定なし'}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => deleteGoal(goal.id)}
+                                                className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </motion.div>
-                ))}
+                        </motion.div>
+                    ))
+                )}
             </div>
 
             {/* Add Goal Modal */}

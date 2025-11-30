@@ -1,7 +1,9 @@
 "use client"
 
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip, Legend } from "recharts"
+import { useState, useEffect } from "react"
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from "recharts"
 import { motion } from "framer-motion"
+import { Loader2 } from "lucide-react"
 
 // カテゴリーごとの色定義 - より鮮やかでスタイリッシュなカラーパレット
 const categoryColors: Record<string, string> = {
@@ -15,19 +17,6 @@ const categoryColors: Record<string, string> = {
     "社会貢献": "#14b8a6", // ティール
     "自己実現": "#a855f7", // パープル
 }
-
-// 幸福バランスのデータ - 9つのライフバランス項目
-const rawData = [
-    { category: "身体的健康", value: 75 },
-    { category: "精神的健康", value: 82 },
-    { category: "人間関係", value: 88 },
-    { category: "仕事・キャリア", value: 70 },
-    { category: "経済的安定", value: 65 },
-    { category: "学習・成長", value: 78 },
-    { category: "趣味・余暇", value: 85 },
-    { category: "社会貢献", value: 60 },
-    { category: "自己実現", value: 72 },
-]
 
 // カスタムツールチップ
 const CustomTooltip = ({ active, payload }: any) => {
@@ -67,17 +56,41 @@ const CustomDot = (props: any) => {
     )
 }
 
-// カスタムラベル - 項目名を色分け
+// CustomLabel - 項目名を色分け
 const CustomLabel = (props: any) => {
     const { x, y, payload, index } = props
     const color = categoryColors[payload.value]
 
     // ラベルの位置を調整
-    const angle = (index / rawData.length) * 360
-    const radians = (angle * Math.PI) / 180
-    const radius = 15
-    const labelX = x + Math.cos(radians) * radius
-    const labelY = y + Math.sin(radians) * radius
+    const total = 9
+    const angle = (index / total) * 360
+
+    const { cx, cy } = props
+
+    // 中心からの角度を再計算
+    const radian = Math.atan2(y - cy, x - cx)
+    const radius = 10 // オフセット距離を調整
+
+    const labelX = x + Math.cos(radian) * radius
+    const labelY = y + Math.sin(radian) * radius
+
+    // 角度に基づいてテキストのアンカー位置を調整
+    const degree = (radian * 180) / Math.PI
+    const normalizedDegree = degree < 0 ? degree + 360 : degree
+
+    let textAnchor: "start" | "middle" | "end" = 'middle'
+    if (normalizedDegree > 280 || normalizedDegree < 80) {
+        textAnchor = 'start'
+    } else if (normalizedDegree > 100 && normalizedDegree < 260) {
+        textAnchor = 'end'
+    }
+
+    let dominantBaseline: "auto" | "hanging" | "central" = 'central'
+    if (normalizedDegree > 45 && normalizedDegree < 135) {
+        dominantBaseline = 'hanging' // 下
+    } else if (normalizedDegree > 225 && normalizedDegree < 315) {
+        dominantBaseline = 'auto' // 上
+    }
 
     return (
         <text
@@ -86,20 +99,92 @@ const CustomLabel = (props: any) => {
             fill={color}
             fontSize={11}
             fontWeight={600}
-            textAnchor={angle > 90 && angle < 270 ? 'end' : 'start'}
+            textAnchor={textAnchor}
+            dominantBaseline={dominantBaseline}
         >
             {payload.value}
         </text>
     )
 }
 
-export function LifeBalanceChart() {
+export function LifeBalanceChart({ data: initialData }: { data?: { category: string, value: number }[] }) {
+    const [period, setPeriod] = useState('1month')
+    const [chartData, setChartData] = useState(initialData || [])
+    const [isLoading, setIsLoading] = useState(false)
+
+    // Default data structure
+    const defaultData = [
+        { category: "身体的健康", value: 0 },
+        { category: "精神的健康", value: 0 },
+        { category: "人間関係", value: 0 },
+        { category: "社会貢献", value: 0 },
+        { category: "仕事・キャリア", value: 0 },
+        { category: "経済的安定", value: 0 },
+        { category: "学習・成長", value: 0 },
+        { category: "自己実現", value: 0 },
+        { category: "趣味・余暇", value: 0 },
+    ]
+
+    const displayData = chartData.length > 0 ? chartData : defaultData
+
+    // 期間変更時にデータを取得
+    useEffect(() => {
+        const fetchData = async () => {
+            if (period === '1month' && initialData && initialData.length > 0) {
+                // 初期データを使用（初回レンダリング時など）
+                // ただし、ユーザーが明示的に1ヶ月を選択し直した場合は再取得しても良いが、
+                // ここではシンプルにするため、APIを常に呼ぶようにする
+            }
+
+            setIsLoading(true)
+            try {
+                const response = await fetch(`/api/life-balance/stats?period=${period}`)
+                if (response.ok) {
+                    const result = await response.json()
+                    // APIのレスポンス形式（オブジェクト）をチャート用の配列に変換
+                    const scores = result.scores
+                    const formattedData = [
+                        { category: "身体的健康", value: scores.physical },
+                        { category: "精神的健康", value: scores.mental },
+                        { category: "人間関係", value: scores.relationships },
+                        { category: "社会貢献", value: scores.social },
+                        { category: "仕事・キャリア", value: scores.career },
+                        { category: "経済的安定", value: scores.financial },
+                        { category: "学習・成長", value: scores.learning },
+                        { category: "自己実現", value: scores.selfActualization },
+                        { category: "趣味・余暇", value: scores.leisure },
+                    ]
+                    setChartData(formattedData)
+                }
+            } catch (error) {
+                console.error("Failed to fetch stats:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        // 初回マウント時はinitialDataがあればスキップ、なければ取得
+        if (period === '1month' && initialData && initialData.length > 0 && chartData === initialData) {
+            return
+        }
+
+        fetchData()
+    }, [period])
+
     // 平均値を計算
-    const average = Math.round(rawData.reduce((sum, item) => sum + item.value, 0) / rawData.length)
+    const average = Math.round(displayData.reduce((sum, item) => sum + item.value, 0) / displayData.length)
 
     // 最高・最低を見つける
-    const highest = rawData.reduce((max, item) => item.value > max.value ? item : max, rawData[0])
-    const lowest = rawData.reduce((min, item) => item.value < min.value ? item : min, rawData[0])
+    const highest = displayData.reduce((max, item) => item.value > max.value ? item : max, displayData[0])
+    const lowest = displayData.reduce((min, item) => item.value < min.value ? item : min, displayData[0])
+
+    const periods = [
+        { id: '1day', label: '1日' },
+        { id: '1week', label: '1週間' },
+        { id: '1month', label: '1ヶ月' },
+        { id: '6months', label: '半年' },
+        { id: '1year', label: '1年' },
+    ]
 
     return (
         <motion.div
@@ -108,19 +193,43 @@ export function LifeBalanceChart() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
-            <div className="mb-6">
-                <h3 className="text-xl font-bold mb-1 text-white">
-                    幸福度バランス
-                </h3>
-                <p className="text-white/60 text-sm">9つの項目で人生の充実度を可視化</p>
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 className="text-xl font-bold mb-1 text-white">
+                        幸福度バランス
+                    </h3>
+                    <p className="text-white/60 text-sm">9つの項目で人生の充実度を可視化</p>
+                </div>
+
+                {/* 期間セレクター */}
+                <div className="flex bg-black/40 p-1 rounded-xl overflow-x-auto">
+                    {periods.map((p) => (
+                        <button
+                            key={p.id}
+                            onClick={() => setPeriod(p.id)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${period === p.id
+                                ? 'bg-white/10 text-white shadow-sm'
+                                : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                                }`}
+                        >
+                            {p.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <div className="h-[300px] sm:h-[400px] relative">
+            <div className="h-[300px] sm:h-[400px] relative [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none *:focus:outline-none">
                 {/* 背景のグロー効果 */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-indigo-500/10 rounded-2xl blur-3xl"></div>
 
+                {isLoading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl">
+                        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                    </div>
+                )}
+
                 <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={rawData}>
+                    <RadarChart data={displayData}>
                         <defs>
                             <linearGradient id="radarGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
@@ -155,7 +264,7 @@ export function LifeBalanceChart() {
 
             {/* Color Legend - 9つの項目を色付きで表示 */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-6 pt-6 border-t border-white/10">
-                {rawData.map((item) => (
+                {displayData.map((item) => (
                     <div key={item.category} className="flex items-center gap-2">
                         <div
                             className="w-2 h-2 rounded-full"

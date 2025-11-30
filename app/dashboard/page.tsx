@@ -6,19 +6,96 @@ import { LifeBalanceChart } from "@/components/LifeBalanceChart"
 import { motion } from "framer-motion"
 import { BookOpen, Target, TrendingUp, Calendar } from "lucide-react"
 import Link from "next/link"
+import { useState, useEffect } from "react"
+
+interface Journal {
+    id: string
+    title: string
+    mood: number
+    date: string
+}
+
+interface Goal {
+    id: string
+    title: string
+    progress: number
+}
+
+// Helper function to convert mood integer to emoji
+function getMoodEmoji(mood: number | null | undefined): string {
+    if (!mood) return "❓"
+
+    switch (mood) {
+        case 1:
+            return "😢" // Very Sad
+        case 2:
+            return "😕" // Sad
+        case 3:
+            return "😐" // Neutral
+        case 4:
+            return "😊" // Happy
+        case 5:
+            return "😄" // Very Happy
+        default:
+            return "❓" // Unknown
+    }
+}
 
 export default function DashboardPage() {
-    const recentJournals = [
-        { id: 1, title: "朝の振り返り", date: "今日, 9:30 AM", mood: "😊" },
-        { id: 2, title: "感謝リスト", date: "昨日, 8:00 PM", mood: "🙏" },
-        { id: 3, title: "週次レビュー", date: "3月 3日, 2025年", mood: "💭" },
-    ]
+    const [stats, setStats] = useState({ journalCount: 0, goalCount: 0, streak: 0, happiness: 0 })
+    const [recentJournals, setRecentJournals] = useState<Journal[]>([])
+    const [goals, setGoals] = useState<Goal[]>([])
+    const [lifeBalance, setLifeBalance] = useState<any[]>([])
+    const [happinessData, setHappinessData] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(true)
 
-    const goals = [
-        { id: 1, title: "週に3回運動する", progress: 75 },
-        { id: 2, title: "今月☆2冊読書する", progress: 50 },
-        { id: 3, title: "毎日瞑想する", progress: 90 },
-    ]
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await fetch("/api/dashboard")
+                if (res.ok) {
+                    const data = await res.json()
+                    setStats(data.stats)
+                    setRecentJournals(data.recentJournals)
+                    setGoals(data.goals)
+                    setLifeBalance(data.lifeBalance)
+                    setHappinessData(data.happinessData)
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard data", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
+
+    const [greeting, setGreeting] = useState({ title: "", message: "" })
+
+    useEffect(() => {
+        const hour = new Date().getHours()
+        if (hour >= 5 && hour < 12) {
+            setGreeting({
+                title: "おはようございます！ ☀️",
+                message: "今日も素晴らしい1日の始まりですね。朝の積み重ねが、未来を変えます。"
+            })
+        } else if (hour >= 12 && hour < 18) {
+            setGreeting({
+                title: "こんにちは！ 🌿",
+                message: "調子はいかがですか？一息ついて、後半戦も楽しみましょう。"
+            })
+        } else if (hour >= 18 && hour < 23) {
+            setGreeting({
+                title: "こんばんは！ 🌙",
+                message: "今日もお疲れ様でした。1日の振り返りをして、心を整えましょう。"
+            })
+        } else {
+            setGreeting({
+                title: "夜遅くまでお疲れ様です ✨",
+                message: "星が綺麗ですね。無理せず、ゆっくり休んでくださいね。"
+            })
+        }
+    }, [])
 
     return (
         <DashboardLayout>
@@ -29,8 +106,8 @@ export default function DashboardPage() {
                 transition={{ duration: 0.5 }}
                 className="mb-8"
             >
-                <h1 className="text-2xl md:text-4xl font-bold mb-2">おかえりなさい！ 👋</h1>
-                <p className="text-white/60">今日のあなたの旅の様子</p>
+                <h1 className="text-2xl md:text-4xl font-bold mb-2">{greeting.title}</h1>
+                <p className="text-white/60">{greeting.message}</p>
             </motion.div>
 
             {/* Stats Cards */}
@@ -38,28 +115,28 @@ export default function DashboardPage() {
                 <StatCard
                     icon={BookOpen}
                     label="今月の記録数"
-                    value="12"
+                    value={stats.journalCount}
                     trend="+3"
                     delay={0.1}
                 />
                 <StatCard
                     icon={Target}
                     label="進行中の目標"
-                    value="3"
+                    value={stats.goalCount}
                     trend="→"
                     delay={0.2}
                 />
                 <StatCard
                     icon={TrendingUp}
-                    label="平均幸福度"
-                    value="78"
+                    label="平均幸福度(過去30日)"
+                    value={stats.happiness}
                     trend="+5%"
                     delay={0.3}
                 />
                 <StatCard
                     icon={Calendar}
                     label="連続日数"
-                    value="7"
+                    value={stats.streak}
                     trend="+2"
                     delay={0.4}
                 />
@@ -68,10 +145,10 @@ export default function DashboardPage() {
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Life Balance Radar Chart */}
-                <LifeBalanceChart />
+                <LifeBalanceChart data={lifeBalance} />
 
                 {/* Happiness Chart */}
-                <HappinessChart />
+                <HappinessChart data={happinessData} />
             </div>
 
             {/* Recent Journals and Goals */}
@@ -105,7 +182,7 @@ export default function DashboardPage() {
                             >
                                 <div className="flex items-center justify-between mb-1">
                                     <h4 className="font-medium">{journal.title}</h4>
-                                    <span className="text-2xl">{journal.mood}</span>
+                                    <span className="text-2xl">{getMoodEmoji(journal.mood)}</span>
                                 </div>
                                 <p className="text-white/60 text-sm">{journal.date}</p>
                             </div>

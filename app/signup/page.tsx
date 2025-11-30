@@ -23,33 +23,58 @@ export default function SignupPage() {
         setError("")
 
         if (password !== confirmPassword) {
-            setError("Passwords don't match!")
+            setError("パスワードが一致しません")
             return
         }
         if (!acceptTerms) {
-            setError("Please accept the terms and conditions")
+            setError("利用規約への同意が必要です")
             return
         }
 
         setIsLoading(true)
 
-        // Simulate API call
-        console.log("Signup:", { name, email, password })
+        try {
+            const { createClient } = await import("@/lib/supabase/client")
+            const supabase = createClient()
 
-        // Simulate network delay
-        setTimeout(() => {
-            setIsLoading(false)
-            // Redirect to dashboard
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        name: name,
+                    },
+                },
+            })
+
+            if (error) {
+                throw error
+            }
+
+            // Create user in Prisma database
+            const userResponse = await fetch("/api/user", {
+                method: "POST",
+            })
+
+            if (!userResponse.ok) {
+                console.error("Failed to create user in database")
+            }
+
             router.push("/dashboard")
-        }, 1500)
+            router.refresh()
+        } catch (err: any) {
+            setError(err.message || "アカウント作成に失敗しました")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background gradient */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute top-1/3 right-1/4 translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-blue-900/30 to-purple-900/30 blur-[120px] rounded-full animate-pulse" />
-                <div className="absolute bottom-1/3 left-1/4 -translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-r from-purple-900/20 to-blue-900/20 blur-[100px] rounded-full animate-pulse" />
+                <div className="absolute top-1/3 right-1/4 translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-cyan-900/30 to-emerald-900/30 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-1/3 left-1/4 -translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-r from-emerald-900/20 to-cyan-900/20 blur-[100px] rounded-full animate-pulse" />
             </div>
 
             {/* Noise texture */}
@@ -94,7 +119,7 @@ export default function SignupPage() {
                                     placeholder="John Doe"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="pl-11 bg-white/5 border-white/10 focus:border-purple-400 h-12 rounded-xl"
+                                    className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
                                     required
                                 />
                             </div>
@@ -113,7 +138,7 @@ export default function SignupPage() {
                                     placeholder="your@email.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-11 bg-white/5 border-white/10 focus:border-purple-400 h-12 rounded-xl"
+                                    className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
                                     required
                                 />
                             </div>
@@ -132,7 +157,7 @@ export default function SignupPage() {
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-11 bg-white/5 border-white/10 focus:border-purple-400 h-12 rounded-xl"
+                                    className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
                                     required
                                     minLength={8}
                                 />
@@ -152,7 +177,7 @@ export default function SignupPage() {
                                     placeholder="••••••••"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="pl-11 bg-white/5 border-white/10 focus:border-purple-400 h-12 rounded-xl"
+                                    className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
                                     required
                                     minLength={8}
                                 />
@@ -165,15 +190,15 @@ export default function SignupPage() {
                                 type="checkbox"
                                 checked={acceptTerms}
                                 onChange={(e) => setAcceptTerms(e.target.checked)}
-                                className="w-4 h-4 mt-0.5 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500 focus:ring-offset-0"
+                                className="w-4 h-4 mt-0.5 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
                                 required
                             />
                             <span className="text-sm text-white/60">
-                                <Link href="/terms" className="text-purple-400 hover:text-purple-300">
+                                <Link href="/terms" className="text-emerald-400 hover:text-emerald-300">
                                     利用規約
                                 </Link>
                                 と
-                                <Link href="/privacy" className="text-purple-400 hover:text-purple-300">
+                                <Link href="/privacy" className="text-emerald-400 hover:text-emerald-300">
                                     プライバシーポリシー
                                 </Link>
                                 に同意します
@@ -195,7 +220,7 @@ export default function SignupPage() {
                         <Button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full h-12 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-medium text-base group disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white rounded-xl font-medium text-base group disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? (
                                 <>
@@ -221,7 +246,7 @@ export default function SignupPage() {
                     {/* Login Link */}
                     <p className="text-center text-white/60">
                         すでにアカウントをお持ちですか？{" "}
-                        <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+                        <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
                             ログイン
                         </Link>
                     </p>

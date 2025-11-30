@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { motion } from "framer-motion"
-import { Image as ImageIcon, List, MessageSquare, Mail, Plus, X, Trash2, Upload } from "lucide-react"
+import { Image as ImageIcon, List, MessageSquare, Mail, Plus, X, Trash2, Upload, Search, ExternalLink, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -30,24 +30,17 @@ interface Letter {
 
 export default function VisionBoardPage() {
     const [activeTab, setActiveTab] = useState<Tab>("collage")
+    const [isLoading, setIsLoading] = useState(true)
 
     // Image Collage State
-    const [images, setImages] = useState<string[]>([])
+    const [images, setImages] = useState<{ id: string, content: string }[]>([])
 
     // Dream List State
-    const [dreams, setDreams] = useState<Dream[]>([
-        { id: 1, text: "世界一周旅行をする", completed: false, category: "旅行" },
-        { id: 2, text: "本を出版する", completed: false, category: "キャリア" },
-        { id: 3, text: "マラソンを完走する", completed: false, category: "健康" },
-    ])
+    const [dreams, setDreams] = useState<Dream[]>([])
     const [newDream, setNewDream] = useState("")
 
     // Affirmations State
-    const [affirmations, setAffirmations] = useState<Affirmation[]>([
-        { id: 1, text: "私は毎日成長しています" },
-        { id: 2, text: "私には無限の可能性があります" },
-        { id: 3, text: "私は愛と感謝に満ちています" },
-    ])
+    const [affirmations, setAffirmations] = useState<Affirmation[]>([])
     const [newAffirmation, setNewAffirmation] = useState("")
 
     // Letter State
@@ -68,18 +61,99 @@ export default function VisionBoardPage() {
         { id: "10years" as const, label: "10年後" },
     ]
 
+    useEffect(() => {
+        fetchItems()
+    }, [])
+
+    const fetchItems = async () => {
+        try {
+            const res = await fetch("/api/vision-board")
+            if (res.ok) {
+                const data = await res.json()
+
+                // Process data into categories
+                const collageImages: { id: string, content: string }[] = []
+                const dreamList: Dream[] = []
+                const affirmationList: Affirmation[] = []
+                const letterList: Letter[] = []
+
+                data.forEach((item: any) => {
+                    if (item.type === "image") {
+                        collageImages.push({ id: item.id, content: item.content })
+                    } else if (item.type === "dream") {
+                        dreamList.push({
+                            id: item.id,
+                            text: item.content,
+                            completed: item.metadata?.completed || false,
+                            category: item.metadata?.category || "その他"
+                        })
+                    } else if (item.type === "affirmation") {
+                        affirmationList.push({
+                            id: item.id,
+                            text: item.content
+                        })
+                    } else if (item.type === "letter") {
+                        letterList.push({
+                            id: item.id,
+                            content: item.content,
+                            period: item.metadata?.period || "1year",
+                            createdAt: item.createdAt
+                        })
+                    }
+                })
+
+                setImages(collageImages)
+                setDreams(dreamList)
+                setAffirmations(affirmationList)
+                setLetters(letterList)
+            }
+        } catch (error) {
+            console.error("Failed to fetch vision board items", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
         if (files) {
             Array.from(files).forEach(file => {
                 const reader = new FileReader()
-                reader.onload = (event) => {
+                reader.onload = async (event) => {
                     if (event.target?.result) {
-                        setImages(prev => [...prev, event.target!.result as string])
+                        const content = event.target.result as string
+                        try {
+                            const res = await fetch("/api/vision-board", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    type: "image",
+                                    content: content,
+                                    metadata: {}
+                                })
+                            })
+                            if (res.ok) {
+                                const newItem = await res.json()
+                                setImages(prev => [{ id: newItem.id, content: newItem.content }, ...prev])
+                            }
+                        } catch (error) {
+                            console.error("Failed to upload image", error)
+                        }
                     }
                 }
                 reader.readAsDataURL(file)
             })
+        }
+    }
+
+    const deleteImage = async (id: string) => {
+        try {
+            const res = await fetch(`/api/vision-board/${id}`, { method: "DELETE" })
+            if (res.ok) {
+                setImages(images.filter(img => img.id !== id))
+            }
+        } catch (error) {
+            console.error("Failed to delete image", error)
         }
     }
 
@@ -151,8 +225,8 @@ export default function VisionBoardPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-                                    ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white border border-emerald-500/30"
-                                    : "text-white/60 hover:text-white hover:bg-white/5"
+                                ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white border border-emerald-500/30"
+                                : "text-white/60 hover:text-white hover:bg-white/5"
                                 }`}
                         >
                             <Icon className="w-4 h-4" />
@@ -189,17 +263,112 @@ export default function VisionBoardPage() {
                             </div>
                         </label>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {/* Image Search & AI Generation Links */}
+                        <div className="border-2 border-white/10 rounded-3xl p-6 mt-6">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Search className="w-5 h-5 text-emerald-400" />
+                                <h3 className="text-lg font-bold">画像を探す・生成する</h3>
+                            </div>
+                            <p className="text-white/60 text-sm mb-4">
+                                無料画像サイトから探すか、AIで生成しましょう
+                            </p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <a
+                                    href="https://unsplash.com/ja"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-500/30 rounded-xl transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
+                                            <ImageIcon className="w-5 h-5 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white">Unsplash</p>
+                                            <p className="text-xs text-white/40">高品質な写真</p>
+                                        </div>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-emerald-400 transition-colors" />
+                                </a>
+
+                                <a
+                                    href="https://www.pexels.com/ja-jp/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-500/30 rounded-xl transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+                                            <ImageIcon className="w-5 h-5 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white">Pexels</p>
+                                            <p className="text-xs text-white/40">動画も豊富</p>
+                                        </div>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-blue-400 transition-colors" />
+                                </a>
+
+                                <a
+                                    href="https://pixabay.com/ja/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-500/30 rounded-xl transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500/20 to-orange-500/20 flex items-center justify-center">
+                                            <ImageIcon className="w-5 h-5 text-pink-400" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white">Pixabay</p>
+                                            <p className="text-xs text-white/40">多様な素材</p>
+                                        </div>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-pink-400 transition-colors" />
+                                </a>
+
+                                <a
+                                    href="https://aistudio.google.com/app/prompts/new_freeform"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex items-center justify-between p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 rounded-xl transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center">
+                                            <Sparkles className="w-5 h-5 text-purple-300" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white flex items-center gap-1">
+                                                Gemini AI
+                                                <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 rounded text-purple-300">NEW</span>
+                                            </p>
+                                            <p className="text-xs text-white/40">AI画像生成</p>
+                                        </div>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-purple-400 transition-colors" />
+                                </a>
+                            </div>
+
+                            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                <p className="text-xs text-blue-200/80">
+                                    💡 ヒント: 画像をダウンロードしたら、上のアップロードエリアから追加できます
+                                </p>
+                            </div>
+                        </div>
+
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
                             {images.map((img, index) => (
                                 <motion.div
-                                    key={index}
+                                    key={img.id}
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     className="relative group aspect-square rounded-xl overflow-hidden"
                                 >
-                                    <img src={img} alt={`Vision ${index + 1}`} className="w-full h-full object-cover" />
+                                    <img src={img.content} alt={`Vision ${index + 1}`} className="w-full h-full object-cover" />
                                     <button
-                                        onClick={() => setImages(images.filter((_, i) => i !== index))}
+                                        onClick={() => deleteImage(img.id)}
                                         className="absolute top-2 right-2 p-2 bg-red-500/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                         <X className="w-4 h-4" />
@@ -318,8 +487,8 @@ export default function VisionBoardPage() {
                                     key={period.id}
                                     onClick={() => setLetterPeriod(period.id)}
                                     className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${letterPeriod === period.id
-                                            ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white border border-emerald-500/30"
-                                            : "text-white/60 hover:text-white hover:bg-white/5"
+                                        ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white border border-emerald-500/30"
+                                        : "text-white/60 hover:text-white hover:bg-white/5"
                                         }`}
                                 >
                                     {period.label}

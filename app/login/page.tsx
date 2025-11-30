@@ -21,23 +21,39 @@ export default function LoginPage() {
         setError("")
         setIsLoading(true)
 
-        // Simulate API call
-        console.log("Login:", { email, password, rememberMe })
+        try {
+            const { createClient } = await import("@/lib/supabase/client")
+            const supabase = createClient()
 
-        // Simulate network delay
-        setTimeout(() => {
-            setIsLoading(false)
-            // Redirect to dashboard
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            })
+
+            if (error) {
+                throw error
+            }
+
+            // Ensure user exists in Prisma database
+            await fetch("/api/user", {
+                method: "POST",
+            })
+
             router.push("/dashboard")
-        }, 1500)
+            router.refresh()
+        } catch (err: any) {
+            setError(err.message || "ログインに失敗しました")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background gradient */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-purple-900/30 to-blue-900/30 blur-[120px] rounded-full animate-pulse" />
-                <div className="absolute bottom-1/3 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-r from-blue-900/20 to-purple-900/20 blur-[100px] rounded-full animate-pulse" />
+                <div className="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-1/3 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-r from-cyan-900/20 to-emerald-900/20 blur-[100px] rounded-full animate-pulse" />
             </div>
 
             {/* Noise texture */}
@@ -82,7 +98,7 @@ export default function LoginPage() {
                                     placeholder="your@email.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-11 bg-white/5 border-white/10 focus:border-purple-400 h-12 rounded-xl"
+                                    className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
                                     required
                                 />
                             </div>
@@ -101,7 +117,7 @@ export default function LoginPage() {
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-11 bg-white/5 border-white/10 focus:border-purple-400 h-12 rounded-xl"
+                                    className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
                                     required
                                 />
                             </div>
@@ -114,11 +130,11 @@ export default function LoginPage() {
                                     type="checkbox"
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
-                                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500 focus:ring-offset-0"
+                                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
                                 />
                                 <span className="text-sm text-white/60">ログイン状態を保持</span>
                             </label>
-                            <Link href="/forgot-password" className="text-sm text-purple-400 hover:text-purple-300 transition-colors">
+                            <Link href="/forgot-password" className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
                                 パスワードを忘れました？
                             </Link>
                         </div>
@@ -138,7 +154,7 @@ export default function LoginPage() {
                         <Button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full h-12 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-medium text-base group disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white rounded-xl font-medium text-base group disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? (
                                 <>
@@ -164,7 +180,7 @@ export default function LoginPage() {
                     {/* Sign Up Link */}
                     <p className="text-center text-white/60">
                         アカウントをお持ちでない方は{" "}
-                        <Link href="/signup" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+                        <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
                             新規登録
                         </Link>
                     </p>
