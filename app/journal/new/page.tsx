@@ -185,7 +185,7 @@ export default function NewJournalPage() {
                     <Button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-xl"
+                        className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 rounded-xl"
                     >
                         <Save className="w-4 h-4 mr-2" />
                         {isSaving ? "保存中..." : "保存"}
@@ -257,8 +257,8 @@ export default function NewJournalPage() {
                                     key={key}
                                     onClick={() => setActiveTagCategory(key)}
                                     className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeTagCategory === key
-                                            ? 'bg-indigo-500/30 border-2 border-indigo-500/50 font-semibold'
-                                            : 'bg-white/5 border-2 border-transparent hover:bg-white/10'
+                                        ? 'bg-indigo-500/30 border-2 border-indigo-500/50 font-semibold'
+                                        : 'bg-white/5 border-2 border-transparent hover:bg-white/10'
                                         }`}
                                 >
                                     {category.name}
@@ -273,8 +273,8 @@ export default function NewJournalPage() {
                                     key={tag}
                                     onClick={() => toggleTag(tag)}
                                     className={`px-4 py-2 rounded-lg text-sm transition-all ${tags.includes(tag)
-                                            ? 'bg-purple-500/30 border-2 border-purple-500/50 font-semibold'
-                                            : 'bg-white/5 border-2 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                        ? 'bg-purple-500/30 border-2 border-purple-500/50 font-semibold'
+                                        : 'bg-white/5 border-2 border-white/10 hover:bg-white/10 hover:border-white/20'
                                         }`}
                                 >
                                     {tag}

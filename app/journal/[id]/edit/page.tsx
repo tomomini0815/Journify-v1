@@ -128,10 +128,62 @@ export default function EditJournalPage() {
         }
     }
 
-    const addTag = () => {
-        if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-            setTags([...tags, tagInput.trim()])
-            setTagInput("")
+    const [activeTagCategory, setActiveTagCategory] = useState("goals")
+    const [showCustomTagInput, setShowCustomTagInput] = useState(false)
+
+    const tagCategories = {
+        goals: {
+            name: "🎯 目標・成長",
+            tags: ["目標達成", "自己成長", "スキルアップ", "キャリア", "学習"]
+        },
+        emotions: {
+            name: "💭 感情・気分",
+            tags: ["幸せ", "感謝", "不安", "ストレス", "リラックス", "モチベーション"]
+        },
+        relationships: {
+            name: "👥 人間関係",
+            tags: ["家族", "友人", "恋愛", "仕事仲間", "新しい出会い"]
+        },
+        work: {
+            name: "💼 仕事・勉強",
+            tags: ["プロジェクト", "会議", "締め切り", "成果", "課題"]
+        },
+        health: {
+            name: "🏃 健康・ライフスタイル",
+            tags: ["運動", "食事", "睡眠", "瞑想", "ヨガ"]
+        },
+        hobbies: {
+            name: "🎨 趣味・娯楽",
+            tags: ["読書", "映画", "音楽", "アート", "ゲーム", "旅行"]
+        },
+        ideas: {
+            name: "💡 アイデア・インスピレーション",
+            tags: ["ひらめき", "計画", "夢", "創造性"]
+        },
+        other: {
+            name: "🌟 その他",
+            tags: ["日常", "振り返り", "決断", "変化", "挑戦"]
+        }
+    }
+
+    const toggleTag = (tag: string) => {
+        if (tags.includes(tag)) {
+            setTags(tags.filter(t => t !== tag))
+        } else {
+            setTags([...tags, tag])
+        }
+    }
+
+    const addCustomTag = () => {
+        if (!tagInput.trim()) return;
+        const newTags = tagInput
+            .split(',')
+            .map(tag => tag.trim())
+            .filter(tag => tag && !tags.includes(tag));
+        if (newTags.length > 0) {
+            setTags([...tags, ...newTags]);
+            setTagInput("");
+            setShowCustomTagInput(false);
         }
     }
 
@@ -215,41 +267,97 @@ export default function EditJournalPage() {
                     >
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                             <Tag className="w-5 h-5" />
-                            タグ
+                            タグを選択
                         </h3>
 
-                        <div className="flex gap-2 mb-4">
-                            <Input
-                                value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                                placeholder="タグを追加..."
-                                className="flex-1 bg-white/5 border-white/10 rounded-xl"
-                            />
-                            <Button
-                                onClick={addTag}
-                                className="bg-white/10 hover:bg-white/20 rounded-xl"
-                            >
-                                追加
-                            </Button>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                            {tags.map((tag) => (
-                                <span
-                                    key={tag}
-                                    className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-sm flex items-center gap-2"
-                                >
-                                    {tag}
-                                    <button
-                                        onClick={() => removeTag(tag)}
-                                        className="hover:text-red-400 transition-colors"
+                        {/* 選択されたタグ */}
+                        {tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-4 p-3 bg-white/5 rounded-xl">
+                                {tags.map((tag) => (
+                                    <span
+                                        key={tag}
+                                        className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-sm flex items-center gap-2"
                                     >
-                                        <X className="w-3 h-3" />
-                                    </button>
-                                </span>
+                                        {tag}
+                                        <button
+                                            onClick={() => removeTag(tag)}
+                                            className="hover:text-red-400 transition-colors"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* カテゴリタブ */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {Object.entries(tagCategories).map(([key, category]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => setActiveTagCategory(key)}
+                                    className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeTagCategory === key
+                                        ? 'bg-indigo-500/30 border-2 border-indigo-500/50 font-semibold'
+                                        : 'bg-white/5 border-2 border-transparent hover:bg-white/10'
+                                        }`}
+                                >
+                                    {category.name}
+                                </button>
                             ))}
                         </div>
+
+                        {/* タグ選択ボタン */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {tagCategories[activeTagCategory as keyof typeof tagCategories].tags.map((tag) => (
+                                <button
+                                    key={tag}
+                                    onClick={() => toggleTag(tag)}
+                                    className={`px-4 py-2 rounded-lg text-sm transition-all ${tags.includes(tag)
+                                        ? 'bg-emerald-500/30 border-2 border-emerald-500/50 font-semibold'
+                                        : 'bg-white/5 border-2 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                        }`}
+                                >
+                                    {tag}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* カスタムタグ追加 */}
+                        {!showCustomTagInput ? (
+                            <button
+                                onClick={() => setShowCustomTagInput(true)}
+                                className="w-full px-4 py-2 bg-white/5 border-2 border-dashed border-white/20 rounded-xl hover:bg-white/10 transition-colors text-sm text-white/60 hover:text-white"
+                            >
+                                + カスタムタグを追加
+                            </button>
+                        ) : (
+                            <div className="flex gap-2">
+                                <Input
+                                    type="text"
+                                    placeholder="カスタムタグ (カンマ区切りで複数可)"
+                                    value={tagInput}
+                                    onChange={(e) => setTagInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === "Enter" && addCustomTag()}
+                                    className="flex-1 bg-white/5 border-white/10 rounded-xl"
+                                    autoFocus
+                                />
+                                <Button
+                                    onClick={addCustomTag}
+                                    className="bg-emerald-500 hover:bg-emerald-600 rounded-xl"
+                                >
+                                    追加
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        setShowCustomTagInput(false)
+                                        setTagInput("")
+                                    }}
+                                    className="bg-white/10 hover:bg-white/20 rounded-xl"
+                                >
+                                    <X className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )}
                     </motion.div>
                 </div>
 

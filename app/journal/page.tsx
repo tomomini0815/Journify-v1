@@ -137,7 +137,7 @@ export default function JournalPage() {
 
                     {/* New Entry Button */}
                     <Link href="/journal/new">
-                        <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 h-12 rounded-xl">
+                        <Button className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 h-12 rounded-xl">
                             <Plus className="w-5 h-5 mr-2" />
                             新規記録
                         </Button>
@@ -152,7 +152,7 @@ export default function JournalPage() {
                 <div className="text-center py-12">
                     <p className="text-white/60 mb-4">まだジャーナルがありません</p>
                     <Link href="/journal/new">
-                        <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl">
+                        <Button className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 rounded-xl">
                             <Plus className="w-5 h-5 mr-2" />
                             最初のジャーナルを作成
                         </Button>
