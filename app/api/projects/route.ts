@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 
 // Mock user ID for now - in production this would come from auth session
-const USER_ID = "user-1"
+const USER_ID = "42c1eda0-18f2-4213-86b0-55b47ee003f3"
 
 export async function GET() {
     try {
