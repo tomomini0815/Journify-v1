@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import prisma from "@/lib/prisma"
 
 // Mock user ID for now - in production this would come from auth session
 const USER_ID = "user-1"
