@@ -12,7 +12,7 @@ interface Journal {
     id: string
     title: string
     content: string
-    mood: number
+    mood: number | null
     tags: string[]
     createdAt: string
 }
