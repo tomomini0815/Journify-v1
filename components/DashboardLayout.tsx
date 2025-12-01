@@ -4,7 +4,7 @@ import { ReactNode, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles } from "lucide-react"
+import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 
@@ -17,6 +17,7 @@ const navigation = [
     { name: "ジャーナル", href: "/journal", icon: BookOpen },
     { name: "目標", href: "/goals", icon: Target },
     { name: "タスク", href: "/tasks", icon: CheckSquare },
+    { name: "カレンダー", href: "/tasks/calendar", icon: Calendar },
     { name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
     { name: "プロフィール", href: "/profile", icon: User },
 ]
