@@ -22,10 +22,18 @@ export async function GET() {
         }
 
         return NextResponse.json(settings)
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to fetch user settings:", error)
+        console.error("Error details:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        })
         return NextResponse.json(
-            { error: "Failed to fetch user settings" },
+            {
+                error: "Failed to fetch user settings",
+                details: error.message
+            },
             { status: 500 }
         )
     }
