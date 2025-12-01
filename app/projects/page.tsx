@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Plus, Briefcase, Calendar, Clock, ArrowRight } from "lucide-react"
+import { Plus, Briefcase, Calendar, Clock, ArrowRight, CheckSquare } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import Link from "next/link"
 
@@ -104,8 +104,8 @@ export default function ProjectsPage() {
                                         <Briefcase className="w-6 h-6 text-indigo-400" />
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${project.status === 'active' ? 'bg-emerald-500/20 text-emerald-300' :
-                                            project.status === 'completed' ? 'bg-blue-500/20 text-blue-300' :
-                                                'bg-white/10 text-white/60'
+                                        project.status === 'completed' ? 'bg-blue-500/20 text-blue-300' :
+                                            'bg-white/10 text-white/60'
                                         }`}>
                                         {project.status === 'active' ? '進行中' :
                                             project.status === 'completed' ? '完了' : 'アーカイブ'}
