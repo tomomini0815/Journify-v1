@@ -12,7 +12,10 @@ export async function GET() {
 
     try {
         const tasks = await prisma.task.findMany({
-            where: { userId: user.id },
+            where: {
+                userId: user.id,
+                projectId: null  // Only show daily tasks, not project tasks
+            },
             orderBy: { createdAt: "desc" },
         })
 
