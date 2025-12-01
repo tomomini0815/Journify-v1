@@ -57,7 +57,7 @@ export default function TasksPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     text: newTask,
-                    scheduledDate: scheduledDate || null
+                    scheduledDate: scheduledDate ? new Date(scheduledDate).toISOString() : null
                 }),
             })
 
