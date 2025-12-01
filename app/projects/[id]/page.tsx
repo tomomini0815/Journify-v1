@@ -295,9 +295,29 @@ export default function ProjectDetailsPage() {
                                     type="text"
                                     required
                                     value={newTask.text}
-                                    onChange={(e) => setNewTask({ text: e.target.value })}
+                                    onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
                                 />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
+                                    <input
+                                        type="date"
+                                        value={newTask.startDate}
+                                        onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-white/60 mb-2">終了日</label>
+                                    <input
+                                        type="date"
+                                        value={newTask.endDate}
+                                        onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                    />
+                                </div>
                             </div>
                             <div className="flex justify-end gap-3 mt-6">
                                 <button
