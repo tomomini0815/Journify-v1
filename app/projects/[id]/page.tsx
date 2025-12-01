@@ -37,6 +37,10 @@ export default function ProjectDetailsPage() {
     const router = useRouter()
     const [project, setProject] = useState<Project | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [showMilestoneModal, setShowMilestoneModal] = useState(false)
+    const [showTaskModal, setShowTaskModal] = useState(false)
+    const [newMilestone, setNewMilestone] = useState({ title: "", date: "" })
+    const [newTask, setNewTask] = useState({ text: "" })
 
     useEffect(() => {
         fetchProject()
@@ -55,6 +59,42 @@ export default function ProjectDetailsPage() {
             console.error("Failed to fetch project", error)
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const createMilestone = async (e: React.FormEvent) => {
+        e.preventDefault()
+        try {
+            const res = await fetch(`/api/projects/${params.id}/milestones`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newMilestone)
+            })
+            if (res.ok) {
+                await fetchProject()
+                setShowMilestoneModal(false)
+                setNewMilestone({ title: "", date: "" })
+            }
+        } catch (error) {
+            console.error("Failed to create milestone", error)
+        }
+    }
+
+    const createTask = async (e: React.FormEvent) => {
+        e.preventDefault()
+        try {
+            const res = await fetch(`/api/projects/${params.id}/tasks`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newTask)
+            })
+            if (res.ok) {
+                await fetchProject()
+                setShowTaskModal(false)
+                setNewTask({ text: "" })
+            }
+        } catch (error) {
+            console.error("Failed to create task", error)
         }
     }
 
@@ -129,8 +169,8 @@ export default function ProjectDetailsPage() {
                                     style={{ left: `${clampedPosition}%`, transform: 'translate(-50%, -50%)' }}
                                 >
                                     <div className={`w-4 h-4 border-2 rounded-full transition-colors ${milestone.completed
-                                            ? 'bg-emerald-500 border-emerald-500'
-                                            : 'bg-[#0a0a0a] border-white/40 group-hover:border-indigo-400'
+                                        ? 'bg-emerald-500 border-emerald-500'
+                                        : 'bg-[#0a0a0a] border-white/40 group-hover:border-indigo-400'
                                         }`} />
                                     <div className="absolute top-6 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-white/10 px-3 py-1 rounded-lg whitespace-nowrap z-10">
                                         <p className="font-medium text-sm">{milestone.title}</p>
@@ -151,7 +191,10 @@ export default function ProjectDetailsPage() {
                                     <CheckSquare className="w-5 h-5 text-emerald-400" />
                                     タスク
                                 </h2>
-                                <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                                <button
+                                    onClick={() => setShowTaskModal(true)}
+                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                                >
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </div>
@@ -183,7 +226,10 @@ export default function ProjectDetailsPage() {
                                     <Flag className="w-5 h-5 text-amber-400" />
                                     マイルストーン
                                 </h2>
-                                <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                                <button
+                                    onClick={() => setShowMilestoneModal(true)}
+                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                                >
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </div>
@@ -209,6 +255,96 @@ export default function ProjectDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Milestone Modal */}
+            {showMilestoneModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                    >
+                        <h2 className="text-xl font-bold mb-6">新規マイルストーン</h2>
+                        <form onSubmit={createMilestone} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={newMilestone.title}
+                                    onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={newMilestone.date}
+                                    onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowMilestoneModal(false)}
+                                    className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                >
+                                    キャンセル
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                >
+                                    作成
+                                </button>
+                            </div>
+                        </form>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Task Modal */}
+            {showTaskModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                    >
+                        <h2 className="text-xl font-bold mb-6">新規タスク</h2>
+                        <form onSubmit={createTask} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={newTask.text}
+                                    onChange={(e) => setNewTask({ text: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowTaskModal(false)}
+                                    className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                >
+                                    キャンセル
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                >
+                                    作成
+                                </button>
+                            </div>
+                        </form>
+                    </motion.div>
+                </div>
+            )}
         </DashboardLayout>
     )
 }
