@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 type Project = {
     id: string
     title: string
-    description: string
+    description: string | null
     status: string
     startDate: string | null
     endDate: string | null
