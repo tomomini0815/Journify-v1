@@ -7,7 +7,7 @@ const USER_ID = "42c1eda0-18f2-4213-86b0-55b47ee003f3"
 export const dynamic = 'force-dynamic'
 
 export default async function JournalPage() {
-    const journals = await prisma.journal.findMany({
+    const journals = await prisma.journalEntry.findMany({
         where: { userId: USER_ID },
         orderBy: { createdAt: "desc" },
         select: {
