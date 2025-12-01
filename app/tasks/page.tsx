@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Trash2, Check, Calendar, Clock, CalendarPlus, MoreVertical, X } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
+import { useSearchParams } from "next/navigation"
 
 type Task = {
     id: string
@@ -21,9 +22,22 @@ export default function TasksPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
 
+    const searchParams = useSearchParams()
+
     useEffect(() => {
         fetchTasks()
-    }, [])
+
+        // Check for date parameter from calendar
+        const dateParam = searchParams.get('date')
+        if (dateParam) {
+            setScheduledDate(dateParam)
+            // Focus input after a short delay to ensure render
+            setTimeout(() => {
+                const input = document.querySelector('input[type="text"]') as HTMLInputElement
+                input?.focus()
+            }, 100)
+        }
+    }, [searchParams])
 
     const fetchTasks = async () => {
         try {
