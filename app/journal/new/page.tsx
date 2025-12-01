@@ -185,7 +185,7 @@ export default function NewJournalPage() {
                     <Button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 rounded-xl"
+                        className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl"
                     >
                         <Save className="w-4 h-4 mr-2" />
                         {isSaving ? "保存中..." : "保存"}
