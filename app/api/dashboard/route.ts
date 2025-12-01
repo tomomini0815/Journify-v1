@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 60 // Cache for 60 seconds
 
 export async function GET() {
     const supabase = await createClient()
@@ -13,35 +14,56 @@ export async function GET() {
     }
 
     try {
-        // Fetch stats
-        const journalCount = await prisma.journalEntry.count({
-            where: { userId: user.id },
-        })
-
-        const goalCount = await prisma.goal.count({
-            where: { userId: user.id, progress: { lt: 100 } },
-        })
-
-        // Fetch recent journals
-        const recentJournals = await prisma.journalEntry.findMany({
-            where: { userId: user.id },
-            orderBy: { createdAt: "desc" },
-            take: 3,
-        })
-
-        // Fetch goals
-        const goals = await prisma.goal.findMany({
-            where: { userId: user.id },
-            orderBy: { createdAt: "desc" },
-            take: 3,
-        })
-
-        // Fetch Life Balance Data (latest entry per category)
-        const lifeBalanceEntries = await prisma.lifeBalanceEntry.findMany({
-            where: { userId: user.id },
-            orderBy: { createdAt: "desc" },
-            take: 100,
-        })
+        // Execute independent queries in parallel with field selection
+        const [
+            journalCount,
+            goalCount,
+            recentJournals,
+            goals,
+            lifeBalanceEntries
+        ] = await Promise.all([
+            // Count queries
+            prisma.journalEntry.count({
+                where: { userId: user.id },
+            }),
+            prisma.goal.count({
+                where: { userId: user.id, progress: { lt: 100 } },
+            }),
+            // Recent journals - only fetch needed fields
+            prisma.journalEntry.findMany({
+                where: { userId: user.id },
+                select: {
+                    id: true,
+                    title: true,
+                    mood: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: "desc" },
+                take: 3,
+            }),
+            // Goals - only fetch needed fields
+            prisma.goal.findMany({
+                where: { userId: user.id },
+                select: {
+                    id: true,
+                    title: true,
+                    progress: true,
+                },
+                orderBy: { createdAt: "desc" },
+                take: 3,
+            }),
+            // Life Balance entries
+            prisma.lifeBalanceEntry.findMany({
+                where: { userId: user.id },
+                select: {
+                    category: true,
+                    score: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: "desc" },
+                take: 100,
+            })
+        ])
 
         const latestLifeBalance: Record<string, number> = {}
         const categories = [
@@ -69,23 +91,30 @@ export async function GET() {
             value
         }))
 
-        // Fetch Happiness Data (last 30 days) from JournalEntry
+        // Fetch Happiness Data and streak calculation in parallel
         const thirtyDaysAgo = new Date()
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
         thirtyDaysAgo.setHours(0, 0, 0, 0)
 
-        const journalEntries = await prisma.journalEntry.findMany({
-            where: {
-                userId: user.id,
-                mood: { gt: 0 }, // mood is 1-5, so gt 0 works and avoids null type issues
-                createdAt: { gte: thirtyDaysAgo }
-            },
-            select: {
-                mood: true,
-                createdAt: true
-            },
-            orderBy: { createdAt: "asc" }
-        })
+        const [journalEntries, allJournalDates] = await Promise.all([
+            prisma.journalEntry.findMany({
+                where: {
+                    userId: user.id,
+                    mood: { gt: 0 },
+                    createdAt: { gte: thirtyDaysAgo }
+                },
+                select: {
+                    mood: true,
+                    createdAt: true
+                },
+                orderBy: { createdAt: "asc" }
+            }),
+            prisma.journalEntry.findMany({
+                where: { userId: user.id },
+                select: { createdAt: true },
+                orderBy: { createdAt: 'desc' }
+            })
+        ])
 
         // Calculate daily average mood and convert to 0-100 score
         const dailyMap = new Map<string, { total: number, count: number }>()
@@ -111,13 +140,7 @@ export async function GET() {
             ? Math.round((totalMood / journalEntries.length / 5) * 100)
             : 0
 
-        // Calculate streak
-        const allJournalDates = await prisma.journalEntry.findMany({
-            where: { userId: user.id },
-            select: { createdAt: true },
-            orderBy: { createdAt: 'desc' }
-        })
-
+        // Calculate streak (using already fetched allJournalDates)
         let streak = 0
         if (allJournalDates.length > 0) {
             const uniqueDates = new Set(
@@ -169,6 +192,10 @@ export async function GET() {
             goals,
             lifeBalance: lifeBalanceData,
             happinessData: happinessData
+        }, {
+            headers: {
+                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120'
+            }
         })
     } catch (error) {
         console.error("Dashboard API Error:", error)
