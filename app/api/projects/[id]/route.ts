@@ -6,12 +6,13 @@ const USER_ID = "user-1"
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params
         const project = await prisma.project.findUnique({
             where: {
-                id: params.id,
+                id,
                 userId: USER_ID
             },
             include: {
@@ -43,15 +44,16 @@ export async function GET(
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params
         const body = await req.json()
         const { title, description, status, startDate, endDate } = body
 
         const project = await prisma.project.update({
             where: {
-                id: params.id,
+                id,
                 userId: USER_ID
             },
             data: {
@@ -75,12 +77,13 @@ export async function PATCH(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params
         await prisma.project.delete({
             where: {
-                id: params.id,
+                id,
                 userId: USER_ID
             }
         })
