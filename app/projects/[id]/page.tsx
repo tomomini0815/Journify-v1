@@ -108,14 +108,30 @@ export default function ProjectDetailsPage() {
         )
     }
 
-    // Calculate timeline duration
-    const start = project.startDate ? new Date(project.startDate) : new Date()
-    const end = project.endDate ? new Date(project.endDate) : new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000)
-    const totalDuration = end.getTime() - start.getTime()
+    // Calculate timeline range
+    const dates = [
+        project.startDate ? new Date(project.startDate).getTime() : Date.now(),
+        project.endDate ? new Date(project.endDate).getTime() : Date.now(),
+        ...project.tasks.flatMap(t => [
+            t.startDate ? new Date(t.startDate).getTime() : null,
+            t.endDate ? new Date(t.endDate).getTime() : null
+        ]).filter((d): d is number => d !== null),
+        ...project.milestones.map(m => new Date(m.date).getTime())
+    ]
+
+    const minDate = new Date(Math.min(...dates))
+    const maxDate = new Date(Math.max(...dates))
+
+    // Add padding to dates
+    minDate.setDate(minDate.getDate() - 3)
+    maxDate.setDate(maxDate.getDate() + 7)
+
+    const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24))
+    const dayWidth = 50 // px per day
 
     return (
         <DashboardLayout>
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-[1600px] mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <Link href="/projects" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-4 transition-colors">
@@ -135,94 +151,130 @@ export default function ProjectDetailsPage() {
                     </div>
                 </div>
 
-                {/* Gantt Chart / Timeline */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-8 overflow-hidden">
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-indigo-400" />
-                        タイムライン & マイルストーン
-                    </h2>
-
-                    <div className="relative h-48 mt-8 mb-4 overflow-x-auto">
-                        {/* Timeline Bar */}
-                        <div className="absolute top-8 left-0 right-0 h-1 bg-white/10 rounded-full" />
-
-                        {/* Start Date */}
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-                            <div className="w-3 h-3 bg-indigo-500 rounded-full" />
-                            <span className="text-xs text-white/60 whitespace-nowrap">{start.toLocaleDateString()}</span>
+                {/* Gantt Chart Container */}
+                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden flex flex-col h-[600px]">
+                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1a1a1a]">
+                        <h2 className="text-xl font-bold flex items-center gap-2">
+                            <Calendar className="w-5 h-5 text-indigo-400" />
+                            プロジェクト工程表
+                        </h2>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowMilestoneModal(true)}
+                                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition-colors flex items-center gap-2"
+                            >
+                                <Flag className="w-4 h-4 text-amber-400" />
+                                マイルストーン追加
+                            </button>
+                            <button
+                                onClick={() => setShowTaskModal(true)}
+                                className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-sm transition-colors flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" />
+                                タスク追加
+                            </button>
                         </div>
-
                     </div>
-                </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Tasks */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold flex items-center gap-2">
-                                    <CheckSquare className="w-5 h-5 text-emerald-400" />
-                                    タスク
-                                </h2>
-                                <button
-                                    onClick={() => setShowTaskModal(true)}
-                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </button>
+                    <div className="flex flex-1 overflow-hidden">
+                        {/* Left Sidebar: Task List */}
+                        <div className="w-64 flex-shrink-0 border-r border-white/10 bg-[#1a1a1a] flex flex-col">
+                            <div className="h-12 border-b border-white/10 flex items-center px-4 font-medium text-white/60 bg-[#252525]">
+                                タスク名
                             </div>
-
-                            <div className="space-y-2">
+                            <div className="flex-1 overflow-y-hidden">
                                 {project.tasks.map((task) => (
-                                    <div key={task.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-                                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${task.completed ? 'bg-emerald-500 border-emerald-500' : 'border-white/20'
-                                            }`}>
-                                            {task.completed && <CheckSquare className="w-3 h-3 text-white" />}
-                                        </div>
-                                        <span className={task.completed ? 'text-white/40 line-through' : 'text-white'}>
-                                            {task.text}
-                                        </span>
+                                    <div key={task.id} className="h-10 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate">
+                                        <div className={`w-2 h-2 rounded-full mr-2 ${task.completed ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                                        <span className="text-sm truncate">{task.text}</span>
                                     </div>
                                 ))}
-                                {project.tasks.length === 0 && (
-                                    <p className="text-center text-white/40 py-8">タスクがまだありません</p>
-                                )}
+                                {/* Milestones in list */}
+                                {project.milestones.map((milestone) => (
+                                    <div key={milestone.id} className="h-10 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5">
+                                        <Flag className="w-3 h-3 text-amber-400 mr-2" />
+                                        <span className="text-sm truncate text-amber-200">{milestone.title}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Milestones List */}
-                    <div>
-                        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold flex items-center gap-2">
-                                    <Flag className="w-5 h-5 text-amber-400" />
-                                    マイルストーン
-                                </h2>
-                                <button
-                                    onClick={() => setShowMilestoneModal(true)}
-                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </button>
-                            </div>
+                        {/* Right Content: Timeline */}
+                        <div className="flex-1 overflow-auto bg-[#151515] relative">
+                            <div className="min-w-full" style={{ width: `${totalDays * dayWidth}px` }}>
+                                {/* Date Header */}
+                                <div className="h-12 border-b border-white/10 flex bg-[#252525] sticky top-0 z-20">
+                                    {Array.from({ length: totalDays }).map((_, i) => {
+                                        const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
+                                        const isToday = date.toDateString() === new Date().toDateString()
+                                        return (
+                                            <div
+                                                key={i}
+                                                className={`flex-shrink-0 border-r border-white/5 flex flex-col items-center justify-center text-xs ${isToday ? 'bg-indigo-500/10' : ''}`}
+                                                style={{ width: `${dayWidth}px` }}
+                                            >
+                                                <span className="text-white/40">{date.getMonth() + 1}/{date.getDate()}</span>
+                                                <span className="text-white/20">{['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
 
-                            <div className="space-y-4">
-                                {project.milestones.map((milestone) => (
-                                    <div key={milestone.id} className="flex items-center gap-3">
-                                        <div className="flex flex-col items-center gap-1">
-                                            <div className={`w-2 h-2 rounded-full ${milestone.completed ? 'bg-emerald-500' : 'bg-white/20'}`} />
-                                            <div className="w-px h-8 bg-white/10 last:hidden" />
-                                        </div>
-                                        <div className="pb-4">
-                                            <p className="font-medium">{milestone.title}</p>
-                                            <p className="text-xs text-white/60">{new Date(milestone.date).toLocaleDateString()}</p>
-                                        </div>
+                                {/* Grid Body */}
+                                <div className="relative">
+                                    {/* Vertical Grid Lines */}
+                                    <div className="absolute inset-0 flex pointer-events-none">
+                                        {Array.from({ length: totalDays }).map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className="flex-shrink-0 border-r border-white/5 h-full"
+                                                style={{ width: `${dayWidth}px` }}
+                                            />
+                                        ))}
                                     </div>
-                                ))}
-                                {project.milestones.length === 0 && (
-                                    <p className="text-center text-white/40 py-8">マイルストーンがありません</p>
-                                )}
+
+                                    {/* Task Rows */}
+                                    {project.tasks.map((task) => {
+                                        if (!task.startDate || !task.endDate) return <div key={task.id} className="h-10 border-b border-white/5" />
+
+                                        const taskStart = new Date(task.startDate)
+                                        const taskEnd = new Date(task.endDate)
+                                        const left = ((taskStart.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
+                                        const width = Math.max(((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth, dayWidth)
+
+                                        return (
+                                            <div key={task.id} className="h-10 border-b border-white/5 relative group">
+                                                <div
+                                                    className={`absolute top-2 h-6 rounded-md flex items-center px-2 cursor-pointer transition-colors ${task.completed ? 'bg-emerald-500/40 border border-emerald-500/60' : 'bg-indigo-500/40 border border-indigo-500/60 hover:bg-indigo-500/60'
+                                                        }`}
+                                                    style={{ left: `${left}px`, width: `${width}px` }}
+                                                >
+                                                    <span className="text-[10px] text-white truncate">{task.text}</span>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+
+                                    {/* Milestone Rows */}
+                                    {project.milestones.map((milestone) => {
+                                        const date = new Date(milestone.date)
+                                        const left = ((date.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
+
+                                        return (
+                                            <div key={milestone.id} className="h-10 border-b border-white/5 relative bg-amber-500/5">
+                                                <div
+                                                    className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-10"
+                                                    style={{ left: `${left + (dayWidth / 2)}px` }}
+                                                >
+                                                    <div className="w-3 h-3 rotate-45 bg-amber-400 border-2 border-[#1a1a1a]" />
+                                                    <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-white/10 px-2 py-1 rounded text-xs whitespace-nowrap">
+                                                        {milestone.title}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>
