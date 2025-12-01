@@ -231,7 +231,7 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
                     )
                 })}
             </div>
-            )}
+
         </DashboardLayout>
     )
 }
