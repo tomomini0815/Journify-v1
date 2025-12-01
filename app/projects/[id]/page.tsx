@@ -19,6 +19,8 @@ type Task = {
     text: string
     completed: boolean
     createdAt: string
+    startDate?: string
+    endDate?: string
 }
 
 type Project = {
@@ -40,7 +42,7 @@ export default function ProjectDetailsPage() {
     const [showMilestoneModal, setShowMilestoneModal] = useState(false)
     const [showTaskModal, setShowTaskModal] = useState(false)
     const [newMilestone, setNewMilestone] = useState({ title: "", date: "" })
-    const [newTask, setNewTask] = useState({ text: "" })
+    const [newTask, setNewTask] = useState({ text: "", startDate: "", endDate: "" })
 
     useEffect(() => {
         fetchProject()
@@ -91,7 +93,7 @@ export default function ProjectDetailsPage() {
             if (res.ok) {
                 await fetchProject()
                 setShowTaskModal(false)
-                setNewTask({ text: "" })
+                setNewTask({ text: "", startDate: "", endDate: "" })
             }
         } catch (error) {
             console.error("Failed to create task", error)
@@ -140,9 +142,9 @@ export default function ProjectDetailsPage() {
                         タイムライン & マイルストーン
                     </h2>
 
-                    <div className="relative h-32 mt-8 mb-4">
+                    <div className="relative h-48 mt-8 mb-4 overflow-x-auto">
                         {/* Timeline Bar */}
-                        <div className="absolute top-1/2 left-0 right-0 h-1 bg-white/10 rounded-full -translate-y-1/2" />
+                        <div className="absolute top-8 left-0 right-0 h-1 bg-white/10 rounded-full" />
 
                         {/* Start Date */}
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
@@ -150,35 +152,6 @@ export default function ProjectDetailsPage() {
                             <span className="text-xs text-white/60 whitespace-nowrap">{start.toLocaleDateString()}</span>
                         </div>
 
-                        {/* End Date */}
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 flex flex-col items-center gap-2">
-                            <div className="w-3 h-3 bg-indigo-500 rounded-full" />
-                            <span className="text-xs text-white/60 whitespace-nowrap">{end.toLocaleDateString()}</span>
-                        </div>
-
-                        {/* Milestones */}
-                        {project.milestones.map((milestone) => {
-                            const date = new Date(milestone.date)
-                            const position = ((date.getTime() - start.getTime()) / totalDuration) * 100
-                            const clampedPosition = Math.min(Math.max(position, 0), 100)
-
-                            return (
-                                <div
-                                    key={milestone.id}
-                                    className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 group cursor-pointer"
-                                    style={{ left: `${clampedPosition}%`, transform: 'translate(-50%, -50%)' }}
-                                >
-                                    <div className={`w-4 h-4 border-2 rounded-full transition-colors ${milestone.completed
-                                        ? 'bg-emerald-500 border-emerald-500'
-                                        : 'bg-[#0a0a0a] border-white/40 group-hover:border-indigo-400'
-                                        }`} />
-                                    <div className="absolute top-6 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-white/10 px-3 py-1 rounded-lg whitespace-nowrap z-10">
-                                        <p className="font-medium text-sm">{milestone.title}</p>
-                                        <p className="text-xs text-white/60">{date.toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                            )
-                        })}
                     </div>
                 </div>
 
