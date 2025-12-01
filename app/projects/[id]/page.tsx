@@ -43,6 +43,7 @@ export default function ProjectDetailsPage() {
     const [showTaskModal, setShowTaskModal] = useState(false)
     const [newMilestone, setNewMilestone] = useState({ title: "", date: "" })
     const [newTask, setNewTask] = useState({ text: "", startDate: "", endDate: "" })
+    const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list')
 
     useEffect(() => {
         fetchProject()
@@ -170,226 +171,108 @@ export default function ProjectDetailsPage() {
                                 onClick={() => setShowTaskModal(true)}
                                 className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-sm transition-colors flex items-center gap-2"
                             >
-                                <Plus className="w-4 h-4" />
-                                タスク追加
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-1 overflow-hidden">
-                        {/* Left Sidebar: Task List */}
-                        <div className="w-64 flex-shrink-0 border-r border-white/10 bg-[#1a1a1a] flex flex-col">
-                            <div className="h-12 border-b border-white/10 flex items-center px-4 font-medium text-white/60 bg-[#252525]">
-                                タスク名
-                            </div>
-                            <div className="flex-1 overflow-y-hidden">
-                                {project.tasks.map((task) => (
-                                    <div key={task.id} className="h-10 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate">
-                                        <div className={`w-2 h-2 rounded-full mr-2 ${task.completed ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
-                                        <span className="text-sm truncate">{task.text}</span>
+                    >
+                                <h2 className="text-xl font-bold mb-6">新規マイルストーン</h2>
+                                <form onSubmit={createMilestone} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newMilestone.title}
+                                            onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                        />
                                     </div>
-                                ))}
-                                {/* Milestones in list */}
-                                {project.milestones.map((milestone) => (
-                                    <div key={milestone.id} className="h-10 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5">
-                                        <Flag className="w-3 h-3 text-amber-400 mr-2" />
-                                        <span className="text-sm truncate text-amber-200">{milestone.title}</span>
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={newMilestone.date}
+                                            onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                        />
                                     </div>
-                                ))}
-                            </div>
+                                    <div className="flex justify-end gap-3 mt-6">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMilestoneModal(false)}
+                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                        >
+                                            キャンセル
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                        >
+                                            作成
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
                         </div>
+            )}
 
-                        {/* Right Content: Timeline */}
-                        <div className="flex-1 overflow-auto bg-[#151515] relative">
-                            <div className="min-w-full" style={{ width: `${totalDays * dayWidth}px` }}>
-                                {/* Date Header */}
-                                <div className="h-12 border-b border-white/10 flex bg-[#252525] sticky top-0 z-20">
-                                    {Array.from({ length: totalDays }).map((_, i) => {
-                                        const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
-                                        const isToday = date.toDateString() === new Date().toDateString()
-                                        return (
-                                            <div
-                                                key={i}
-                                                className={`flex-shrink-0 border-r border-white/5 flex flex-col items-center justify-center text-xs ${isToday ? 'bg-indigo-500/10' : ''}`}
-                                                style={{ width: `${dayWidth}px` }}
-                                            >
-                                                <span className="text-white/40">{date.getMonth() + 1}/{date.getDate()}</span>
-                                                <span className="text-white/20">{['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}</span>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-
-                                {/* Grid Body */}
-                                <div className="relative">
-                                    {/* Vertical Grid Lines */}
-                                    <div className="absolute inset-0 flex pointer-events-none">
-                                        {Array.from({ length: totalDays }).map((_, i) => (
-                                            <div
-                                                key={i}
-                                                className="flex-shrink-0 border-r border-white/5 h-full"
-                                                style={{ width: `${dayWidth}px` }}
+                        {/* Task Modal */}
+                        {showTaskModal && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                                >
+                                    <h2 className="text-xl font-bold mb-6">新規タスク</h2>
+                                    <form onSubmit={createTask} className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newTask.text}
+                                                onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
                                             />
-                                        ))}
-                                    </div>
-
-                                    {/* Task Rows */}
-                                    {project.tasks.map((task) => {
-                                        if (!task.startDate || !task.endDate) return <div key={task.id} className="h-10 border-b border-white/5" />
-
-                                        const taskStart = new Date(task.startDate)
-                                        const taskEnd = new Date(task.endDate)
-                                        const left = ((taskStart.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
-                                        const width = Math.max(((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth, dayWidth)
-
-                                        return (
-                                            <div key={task.id} className="h-10 border-b border-white/5 relative group">
-                                                <div
-                                                    className={`absolute top-2 h-6 rounded-md flex items-center px-2 cursor-pointer transition-colors ${task.completed ? 'bg-emerald-500/40 border border-emerald-500/60' : 'bg-indigo-500/40 border border-indigo-500/60 hover:bg-indigo-500/60'
-                                                        }`}
-                                                    style={{ left: `${left}px`, width: `${width}px` }}
-                                                >
-                                                    <span className="text-[10px] text-white truncate">{task.text}</span>
-                                                </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
+                                                <input
+                                                    type="date"
+                                                    value={newTask.startDate}
+                                                    onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                                />
                                             </div>
-                                        )
-                                    })}
-
-                                    {/* Milestone Rows */}
-                                    {project.milestones.map((milestone) => {
-                                        const date = new Date(milestone.date)
-                                        const left = ((date.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
-
-                                        return (
-                                            <div key={milestone.id} className="h-10 border-b border-white/5 relative bg-amber-500/5">
-                                                <div
-                                                    className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-10"
-                                                    style={{ left: `${left + (dayWidth / 2)}px` }}
-                                                >
-                                                    <div className="w-3 h-3 rotate-45 bg-amber-400 border-2 border-[#1a1a1a]" />
-                                                    <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-white/10 px-2 py-1 rounded text-xs whitespace-nowrap">
-                                                        {milestone.title}
-                                                    </div>
-                                                </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-white/60 mb-2">終了日</label>
+                                                <input
+                                                    type="date"
+                                                    value={newTask.endDate}
+                                                    onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                                />
                                             </div>
-                                        )
-                                    })}
-                                </div>
+                                        </div>
+                                        <div className="flex justify-end gap-3 mt-6">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowTaskModal(false)}
+                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                            >
+                                                キャンセル
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                            >
+                                                作成
+                                            </button>
+                                        </div>
+                                    </form>
+                                </motion.div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Milestone Modal */}
-            {showMilestoneModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
-                    >
-                        <h2 className="text-xl font-bold mb-6">新規マイルストーン</h2>
-                        <form onSubmit={createMilestone} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newMilestone.title}
-                                    onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={newMilestone.date}
-                                    onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowMilestoneModal(false)}
-                                    className="px-4 py-2 text-white/60 hover:text-white transition-colors"
-                                >
-                                    キャンセル
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
-                                >
-                                    作成
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )}
-
-            {/* Task Modal */}
-            {showTaskModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
-                    >
-                        <h2 className="text-xl font-bold mb-6">新規タスク</h2>
-                        <form onSubmit={createTask} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newTask.text}
-                                    onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
-                                    <input
-                                        type="date"
-                                        value={newTask.startDate}
-                                        onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-2">終了日</label>
-                                    <input
-                                        type="date"
-                                        value={newTask.endDate}
-                                        onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowTaskModal(false)}
-                                    className="px-4 py-2 text-white/60 hover:text-white transition-colors"
-                                >
-                                    キャンセル
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
-                                >
-                                    作成
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )}
-        </DashboardLayout>
-    )
+                        )}
+                    </DashboardLayout>
+                    )
 }

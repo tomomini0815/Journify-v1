@@ -229,8 +229,8 @@ export default function TasksPage() {
                     <button
                         onClick={() => setActiveTab('list')}
                         className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'list'
-                                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                            ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                             }`}
                     >
                         <List className="w-4 h-4" />
@@ -239,8 +239,8 @@ export default function TasksPage() {
                     <button
                         onClick={() => setActiveTab('calendar')}
                         className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'calendar'
-                                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                            ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                             }`}
                     >
                         <CalendarDays className="w-4 h-4" />
@@ -351,7 +351,7 @@ export default function TasksPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity relative">
+                                        <div className="flex items-center gap-2 relative">
                                             {/* Calendar Button */}
                                             <div className="relative">
                                                 <button
