@@ -1,0 +1,2 @@
+# Force redeploy to regenerate Prisma Client with latest schema
+# This file is intentionally empty and used only to trigger a new deployment
