@@ -1,18 +1,17 @@
 "use client"
 
-import { ReactNode, useEffect } from "react"
+import { ReactNode, useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles } from "lucide-react"
+import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
 
 interface DashboardLayoutProps {
     children: ReactNode
 }
 
-const navigation = [
+const defaultNavigation = [
     { name: "ダッシュボード", href: "/dashboard", icon: Home },
     { name: "ジャーナル", href: "/journal", icon: BookOpen },
     { name: "目標", href: "/goals", icon: Target },
@@ -23,18 +22,32 @@ const navigation = [
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const pathname = usePathname()
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const [user, setUser] = useState<any>(null)
     const router = useRouter()
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [navigation, setNavigation] = useState(defaultNavigation)
 
     useEffect(() => {
-        const getUser = async () => {
-            const { createClient } = await import("@/lib/supabase/client")
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            setUser(user)
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch("/api/user/settings")
+                if (res.ok) {
+                    const settings = await res.json()
+                    if (settings.enableProjects) {
+                        const newNav = [...defaultNavigation]
+                        // Insert Projects before Profile (last item)
+                        newNav.splice(newNav.length - 1, 0, {
+                            name: "プロジェクト",
+                            href: "/projects",
+                            icon: Briefcase
+                        })
+                        setNavigation(newNav)
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings", error)
+            }
         }
-        getUser()
+        fetchSettings()
     }, [])
 
     const handleLogout = async () => {
@@ -64,7 +77,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     {/* Navigation */}
                     <nav className="flex-1 px-3 space-y-1">
                         {navigation.map((item) => {
-                            const isActive = pathname === item.href
+                            const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href))
                             const Icon = item.icon
 
                             return (
@@ -132,7 +145,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         <nav className="flex-1 space-y-2">
                             {navigation.map((item) => {
                                 const Icon = item.icon
-                                const isActive = pathname === item.href
+                                const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href))
 
                                 return (
                                     <Link

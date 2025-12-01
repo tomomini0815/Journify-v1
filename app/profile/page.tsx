@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { motion } from "framer-motion"
-import { User, Mail, Calendar, Bell, Lock, Palette, Globe, Save, Camera } from "lucide-react"
+import { User, Mail, Calendar, Bell, Lock, Palette, Globe, Save, Camera, Briefcase } from "lucide-react"
 
 export default function ProfilePage() {
     const [name, setName] = useState("")
@@ -12,6 +12,7 @@ export default function ProfilePage() {
     const [notifications, setNotifications] = useState(true)
     const [emailUpdates, setEmailUpdates] = useState(false)
     const [language, setLanguage] = useState("ja")
+    const [enableProjects, setEnableProjects] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
@@ -32,6 +33,13 @@ export default function ProfilePage() {
                     setNotifications(data.preferences.notifications ?? true)
                     setEmailUpdates(data.preferences.emailUpdates ?? false)
                     setLanguage(data.preferences.language || "ja")
+                }
+
+                // Fetch user settings
+                const settingsRes = await fetch("/api/user/settings")
+                if (settingsRes.ok) {
+                    const settings = await settingsRes.json()
+                    setEnableProjects(settings.enableProjects)
                 }
             }
         } catch (error) {
@@ -61,6 +69,16 @@ export default function ProfilePage() {
                     },
                 }),
             })
+
+            // Update user settings
+            await fetch("/api/user/settings", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enableProjects })
+            })
+
+            // Force reload to update navigation
+            window.location.reload()
 
             if (!response.ok) {
                 throw new Error("保存に失敗しました")
@@ -249,6 +267,43 @@ export default function ProfilePage() {
                                 <option value="en">English</option>
                                 <option value="zh">中文</option>
                             </select>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* App Settings */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 mb-6"
+                >
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-indigo-500/20 rounded-lg">
+                            <Briefcase className="w-5 h-5 text-indigo-400" />
+                        </div>
+                        <h3 className="text-xl font-bold">アプリ設定</h3>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                            <div className="flex items-center gap-3">
+                                <Briefcase className="w-5 h-5 text-white/60" />
+                                <div>
+                                    <p className="font-medium">プロジェクト管理</p>
+                                    <p className="text-sm text-white/60">プロジェクト、マイルストーン、ガントチャート機能を有効にする</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setEnableProjects(!enableProjects)}
+                                className={`relative w-12 h-6 rounded-full transition-colors ${enableProjects ? "bg-emerald-500" : "bg-white/20"
+                                    }`}
+                            >
+                                <div
+                                    className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${enableProjects ? "translate-x-7" : "translate-x-1"
+                                        }`}
+                                />
+                            </button>
                         </div>
                     </div>
                 </motion.div>

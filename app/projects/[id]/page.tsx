@@ -1,0 +1,214 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag } from "lucide-react"
+import { DashboardLayout } from "@/components/DashboardLayout"
+import Link from "next/link"
+import { useParams, useRouter } from "next/navigation"
+
+type Milestone = {
+    id: string
+    title: string
+    date: string
+    completed: boolean
+}
+
+type Task = {
+    id: string
+    text: string
+    completed: boolean
+    createdAt: string
+}
+
+type Project = {
+    id: string
+    title: string
+    description: string
+    status: string
+    startDate: string
+    endDate: string
+    milestones: Milestone[]
+    tasks: Task[]
+}
+
+export default function ProjectDetailsPage() {
+    const params = useParams()
+    const router = useRouter()
+    const [project, setProject] = useState<Project | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        fetchProject()
+    }, [])
+
+    const fetchProject = async () => {
+        try {
+            const res = await fetch(`/api/projects/${params.id}`)
+            if (res.ok) {
+                const data = await res.json()
+                setProject(data)
+            } else {
+                router.push("/projects")
+            }
+        } catch (error) {
+            console.error("Failed to fetch project", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    if (isLoading || !project) {
+        return (
+            <DashboardLayout>
+                <div className="text-center py-12 text-white/60">読み込み中...</div>
+            </DashboardLayout>
+        )
+    }
+
+    // Calculate timeline duration
+    const start = project.startDate ? new Date(project.startDate) : new Date()
+    const end = project.endDate ? new Date(project.endDate) : new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000)
+    const totalDuration = end.getTime() - start.getTime()
+
+    return (
+        <DashboardLayout>
+            <div className="max-w-6xl mx-auto">
+                {/* Header */}
+                <div className="mb-8">
+                    <Link href="/projects" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-4 transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        プロジェクト一覧に戻る
+                    </Link>
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-2">{project.title}</h1>
+                            <p className="text-white/60">{project.description}</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+                                <MoreVertical className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Gantt Chart / Timeline */}
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-8 overflow-hidden">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-indigo-400" />
+                        タイムライン & マイルストーン
+                    </h2>
+
+                    <div className="relative h-32 mt-8 mb-4">
+                        {/* Timeline Bar */}
+                        <div className="absolute top-1/2 left-0 right-0 h-1 bg-white/10 rounded-full -translate-y-1/2" />
+
+                        {/* Start Date */}
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+                            <div className="w-3 h-3 bg-indigo-500 rounded-full" />
+                            <span className="text-xs text-white/60 whitespace-nowrap">{start.toLocaleDateString()}</span>
+                        </div>
+
+                        {/* End Date */}
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 flex flex-col items-center gap-2">
+                            <div className="w-3 h-3 bg-indigo-500 rounded-full" />
+                            <span className="text-xs text-white/60 whitespace-nowrap">{end.toLocaleDateString()}</span>
+                        </div>
+
+                        {/* Milestones */}
+                        {project.milestones.map((milestone) => {
+                            const date = new Date(milestone.date)
+                            const position = ((date.getTime() - start.getTime()) / totalDuration) * 100
+                            const clampedPosition = Math.min(Math.max(position, 0), 100)
+
+                            return (
+                                <div
+                                    key={milestone.id}
+                                    className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 group cursor-pointer"
+                                    style={{ left: `${clampedPosition}%`, transform: 'translate(-50%, -50%)' }}
+                                >
+                                    <div className={`w-4 h-4 border-2 rounded-full transition-colors ${milestone.completed
+                                            ? 'bg-emerald-500 border-emerald-500'
+                                            : 'bg-[#0a0a0a] border-white/40 group-hover:border-indigo-400'
+                                        }`} />
+                                    <div className="absolute top-6 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-white/10 px-3 py-1 rounded-lg whitespace-nowrap z-10">
+                                        <p className="font-medium text-sm">{milestone.title}</p>
+                                        <p className="text-xs text-white/60">{date.toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Tasks */}
+                    <div className="lg:col-span-2">
+                        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <CheckSquare className="w-5 h-5 text-emerald-400" />
+                                    タスク
+                                </h2>
+                                <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                {project.tasks.map((task) => (
+                                    <div key={task.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${task.completed ? 'bg-emerald-500 border-emerald-500' : 'border-white/20'
+                                            }`}>
+                                            {task.completed && <CheckSquare className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <span className={task.completed ? 'text-white/40 line-through' : 'text-white'}>
+                                            {task.text}
+                                        </span>
+                                    </div>
+                                ))}
+                                {project.tasks.length === 0 && (
+                                    <p className="text-center text-white/40 py-8">タスクがまだありません</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Milestones List */}
+                    <div>
+                        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <Flag className="w-5 h-5 text-amber-400" />
+                                    マイルストーン
+                                </h2>
+                                <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {project.milestones.map((milestone) => (
+                                    <div key={milestone.id} className="flex items-center gap-3">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className={`w-2 h-2 rounded-full ${milestone.completed ? 'bg-emerald-500' : 'bg-white/20'}`} />
+                                            <div className="w-px h-8 bg-white/10 last:hidden" />
+                                        </div>
+                                        <div className="pb-4">
+                                            <p className="font-medium">{milestone.title}</p>
+                                            <p className="text-xs text-white/60">{new Date(milestone.date).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {project.milestones.length === 0 && (
+                                    <p className="text-center text-white/40 py-8">マイルストーンがありません</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </DashboardLayout>
+    )
+}
