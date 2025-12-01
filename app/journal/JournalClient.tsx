@@ -190,29 +190,50 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
                                                         <div className="flex items-start justify-between mb-3">
                                                             <div className="flex-1">
                                                                 <h3 className="font-semibold text-lg mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">
-                                                                    {/* Tags */}
-                                                                    <div className="flex flex-wrap gap-2 mt-auto">
-                                                                        {entry.tags.map((tag) => (
-                                                                            <span
-                                                                                key={tag}
-                                                                                className="px-2 py-1 bg-white/5 text-white/60 text-xs rounded-md"
-                                                                            >
-                                                                                #{tag}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
+                                                                    {entry.title}
+                                                                </h3>
+                                                                <p className="text-sm text-white/60">
+                                                                    {new Date(entry.createdAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                                                                </p>
                                                             </div>
-                                                        </Link>
-                                            ))}
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </motion.div>
-                                )
-                                })}
-                            </div>
+                                                            {entry.mood !== null && (
+                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                                                                        ${entry.mood >= 4 ? 'bg-emerald-500/20 text-emerald-400' :
+                                                                        entry.mood >= 3 ? 'bg-blue-500/20 text-blue-400' :
+                                                                            'bg-yellow-500/20 text-yellow-400'}`}>
+                                                                    {entry.mood}
+                                                                </div>
+                                                            )}
+                                                        </div>
 
-                        </DashboardLayout>
+                                                        {/* Preview */}
+                                                        <p className="text-white/70 text-sm mb-4 line-clamp-3 flex-1">
+                                                            {stripHtml(entry.content).substring(0, 100)}...
+                                                        </p>
+
+                                                        {/* Tags */}
+                                                        <div className="flex flex-wrap gap-2 mt-auto">
+                                                            {entry.tags.map((tag) => (
+                                                                <span
+                                                                    key={tag}
+                                                                    className="px-2 py-1 bg-white/5 text-white/60 text-xs rounded-md"
+                                                                >
+                                                                    #{tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
                     )
-                }
+                })}
+            </div>
+
+        </DashboardLayout>
+    )
+}
