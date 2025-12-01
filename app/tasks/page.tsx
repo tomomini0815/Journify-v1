@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Trash2, Check, Calendar, Clock, CalendarPlus, MoreVertical, X } from "lucide-react"
+import { Plus, Trash2, Check, Calendar, Clock, CalendarPlus, MoreVertical, X, List, CalendarDays } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
-import { useSearchParams } from "next/navigation"
+import { TaskCalendar } from "@/components/TaskCalendar"
 
 type Task = {
     id: string
@@ -21,23 +21,11 @@ export default function TasksPage() {
     const [activeCalendarMenu, setActiveCalendarMenu] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
-
-    const searchParams = useSearchParams()
+    const [activeTab, setActiveTab] = useState<'list' | 'calendar'>('list')
 
     useEffect(() => {
         fetchTasks()
-
-        // Check for date parameter from calendar
-        const dateParam = searchParams.get('date')
-        if (dateParam) {
-            setScheduledDate(dateParam)
-            // Focus input after a short delay to ensure render
-            setTimeout(() => {
-                const input = document.querySelector('input[type="text"]') as HTMLInputElement
-                input?.focus()
-            }, 100)
-        }
-    }, [searchParams])
+    }, [])
 
     const fetchTasks = async () => {
         try {
@@ -189,6 +177,22 @@ export default function TasksPage() {
         setActiveCalendarMenu(null)
     }
 
+    const handleDateSelect = (date: Date) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+
+        setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`)
+        setActiveTab('list')
+
+        setTimeout(() => {
+            const input = document.querySelector('input[type="text"]') as HTMLInputElement
+            input?.focus()
+        }, 100)
+    }
+
     const completedCount = tasks.filter(t => t.completed).length
     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0
 
@@ -220,170 +224,200 @@ export default function TasksPage() {
                     </motion.div>
                 )}
 
-                {/* Progress Card */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mb-8 relative overflow-hidden"
-                >
-                    <div className="relative z-10 flex items-center justify-between mb-4">
-                        <div>
-                            <h2 className="text-xl font-bold text-white mb-1">今日の進捗</h2>
-                            <p className="text-white/60 text-sm">{tasks.length}個中 {completedCount}個のタスクを完了</p>
-                        </div>
-                        <div className="text-3xl font-bold text-white">{Math.round(progress)}%</div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="h-3 bg-black/20 rounded-full overflow-hidden">
-                        <motion.div
-                            className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            transition={{ duration: 0.5, ease: "easeOut" }}
-                        />
-                    </div>
-
-                    {/* Background decoration */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                </motion.div>
-
-                {/* Add Task Form */}
-                <motion.form
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    onSubmit={addTask}
-                    className="mb-8 relative flex gap-4"
-                >
-                    <div className="relative flex-1">
-                        <input
-                            type="text"
-                            value={newTask}
-                            onChange={(e) => setNewTask(e.target.value)}
-                            placeholder="新しいタスクを追加..."
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-4 text-white placeholder:text-white/40 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
-                        />
-                    </div>
-                    <div className="relative w-48">
-                        <input
-                            type="datetime-local"
-                            value={scheduledDate}
-                            onChange={(e) => setScheduledDate(e.target.value)}
-                            className="w-full h-full bg-white/5 border border-white/10 rounded-2xl px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all [color-scheme:dark]"
-                        />
-                    </div>
+                {/* Tab Navigation */}
+                <div className="flex gap-2 mb-6">
                     <button
-                        type="submit"
-                        disabled={!newTask.trim()}
-                        className="aspect-square bg-white/10 hover:bg-emerald-500 text-white rounded-2xl flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-white/10 w-[58px]"
+                        onClick={() => setActiveTab('list')}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'list'
+                                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                            }`}
                     >
-                        <Plus className="w-6 h-6" />
+                        <List className="w-4 h-4" />
+                        リスト
                     </button>
-                </motion.form>
+                    <button
+                        onClick={() => setActiveTab('calendar')}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'calendar'
+                                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                            }`}
+                    >
+                        <CalendarDays className="w-4 h-4" />
+                        カレンダー
+                    </button>
+                </div>
 
-                {/* Task List */}
-                <div className="space-y-3">
-                    <AnimatePresence mode="popLayout">
-                        {tasks.map((task) => (
-                            <motion.div
-                                key={task.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className={`group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${task.completed
-                                    ? "bg-white/5 border-white/5"
-                                    : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
-                                    }`}
+                {activeTab === 'list' ? (
+                    <>
+                        {/* Progress Card */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mb-8 relative overflow-hidden"
+                        >
+                            <div className="relative z-10 flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 className="text-xl font-bold text-white mb-1">今日の進捗</h2>
+                                    <p className="text-white/60 text-sm">{tasks.length}個中 {completedCount}個のタスクを完了</p>
+                                </div>
+                                <div className="text-3xl font-bold text-white">{Math.round(progress)}%</div>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="h-3 bg-black/20 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${progress}%` }}
+                                    transition={{ duration: 0.5, ease: "easeOut" }}
+                                />
+                            </div>
+
+                            {/* Background decoration */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                        </motion.div>
+
+                        {/* Add Task Form */}
+                        <motion.form
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            onSubmit={addTask}
+                            className="mb-8 relative flex gap-4"
+                        >
+                            <div className="relative flex-1">
+                                <input
+                                    type="text"
+                                    value={newTask}
+                                    onChange={(e) => setNewTask(e.target.value)}
+                                    placeholder="新しいタスクを追加..."
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-4 text-white placeholder:text-white/40 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
+                                />
+                            </div>
+                            <div className="relative w-48">
+                                <input
+                                    type="datetime-local"
+                                    value={scheduledDate}
+                                    onChange={(e) => setScheduledDate(e.target.value)}
+                                    className="w-full h-full bg-white/5 border border-white/10 rounded-2xl px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all [color-scheme:dark]"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!newTask.trim()}
+                                className="aspect-square bg-white/10 hover:bg-emerald-500 text-white rounded-2xl flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-white/10 w-[58px]"
                             >
-                                <div className="flex items-center gap-4 flex-1">
-                                    <button
-                                        onClick={() => toggleTask(task.id)}
-                                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.completed
-                                            ? "bg-emerald-500 border-emerald-500 text-white"
-                                            : "border-white/40 hover:border-emerald-500 text-transparent"
+                                <Plus className="w-6 h-6" />
+                            </button>
+                        </motion.form>
+
+                        {/* Task List */}
+                        <div className="space-y-3">
+                            <AnimatePresence mode="popLayout">
+                                {tasks.map((task) => (
+                                    <motion.div
+                                        key={task.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className={`group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${task.completed
+                                            ? "bg-white/5 border-white/5"
+                                            : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
                                             }`}
                                     >
-                                        <Check className="w-4 h-4" />
-                                    </button>
-                                    <div className="flex flex-col">
-                                        <span className={`text-lg transition-all ${task.completed ? "text-white/40 line-through" : "text-white"
-                                            }`}>
-                                            {task.text}
-                                        </span>
-                                        {task.scheduledDate && (
-                                            <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
-                                                <Calendar className="w-3 h-3" />
-                                                <span>{task.scheduledDate.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity relative">
-                                    {/* Calendar Button */}
-                                    <div className="relative">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                setActiveCalendarMenu(activeCalendarMenu === task.id ? null : task.id)
-                                            }}
-                                            className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                                            title="カレンダーに追加"
-                                        >
-                                            <CalendarPlus className="w-4 h-4" />
-                                        </button>
-
-                                        {/* Calendar Dropdown */}
-                                        <AnimatePresence>
-                                            {activeCalendarMenu === task.id && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                                    className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl overflow-hidden z-50"
-                                                >
-                                                    <div className="p-1">
-                                                        <button onClick={() => handleCalendarClick('google', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
-                                                            Google Calendar
-                                                        </button>
-                                                        <button onClick={() => handleCalendarClick('outlook', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
-                                                            Outlook
-                                                        </button>
-                                                        <button onClick={() => handleCalendarClick('yahoo', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
-                                                            Yahoo Calendar
-                                                        </button>
-                                                        <button onClick={() => handleCalendarClick('ical', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
-                                                            iCal (Apple)
-                                                        </button>
+                                        <div className="flex items-center gap-4 flex-1">
+                                            <button
+                                                onClick={() => toggleTask(task.id)}
+                                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.completed
+                                                    ? "bg-emerald-500 border-emerald-500 text-white"
+                                                    : "border-white/40 hover:border-emerald-500 text-transparent"
+                                                    }`}
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </button>
+                                            <div className="flex flex-col">
+                                                <span className={`text-lg transition-all ${task.completed ? "text-white/40 line-through" : "text-white"
+                                                    }`}>
+                                                    {task.text}
+                                                </span>
+                                                {task.scheduledDate && (
+                                                    <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
+                                                        <Calendar className="w-3 h-3" />
+                                                        <span>{task.scheduledDate.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                                     </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
 
-                                    <button
-                                        onClick={() => deleteTask(task.id)}
-                                        className="p-2 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
+                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity relative">
+                                            {/* Calendar Button */}
+                                            <div className="relative">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setActiveCalendarMenu(activeCalendarMenu === task.id ? null : task.id)
+                                                    }}
+                                                    className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                                                    title="カレンダーに追加"
+                                                >
+                                                    <CalendarPlus className="w-4 h-4" />
+                                                </button>
 
-                    {tasks.length === 0 && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="text-center py-12 text-white/40"
-                        >
-                            <p>タスクがありません。新しいタスクを追加しましょう！</p>
-                        </motion.div>
-                    )}
-                </div>
+                                                {/* Calendar Dropdown */}
+                                                <AnimatePresence>
+                                                    {activeCalendarMenu === task.id && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                            className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl overflow-hidden z-50"
+                                                        >
+                                                            <div className="p-1">
+                                                                <button onClick={() => handleCalendarClick('google', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
+                                                                    Google Calendar
+                                                                </button>
+                                                                <button onClick={() => handleCalendarClick('outlook', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
+                                                                    Outlook
+                                                                </button>
+                                                                <button onClick={() => handleCalendarClick('yahoo', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
+                                                                    Yahoo Calendar
+                                                                </button>
+                                                                <button onClick={() => handleCalendarClick('ical', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
+                                                                    iCal (Apple)
+                                                                </button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+
+                                            <button
+                                                onClick={() => deleteTask(task.id)}
+                                                className="p-2 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+
+                            {tasks.length === 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="text-center py-12 text-white/40"
+                                >
+                                    <p>タスクがありません。新しいタスクを追加しましょう！</p>
+                                </motion.div>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <TaskCalendar tasks={tasks} onDateSelect={handleDateSelect} />
+                )}
             </div>
         </DashboardLayout>
     )
