@@ -29,7 +29,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await fetch("/api/user/settings")
+                const res = await fetch("/api/user/settings", { cache: 'no-store' })
                 if (res.ok) {
                     const settings = await res.json()
                     if (settings.enableProjects) {

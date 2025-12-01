@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma"
 // Mock user ID for now
 const USER_ID = "user-1"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
     try {
         let settings = await prisma.userSettings.findUnique({
