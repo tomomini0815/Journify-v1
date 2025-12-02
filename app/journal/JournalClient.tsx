@@ -26,6 +26,16 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
     const [journals, setJournals] = useState<Journal[]>(initialJournals)
     const [expandedMonths, setExpandedMonths] = useState<string[]>([])
 
+    // Filter States
+    const [showDateFilter, setShowDateFilter] = useState(false)
+    const [showContentFilter, setShowContentFilter] = useState(false)
+    const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: "", end: "" })
+    const [selectedMoods, setSelectedMoods] = useState<number[]>([])
+    const [selectedTags, setSelectedTags] = useState<string[]>([])
+
+    // Get unique tags from all journals
+    const allTags = Array.from(new Set(initialJournals.flatMap(j => j.tags))).sort()
+
     // Initialize expanded months
     useEffect(() => {
         if (initialJournals.length > 0) {
@@ -41,12 +51,28 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
         return tmp.textContent || tmp.innerText || ""
     }
 
-    // Filter journals based on search query
-    const filteredJournals = journals.filter(journal =>
-        journal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stripHtml(journal.content).toLowerCase().includes(searchQuery.toLowerCase()) ||
-        journal.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-    )
+    // Filter journals based on all criteria
+    const filteredJournals = journals.filter(journal => {
+        // Search Query
+        const matchesSearch =
+            journal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            stripHtml(journal.content).toLowerCase().includes(searchQuery.toLowerCase()) ||
+            journal.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+
+        // Date Range
+        const journalDate = new Date(journal.createdAt).toISOString().split('T')[0]
+        const matchesDate =
+            (!dateRange.start || journalDate >= dateRange.start) &&
+            (!dateRange.end || journalDate <= dateRange.end)
+
+        // Mood
+        const matchesMood = selectedMoods.length === 0 || (journal.mood !== null && selectedMoods.includes(journal.mood))
+
+        // Tags
+        const matchesTags = selectedTags.length === 0 || journal.tags.some(tag => selectedTags.includes(tag))
+
+        return matchesSearch && matchesDate && matchesMood && matchesTags
+    })
 
     // Group journals by month
     const groupedJournals = filteredJournals.reduce((acc, journal) => {
@@ -76,6 +102,18 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
     const formatMonthHeader = (monthKey: string) => {
         const [year, month] = monthKey.split('-')
         return `${year}年${parseInt(month)}月`
+    }
+
+    const toggleMood = (mood: number) => {
+        setSelectedMoods(prev =>
+            prev.includes(mood) ? prev.filter(m => m !== mood) : [...prev, mood]
+        )
+    }
+
+    const toggleTag = (tag: string) => {
+        setSelectedTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        )
     }
 
     return (
@@ -112,22 +150,131 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
                 </div>
 
                 {/* Filter Buttons and New Entry Button */}
-                <div className="flex gap-2 justify-between">
+                <div className="flex gap-2 justify-between relative z-20">
                     <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl"
-                        >
-                            <Calendar className="w-4 h-4 mr-2" />
-                            日付
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl"
-                        >
-                            <Filter className="w-4 h-4 mr-2" />
-                            フィルター
-                        </Button>
+                        {/* Date Filter */}
+                        <div className="relative">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowDateFilter(!showDateFilter)
+                                    setShowContentFilter(false)
+                                }}
+                                className={`bg-white/5 border-white/10 hover:bg-white/10 rounded-xl ${showDateFilter || dateRange.start || dateRange.end ? 'border-emerald-500/50 text-emerald-400' : ''}`}
+                            >
+                                <Calendar className="w-4 h-4 mr-2" />
+                                日付
+                            </Button>
+                            {showDateFilter && (
+                                <div className="absolute top-full left-0 mt-2 p-4 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl w-72 z-30">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-xs text-white/60 mb-1 block">開始日</label>
+                                            <input
+                                                type="date"
+                                                value={dateRange.start}
+                                                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white [color-scheme:dark]"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-white/60 mb-1 block">終了日</label>
+                                            <input
+                                                type="date"
+                                                value={dateRange.end}
+                                                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white [color-scheme:dark]"
+                                            />
+                                        </div>
+                                        <div className="pt-2 border-t border-white/10 flex justify-end">
+                                            <button
+                                                onClick={() => {
+                                                    setDateRange({ start: "", end: "" })
+                                                    setShowDateFilter(false)
+                                                }}
+                                                className="text-xs text-white/40 hover:text-white transition-colors"
+                                            >
+                                                リセット
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Content Filter */}
+                        <div className="relative">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowContentFilter(!showContentFilter)
+                                    setShowDateFilter(false)
+                                }}
+                                className={`bg-white/5 border-white/10 hover:bg-white/10 rounded-xl ${showContentFilter || selectedMoods.length > 0 || selectedTags.length > 0 ? 'border-emerald-500/50 text-emerald-400' : ''}`}
+                            >
+                                <Filter className="w-4 h-4 mr-2" />
+                                フィルター
+                            </Button>
+                            {showContentFilter && (
+                                <div className="absolute top-full left-0 mt-2 p-4 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl w-72 z-30">
+                                    <div className="space-y-4">
+                                        {/* Mood Filter */}
+                                        <div>
+                                            <h4 className="text-xs font-medium text-white/60 mb-2">気分</h4>
+                                            <div className="flex gap-2">
+                                                {[1, 2, 3, 4, 5].map(mood => (
+                                                    <button
+                                                        key={mood}
+                                                        onClick={() => toggleMood(mood)}
+                                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all
+                                                            ${selectedMoods.includes(mood)
+                                                                ? 'bg-emerald-500 text-white'
+                                                                : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                                    >
+                                                        {mood}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Tags Filter */}
+                                        <div>
+                                            <h4 className="text-xs font-medium text-white/60 mb-2">タグ</h4>
+                                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+                                                {allTags.map(tag => (
+                                                    <button
+                                                        key={tag}
+                                                        onClick={() => toggleTag(tag)}
+                                                        className={`px-2 py-1 rounded-md text-xs transition-all
+                                                            ${selectedTags.includes(tag)
+                                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                                                                : 'bg-white/5 text-white/60 hover:bg-white/10 border border-transparent'}`}
+                                                    >
+                                                        #{tag}
+                                                    </button>
+                                                ))}
+                                                {allTags.length === 0 && (
+                                                    <span className="text-xs text-white/20">タグがありません</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-white/10 flex justify-end">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedMoods([])
+                                                    setSelectedTags([])
+                                                    setShowContentFilter(false)
+                                                }}
+                                                className="text-xs text-white/40 hover:text-white transition-colors"
+                                            >
+                                                リセット
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* New Entry Button */}

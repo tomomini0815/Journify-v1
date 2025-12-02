@@ -118,6 +118,11 @@ export default function VisionBoardPage() {
         const files = e.target.files
         if (files) {
             Array.from(files).forEach(file => {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert("ファイルサイズが大きすぎます (5MB以下にしてください)")
+                    return
+                }
+
                 const reader = new FileReader()
                 reader.onload = async (event) => {
                     if (event.target?.result) {
@@ -135,9 +140,14 @@ export default function VisionBoardPage() {
                             if (res.ok) {
                                 const newItem = await res.json()
                                 setImages(prev => [{ id: newItem.id, content: newItem.content }, ...prev])
+                            } else {
+                                const errorData = await res.json()
+                                console.error("Upload failed:", errorData)
+                                alert("画像のアップロードに失敗しました")
                             }
                         } catch (error) {
                             console.error("Failed to upload image", error)
+                            alert("画像のアップロード中にエラーが発生しました")
                         }
                     }
                 }

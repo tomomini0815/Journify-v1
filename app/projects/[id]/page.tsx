@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag } from "lucide-react"
+import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2 } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -44,6 +44,7 @@ export default function ProjectDetailsPage() {
     const [newMilestone, setNewMilestone] = useState({ title: "", date: "" })
     const [newTask, setNewTask] = useState({ text: "", startDate: "", endDate: "" })
     const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list')
+    const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
 
     useEffect(() => {
         fetchProject()
@@ -68,37 +69,102 @@ export default function ProjectDetailsPage() {
     const createMilestone = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
-            const res = await fetch(`/api/projects/${params.id}/milestones`, {
-                method: "POST",
+            const url = editingItem
+                ? `/api/projects/${params.id}/milestones/${editingItem.id}`
+                : `/api/projects/${params.id}/milestones`
+
+            const method = editingItem ? "PATCH" : "POST"
+
+            const res = await fetch(url, {
+                method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(newMilestone)
             })
+
             if (res.ok) {
                 await fetchProject()
                 setShowMilestoneModal(false)
                 setNewMilestone({ title: "", date: "" })
+                setEditingItem(null)
             }
         } catch (error) {
-            console.error("Failed to create milestone", error)
+            console.error("Failed to save milestone", error)
         }
     }
 
     const createTask = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
-            const res = await fetch(`/api/projects/${params.id}/tasks`, {
-                method: "POST",
+            const url = editingItem
+                ? `/api/projects/${params.id}/tasks/${editingItem.id}`
+                : `/api/projects/${params.id}/tasks`
+
+            const method = editingItem ? "PATCH" : "POST"
+
+            const res = await fetch(url, {
+                method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(newTask)
             })
+
             if (res.ok) {
                 await fetchProject()
                 setShowTaskModal(false)
                 setNewTask({ text: "", startDate: "", endDate: "" })
+                setEditingItem(null)
             }
         } catch (error) {
-            console.error("Failed to create task", error)
+            console.error("Failed to save task", error)
         }
+    }
+
+    const handleDeleteTask = async (taskId: string) => {
+        if (!confirm("このタスクを削除してもよろしいですか？")) return
+
+        try {
+            const res = await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
+                method: "DELETE"
+            })
+            if (res.ok) {
+                await fetchProject()
+            }
+        } catch (error) {
+            console.error("Failed to delete task", error)
+        }
+    }
+
+    const handleDeleteMilestone = async (milestoneId: string) => {
+        if (!confirm("このマイルストーンを削除してもよろしいですか？")) return
+
+        try {
+            const res = await fetch(`/api/projects/${params.id}/milestones/${milestoneId}`, {
+                method: "DELETE"
+            })
+            if (res.ok) {
+                await fetchProject()
+            }
+        } catch (error) {
+            console.error("Failed to delete milestone", error)
+        }
+    }
+
+    const openEditTaskModal = (task: Task) => {
+        setNewTask({
+            text: task.text,
+            startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : "",
+            endDate: task.endDate ? new Date(task.endDate).toISOString().split('T')[0] : ""
+        })
+        setEditingItem({ type: 'task', id: task.id })
+        setShowTaskModal(true)
+    }
+
+    const openEditMilestoneModal = (milestone: Milestone) => {
+        setNewMilestone({
+            title: milestone.title,
+            date: new Date(milestone.date).toISOString().split('T')[0]
+        })
+        setEditingItem({ type: 'milestone', id: milestone.id })
+        setShowMilestoneModal(true)
     }
 
     if (isLoading || !project) {
@@ -132,9 +198,9 @@ export default function ProjectDetailsPage() {
 
     return (
         <DashboardLayout>
-            <div className="max-w-[1600px] mx-auto">
+            <div className="max-w-[1600px] mx-auto h-[calc(100vh-100px)] flex flex-col">
                 {/* Header */}
-                <div className="mb-8">
+                <div className="flex-shrink-0 mb-6">
                     <Link href="/projects" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-4 transition-colors">
                         <ArrowLeft className="w-4 h-4" />
                         プロジェクト一覧に戻る
@@ -145,30 +211,40 @@ export default function ProjectDetailsPage() {
                             <p className="text-white/60">{project.description}</p>
                         </div>
                         <div className="flex gap-2">
-                            <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
-                                <MoreVertical className="w-5 h-5" />
-                            </button>
+                            <Link href={`/projects/${params.id}/edit`}>
+                                <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+                                    <MoreVertical className="w-5 h-5" />
+                                </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
 
-                {/* Gantt Chart Container */}
-                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden flex flex-col h-[600px]">
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1a1a1a]">
+                {/* Main Content Container */}
+                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden flex flex-col flex-1 min-h-0">
+                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1a1a1a] flex-shrink-0">
                         <h2 className="text-xl font-bold flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-indigo-400" />
                             プロジェクト工程表
                         </h2>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => setShowMilestoneModal(true)}
+                                onClick={() => {
+                                    setNewMilestone({ title: "", date: "" })
+                                    setEditingItem(null)
+                                    setShowMilestoneModal(true)
+                                }}
                                 className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition-colors flex items-center gap-2"
                             >
                                 <Flag className="w-4 h-4 text-amber-400" />
                                 マイルストーン追加
                             </button>
                             <button
-                                onClick={() => setShowTaskModal(true)}
+                                onClick={() => {
+                                    setNewTask({ text: "", startDate: "", endDate: "" })
+                                    setEditingItem(null)
+                                    setShowTaskModal(true)
+                                }}
                                 className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-sm transition-colors flex items-center gap-2"
                             >
                                 <Plus className="w-4 h-4" />
@@ -179,7 +255,7 @@ export default function ProjectDetailsPage() {
 
                     <div className="flex flex-col flex-1 overflow-hidden bg-[#1a1a1a]">
                         {/* View Toggle Tabs */}
-                        <div className="flex gap-2 p-4 border-b border-white/10">
+                        <div className="flex gap-2 p-4 border-b border-white/10 flex-shrink-0">
                             <button
                                 onClick={() => setActiveTab('list')}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'list'
@@ -208,12 +284,28 @@ export default function ProjectDetailsPage() {
                                 <div className="space-y-2">
                                     <h3 className="text-sm font-medium text-white/60 mb-2 pl-1">タスク</h3>
                                     {project.tasks.map((task) => (
-                                        <div key={task.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                                        <div key={task.id} className="bg-white/5 border border-white/10 rounded-xl p-4 group">
                                             <div className="flex items-start justify-between mb-2">
                                                 <h4 className="font-medium text-white">{task.text}</h4>
-                                                <span className={`px-2 py-1 rounded text-xs ${task.completed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white/60'}`}>
-                                                    {task.completed ? '完了' : '未完了'}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-2 py-1 rounded text-xs ${task.completed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white/60'}`}>
+                                                        {task.completed ? '完了' : '未完了'}
+                                                    </span>
+                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => openEditTaskModal(task)}
+                                                            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                                                        >
+                                                            <Pencil className="w-3.5 h-3.5 text-white/60" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteTask(task.id)}
+                                                            className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="flex flex-wrap gap-3 text-xs text-white/40">
                                                 {task.startDate && (
@@ -242,13 +334,27 @@ export default function ProjectDetailsPage() {
                                 <div className="space-y-2 mt-6">
                                     <h3 className="text-sm font-medium text-white/60 mb-2 pl-1">マイルストーン</h3>
                                     {project.milestones.map((milestone) => (
-                                        <div key={milestone.id} className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3">
+                                        <div key={milestone.id} className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3 group">
                                             <div className="w-2 h-2 rotate-45 bg-amber-400" />
                                             <div className="flex-1">
                                                 <h4 className="font-medium text-white">{milestone.title}</h4>
                                                 <p className="text-xs text-white/40 mt-1">
                                                     {new Date(milestone.date).toLocaleDateString()}
                                                 </p>
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => openEditMilestoneModal(milestone)}
+                                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5 text-white/60" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteMilestone(milestone.id)}
+                                                    className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                                </button>
                                             </div>
                                         </div>
                                     ))}
@@ -376,7 +482,9 @@ export default function ProjectDetailsPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
                     >
-                        <h2 className="text-xl font-bold mb-6">新規マイルストーン</h2>
+                        <h2 className="text-xl font-bold mb-6">
+                            {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
+                        </h2>
                         <form onSubmit={createMilestone} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
@@ -410,7 +518,7 @@ export default function ProjectDetailsPage() {
                                     type="submit"
                                     className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
                                 >
-                                    作成
+                                    {editingItem ? '更新' : '作成'}
                                 </button>
                             </div>
                         </form>
@@ -426,7 +534,9 @@ export default function ProjectDetailsPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
                     >
-                        <h2 className="text-xl font-bold mb-6">新規タスク</h2>
+                        <h2 className="text-xl font-bold mb-6">
+                            {editingItem ? 'タスクを編集' : '新規タスク'}
+                        </h2>
                         <form onSubmit={createTask} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
@@ -470,7 +580,7 @@ export default function ProjectDetailsPage() {
                                     type="submit"
                                     className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
                                 >
-                                    作成
+                                    {editingItem ? '更新' : '作成'}
                                 </button>
                             </div>
                         </form>
