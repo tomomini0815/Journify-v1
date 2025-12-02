@@ -2,6 +2,43 @@ import { DashboardLayout } from "@/components/DashboardLayout"
 import { ProfileClient } from "@/components/ProfileClient"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
+import { unstable_cache } from "next/cache"
+
+// Revalidate every 5 minutes (profile data changes infrequently)
+export const revalidate = 300
+
+const getCachedProfileData = unstable_cache(
+    async (userId: string) => {
+        return await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    name: true,
+                    email: true,
+                    bio: true,
+                    preferences: true
+                }
+            }),
+            prisma.userSettings.findUnique({
+                where: { userId },
+                select: { enableProjects: true }
+            }),
+            prisma.journalEntry.count({
+                where: { userId }
+            }),
+            prisma.goal.count({
+                where: { userId, progress: 100 }
+            }),
+            prisma.journalEntry.findMany({
+                where: { userId },
+                select: { createdAt: true },
+                orderBy: { createdAt: 'desc' }
+            })
+        ])
+    },
+    ['profile-data'],
+    { revalidate: 300, tags: ['profile'] }
+)
 
 export default async function ProfilePage() {
     const supabase = await createClient()
@@ -11,33 +48,8 @@ export default async function ProfilePage() {
         return null // Middleware will redirect
     }
 
-    // Fetch profile and settings in parallel
-    const [profile, settings, journalCount, goalCount, allJournalDates] = await Promise.all([
-        prisma.user.findUnique({
-            where: { id: user.id },
-            select: {
-                name: true,
-                email: true,
-                bio: true,
-                preferences: true
-            }
-        }),
-        prisma.userSettings.findUnique({
-            where: { userId: user.id },
-            select: { enableProjects: true }
-        }),
-        prisma.journalEntry.count({
-            where: { userId: user.id }
-        }),
-        prisma.goal.count({
-            where: { userId: user.id, progress: 100 }
-        }),
-        prisma.journalEntry.findMany({
-            where: { userId: user.id },
-            select: { createdAt: true },
-            orderBy: { createdAt: 'desc' }
-        })
-    ])
+    // Fetch profile and settings in parallel using cache
+    const [profile, settings, journalCount, goalCount, allJournalDates] = await getCachedProfileData(user.id)
 
     // Calculate streak
     let streak = 0
@@ -45,7 +57,7 @@ export default async function ProfilePage() {
 
     if (allJournalDates.length > 0) {
         uniqueDates = new Set(
-            allJournalDates.map(j => j.createdAt.toISOString().split('T')[0])
+            allJournalDates.map(j => new Date(j.createdAt).toISOString().split('T')[0])
         )
 
         const today = new Date()
