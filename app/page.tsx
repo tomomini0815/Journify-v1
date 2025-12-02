@@ -433,6 +433,240 @@ export default function LandingPage() {
 
         </section>
 
+        {/* Features Section */}
+        <section className="relative py-32 md:py-48 px-6">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-20"
+            >
+              <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white">
+                主な機能
+              </h2>
+              <p className="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto">
+                日々の記録から目標達成まで、あなたの成長をサポートする統合プラットフォーム
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+              {/* Journal Feature */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                viewport={{ once: true }}
+                className="group"
+              >
+                <MagneticButton className="w-full">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-violet-500/50 transition-all cursor-none h-full">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-violet-500/20 rounded-2xl text-violet-400">
+                        <BarChart3 className="w-10 h-10" />
+                      </div>
+                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-violet-400 transition-colors">
+                        ジャーナル
+                      </h3>
+                    </div>
+                    <ul className="space-y-3 text-white/70 text-lg">
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
+                        <span>リッチテキストエディタで自由な記述</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
+                        <span>気分・エネルギー・ストレス・睡眠を5段階評価</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
+                        <span>タグ付けによる分類と検索</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
+                        <span>日々の活動記録（運動、社交、趣味など）</span>
+                      </li>
+                    </ul>
+                  </div>
+                </MagneticButton>
+              </motion.div>
+
+              {/* Goals Feature */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="group"
+              >
+                <MagneticButton className="w-full">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-emerald-500/50 transition-all cursor-none h-full">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-emerald-500/20 rounded-2xl text-emerald-400">
+                        <CheckCircle2 className="w-10 h-10" />
+                      </div>
+                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-emerald-400 transition-colors">
+                        目標管理
+                      </h3>
+                    </div>
+                    <ul className="space-y-3 text-white/70 text-lg">
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
+                        <span>進捗を10%刻みで更新可能</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
+                        <span>優先度設定（高・中・低）</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
+                        <span>目標達成率の可視化</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
+                        <span>期日設定とリマインダー</span>
+                      </li>
+                    </ul>
+                  </div>
+                </MagneticButton>
+              </motion.div>
+
+              {/* Tasks Feature */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                viewport={{ once: true }}
+                className="group"
+              >
+                <MagneticButton className="w-full">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-blue-500/50 transition-all cursor-none h-full">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-blue-500/20 rounded-2xl text-blue-400">
+                        <CheckCircle2 className="w-10 h-10" />
+                      </div>
+                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-blue-400 transition-colors">
+                        タスク管理
+                      </h3>
+                    </div>
+                    <ul className="space-y-3 text-white/70 text-lg">
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
+                        <span>日々のタスクとプロジェクト紐付けタスク</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
+                        <span>完了状態の追跡</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
+                        <span>スケジュール設定（開始日・終了日）</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
+                        <span>タスクごとのカラー設定（10色）</span>
+                      </li>
+                    </ul>
+                  </div>
+                </MagneticButton>
+              </motion.div>
+
+              {/* Projects Feature */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                viewport={{ once: true }}
+                className="group"
+              >
+                <MagneticButton className="w-full">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-amber-500/50 transition-all cursor-none h-full">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-amber-500/20 rounded-2xl text-amber-400">
+                        <Calendar className="w-10 h-10" />
+                      </div>
+                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-amber-400 transition-colors">
+                        プロジェクト管理
+                      </h3>
+                    </div>
+                    <ul className="space-y-3 text-white/70 text-lg">
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-amber-400 mt-1 flex-shrink-0" />
+                        <span>ガントチャート風タイムラインビュー</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-amber-400 mt-1 flex-shrink-0" />
+                        <span>マイルストーン設定</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-amber-400 mt-1 flex-shrink-0" />
+                        <span>日本の祝日表示対応</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-amber-400 mt-1 flex-shrink-0" />
+                        <span>プロジェクトステータス管理</span>
+                      </li>
+                    </ul>
+                  </div>
+                </MagneticButton>
+              </motion.div>
+
+              {/* Dashboard Feature */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                viewport={{ once: true }}
+                className="group md:col-span-2"
+              >
+                <MagneticButton className="w-full">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-indigo-500/50 transition-all cursor-none">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-indigo-500/20 rounded-2xl text-indigo-400">
+                        <BarChart3 className="w-10 h-10" />
+                      </div>
+                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-indigo-400 transition-colors">
+                        ダッシュボード & 分析
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <ul className="space-y-3 text-white/70 text-lg">
+                        <li className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
+                          <span>統計情報の可視化（ジャーナル数、連続記録日数）</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
+                          <span>気分の推移グラフ</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
+                          <span>ライフバランスチャート</span>
+                        </li>
+                      </ul>
+                      <ul className="space-y-3 text-white/70 text-lg">
+                        <li className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
+                          <span>最近のジャーナルと目標進捗の一覧</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
+                          <span>ビジョンボード（画像、夢、アファメーション）</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
+                          <span>未来の自分への手紙機能</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </MagneticButton>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
         {/* Final Message Section */}
         <section className="relative py-32 md:py-48 px-6 text-center">
           <motion.div
