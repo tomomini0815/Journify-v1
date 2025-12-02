@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
-
-const USER_ID = "42c1eda0-18f2-4213-86b0-55b47ee003f3"
+import { createClient } from "@/lib/supabase/server"
 
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string; milestoneId: string }> }
 ) {
     try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            )
+        }
+
         const { id: projectId, milestoneId } = await params
         const body = await req.json()
         const { title, date, completed } = body
@@ -17,7 +26,7 @@ export async function PATCH(
             where: {
                 id: milestoneId,
                 projectId,
-                project: { userId: USER_ID }
+                project: { userId: user.id }
             }
         })
 
@@ -52,6 +61,16 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string; milestoneId: string }> }
 ) {
     try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            )
+        }
+
         const { id: projectId, milestoneId } = await params
 
         // Verify milestone belongs to project
@@ -59,7 +78,7 @@ export async function DELETE(
             where: {
                 id: milestoneId,
                 projectId,
-                project: { userId: USER_ID }
+                project: { userId: user.id }
             }
         })
 

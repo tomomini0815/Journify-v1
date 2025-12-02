@@ -6,6 +6,7 @@ import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Penc
 import { DashboardLayout } from "@/components/DashboardLayout"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
+import { isHoliday } from "@/lib/holidays"
 
 type Milestone = {
     id: string
@@ -18,6 +19,7 @@ type Task = {
     id: string
     text: string
     completed: boolean
+    color?: string
     createdAt: string
     startDate?: string
     endDate?: string
@@ -42,9 +44,10 @@ export default function ProjectDetailsPage() {
     const [showMilestoneModal, setShowMilestoneModal] = useState(false)
     const [showTaskModal, setShowTaskModal] = useState(false)
     const [newMilestone, setNewMilestone] = useState({ title: "", date: "" })
-    const [newTask, setNewTask] = useState({ text: "", startDate: "", endDate: "" })
+    const [newTask, setNewTask] = useState({ text: "", startDate: "", endDate: "", color: "#6366f1" })
     const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list')
     const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
+    const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone', id: string, title: string } | null>(null)
 
     useEffect(() => {
         fetchProject()
@@ -110,7 +113,7 @@ export default function ProjectDetailsPage() {
             if (res.ok) {
                 await fetchProject()
                 setShowTaskModal(false)
-                setNewTask({ text: "", startDate: "", endDate: "" })
+                setNewTask({ text: "", startDate: "", endDate: "", color: "#6366f1" })
                 setEditingItem(null)
             }
         } catch (error) {
@@ -119,14 +122,13 @@ export default function ProjectDetailsPage() {
     }
 
     const handleDeleteTask = async (taskId: string) => {
-        if (!confirm("このタスクを削除してもよろしいですか？")) return
-
         try {
             const res = await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
                 method: "DELETE"
             })
             if (res.ok) {
                 await fetchProject()
+                setDeleteConfirm(null)
             }
         } catch (error) {
             console.error("Failed to delete task", error)
@@ -134,14 +136,13 @@ export default function ProjectDetailsPage() {
     }
 
     const handleDeleteMilestone = async (milestoneId: string) => {
-        if (!confirm("このマイルストーンを削除してもよろしいですか？")) return
-
         try {
             const res = await fetch(`/api/projects/${params.id}/milestones/${milestoneId}`, {
                 method: "DELETE"
             })
             if (res.ok) {
                 await fetchProject()
+                setDeleteConfirm(null)
             }
         } catch (error) {
             console.error("Failed to delete milestone", error)
@@ -152,7 +153,8 @@ export default function ProjectDetailsPage() {
         setNewTask({
             text: task.text,
             startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : "",
-            endDate: task.endDate ? new Date(task.endDate).toISOString().split('T')[0] : ""
+            endDate: task.endDate ? new Date(task.endDate).toISOString().split('T')[0] : "",
+            color: task.color || "#6366f1"
         })
         setEditingItem({ type: 'task', id: task.id })
         setShowTaskModal(true)
@@ -241,7 +243,7 @@ export default function ProjectDetailsPage() {
                             </button>
                             <button
                                 onClick={() => {
-                                    setNewTask({ text: "", startDate: "", endDate: "" })
+                                    setNewTask({ text: "", startDate: "", endDate: "", color: "#6366f1" })
                                     setEditingItem(null)
                                     setShowTaskModal(true)
                                 }}
@@ -291,7 +293,7 @@ export default function ProjectDetailsPage() {
                                                     <span className={`px-2 py-1 rounded text-xs ${task.completed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white/60'}`}>
                                                         {task.completed ? '完了' : '未完了'}
                                                     </span>
-                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="flex gap-1 transition-opacity">
                                                         <button
                                                             onClick={() => openEditTaskModal(task)}
                                                             className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
@@ -299,7 +301,7 @@ export default function ProjectDetailsPage() {
                                                             <Pencil className="w-3.5 h-3.5 text-white/60" />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDeleteTask(task.id)}
+                                                            onClick={() => setDeleteConfirm({ type: 'task', id: task.id, title: task.text })}
                                                             className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -342,7 +344,7 @@ export default function ProjectDetailsPage() {
                                                     {new Date(milestone.date).toLocaleDateString()}
                                                 </p>
                                             </div>
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex gap-1 transition-opacity">
                                                 <button
                                                     onClick={() => openEditMilestoneModal(milestone)}
                                                     className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
@@ -350,7 +352,7 @@ export default function ProjectDetailsPage() {
                                                     <Pencil className="w-3.5 h-3.5 text-white/60" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteMilestone(milestone.id)}
+                                                    onClick={() => setDeleteConfirm({ type: 'milestone', id: milestone.id, title: milestone.title })}
                                                     className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -370,20 +372,20 @@ export default function ProjectDetailsPage() {
                             <div className="flex flex-1 overflow-hidden">
                                 {/* Left Sidebar: Task List */}
                                 <div className="w-64 flex-shrink-0 border-r border-white/10 bg-[#1a1a1a] flex flex-col">
-                                    <div className="h-12 border-b border-white/10 flex items-center px-4 font-medium text-white/60 bg-[#252525]">
+                                    <div className="h-16 border-b border-white/10 flex items-center px-4 font-medium text-white/60 bg-[#252525]">
                                         タスク名
                                     </div>
                                     <div className="flex-1 overflow-y-hidden">
                                         {project.tasks.map((task) => (
-                                            <div key={task.id} className="h-10 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate">
-                                                <div className={`w-2 h-2 rounded-full mr-2 ${task.completed ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                                            <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate">
+                                                <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 ${task.completed ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
                                                 <span className="text-sm truncate">{task.text}</span>
                                             </div>
                                         ))}
                                         {/* Milestones in list */}
                                         {project.milestones.map((milestone) => (
-                                            <div key={milestone.id} className="h-10 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5">
-                                                <Flag className="w-3 h-3 text-amber-400 mr-2" />
+                                            <div key={milestone.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5">
+                                                <Flag className="w-3 h-3 text-amber-400 mr-2 flex-shrink-0" />
                                                 <span className="text-sm truncate text-amber-200">{milestone.title}</span>
                                             </div>
                                         ))}
@@ -394,53 +396,121 @@ export default function ProjectDetailsPage() {
                                 <div className="flex-1 overflow-auto bg-[#151515] relative">
                                     <div className="min-w-full" style={{ width: `${totalDays * dayWidth}px` }}>
                                         {/* Date Header */}
-                                        <div className="h-12 border-b border-white/10 flex bg-[#252525] sticky top-0 z-20">
-                                            {Array.from({ length: totalDays }).map((_, i) => {
-                                                const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
-                                                const isToday = date.toDateString() === new Date().toDateString()
-                                                return (
-                                                    <div
-                                                        key={i}
-                                                        className={`flex-shrink-0 border-r border-white/5 flex flex-col items-center justify-center text-xs ${isToday ? 'bg-indigo-500/10' : ''}`}
-                                                        style={{ width: `${dayWidth}px` }}
-                                                    >
-                                                        <span className="text-white/40">{date.getMonth() + 1}/{date.getDate()}</span>
-                                                        <span className="text-white/20">{['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}</span>
-                                                    </div>
-                                                )
-                                            })}
+                                        <div className="h-16 border-b border-white/10 bg-[#252525] sticky top-0 z-20">
+                                            <div className="flex h-full">
+                                                {Array.from({ length: totalDays }).map((_, i) => {
+                                                    const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
+                                                    const isToday = date.toDateString() === new Date().toDateString()
+                                                    const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                                                    const holiday = isHoliday(date)
+                                                    const isFirstOfMonth = date.getDate() === 1
+                                                    const prevDate = i > 0 ? new Date(minDate.getTime() + (i - 1) * 24 * 60 * 60 * 1000) : null
+                                                    const isMonthChange = prevDate && date.getMonth() !== prevDate.getMonth()
+
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs relative ${isToday ? 'bg-indigo-500/20 border-indigo-500/50' :
+                                                                holiday.isHoliday ? 'bg-red-500/10 border-red-500/30' :
+                                                                    isMonthChange ? 'border-white/20' : 'border-white/5'
+                                                                }`}
+                                                            style={{ width: `${dayWidth}px` }}
+                                                        >
+                                                            {isFirstOfMonth && (
+                                                                <div className="absolute -top-1 left-0 right-0 text-center">
+                                                                    <span className="text-[10px] font-bold text-white/80 bg-[#252525] px-1 rounded">
+                                                                        {date.getMonth() + 1}月
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            <span className={`font-medium ${isToday ? 'text-indigo-300' :
+                                                                holiday.isHoliday ? 'text-red-300' :
+                                                                    'text-white/60'
+                                                                }`}>
+                                                                {date.getDate()}
+                                                            </span>
+                                                            <span className={`text-[10px] ${isToday ? 'text-indigo-400' :
+                                                                holiday.isHoliday ? 'text-red-400' :
+                                                                    isWeekend ? 'text-red-400/60' : 'text-white/30'
+                                                                }`}>
+                                                                {holiday.isHoliday ? holiday.name?.substring(0, 2) : ['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
                                         </div>
 
                                         {/* Grid Body */}
                                         <div className="relative">
-                                            {/* Vertical Grid Lines */}
+                                            {/* Vertical Grid Lines and Weekend Highlighting */}
                                             <div className="absolute inset-0 flex pointer-events-none">
-                                                {Array.from({ length: totalDays }).map((_, i) => (
-                                                    <div
-                                                        key={i}
-                                                        className="flex-shrink-0 border-r border-white/5 h-full"
-                                                        style={{ width: `${dayWidth}px` }}
-                                                    />
-                                                ))}
+                                                {Array.from({ length: totalDays }).map((_, i) => {
+                                                    const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
+                                                    const isToday = date.toDateString() === new Date().toDateString()
+                                                    const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                                                    const holiday = isHoliday(date)
+                                                    const prevDate = i > 0 ? new Date(minDate.getTime() + (i - 1) * 24 * 60 * 60 * 1000) : null
+                                                    const isMonthChange = prevDate && date.getMonth() !== prevDate.getMonth()
+
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            className={`flex-shrink-0 border-r h-full ${isToday ? 'bg-indigo-500/5 border-indigo-500/30' :
+                                                                isMonthChange ? 'border-white/10' :
+                                                                    isWeekend ? 'bg-white/[0.02] border-white/5' : 'border-white/5'
+                                                                }`}
+                                                            style={{ width: `${dayWidth}px` }}
+                                                        />
+                                                    )
+                                                })}
                                             </div>
+
+                                            {/* Today Marker Line */}
+                                            {(() => {
+                                                const today = new Date()
+                                                const todayOffset = ((today.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
+                                                if (todayOffset >= 0 && todayOffset <= totalDays * dayWidth) {
+                                                    return (
+                                                        <div
+                                                            className="absolute top-0 bottom-0 w-0.5 bg-indigo-500/50 pointer-events-none z-10"
+                                                            style={{ left: `${todayOffset + dayWidth / 2}px` }}
+                                                        />
+                                                    )
+                                                }
+                                                return null
+                                            })()}
 
                                             {/* Task Rows */}
                                             {project.tasks.map((task) => {
-                                                if (!task.startDate || !task.endDate) return <div key={task.id} className="h-10 border-b border-white/5" />
+                                                if (!task.startDate || !task.endDate) return <div key={task.id} className="h-12 border-b border-white/5" />
 
                                                 const taskStart = new Date(task.startDate)
                                                 const taskEnd = new Date(task.endDate)
                                                 const left = ((taskStart.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
                                                 const width = Math.max(((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth, dayWidth)
+                                                const duration = Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24))
 
                                                 return (
-                                                    <div key={task.id} className="h-10 border-b border-white/5 relative group">
+                                                    <div key={task.id} className="h-12 border-b border-white/5 relative group">
                                                         <div
-                                                            className={`absolute top-2 h-6 rounded-md flex items-center px-2 cursor-pointer transition-colors ${task.completed ? 'bg-emerald-500/40 border border-emerald-500/60' : 'bg-indigo-500/40 border border-indigo-500/60 hover:bg-indigo-500/60'
+                                                            className={`absolute top-2.5 h-7 rounded-lg flex items-center px-3 cursor-pointer transition-all shadow-lg ${task.completed
+                                                                ? 'bg-emerald-500/50 border border-emerald-400/60 hover:bg-emerald-500/70'
+                                                                : 'bg-indigo-500/50 border border-indigo-400/60 hover:bg-indigo-500/70'
                                                                 }`}
                                                             style={{ left: `${left}px`, width: `${width}px` }}
                                                         >
-                                                            <span className="text-[10px] text-white truncate">{task.text}</span>
+                                                            <span className="text-xs text-white font-medium truncate">{task.text}</span>
+                                                            {/* Tooltip on hover */}
+                                                            <div className="absolute bottom-full left-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                                                                <div className="bg-[#1a1a1a] border border-white/20 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                                                                    <div className="text-sm font-medium text-white mb-1">{task.text}</div>
+                                                                    <div className="text-xs text-white/60">
+                                                                        {taskStart.toLocaleDateString('ja-JP')} - {taskEnd.toLocaleDateString('ja-JP')}
+                                                                    </div>
+                                                                    <div className="text-xs text-white/40 mt-1">期間: {duration}日</div>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )
@@ -452,14 +522,15 @@ export default function ProjectDetailsPage() {
                                                 const left = ((date.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
 
                                                 return (
-                                                    <div key={milestone.id} className="h-10 border-b border-white/5 relative bg-amber-500/5">
+                                                    <div key={milestone.id} className="h-12 border-b border-white/5 relative bg-amber-500/5">
                                                         <div
                                                             className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-10"
                                                             style={{ left: `${left + (dayWidth / 2)}px` }}
                                                         >
-                                                            <div className="w-3 h-3 rotate-45 bg-amber-400 border-2 border-[#1a1a1a]" />
-                                                            <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-white/10 px-2 py-1 rounded text-xs whitespace-nowrap">
-                                                                {milestone.title}
+                                                            <div className="w-4 h-4 rotate-45 bg-amber-400 border-2 border-[#1a1a1a] shadow-lg" />
+                                                            <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-amber-400/30 px-3 py-2 rounded-lg text-xs whitespace-nowrap shadow-xl">
+                                                                <div className="font-medium text-amber-200">{milestone.title}</div>
+                                                                <div className="text-white/60 text-[10px] mt-1">{date.toLocaleDateString('ja-JP')}</div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -548,6 +619,20 @@ export default function ProjectDetailsPage() {
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-white/60 mb-2">カラー</label>
+                                <div className="flex gap-2">
+                                    {['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'].map((color) => (
+                                        <button
+                                            key={color}
+                                            type="button"
+                                            onClick={() => setNewTask({ ...newTask, color })}
+                                            className={`w-8 h-8 rounded-lg transition-all ${newTask.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1a1a] scale-110' : 'hover:scale-105'}`}
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
@@ -584,6 +669,42 @@ export default function ProjectDetailsPage() {
                                 </button>
                             </div>
                         </form>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                    >
+                        <h2 className="text-xl font-bold mb-4">削除の確認</h2>
+                        <p className="text-white/60 mb-6">
+                            {deleteConfirm.type === 'task' ? 'タスク' : 'マイルストーン'}「{deleteConfirm.title}」を削除してもよろしいですか？
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (deleteConfirm.type === 'task') {
+                                        handleDeleteTask(deleteConfirm.id)
+                                    } else {
+                                        handleDeleteMilestone(deleteConfirm.id)
+                                    }
+                                }}
+                                className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors"
+                            >
+                                削除
+                            </button>
+                        </div>
                     </motion.div>
                 </div>
             )}

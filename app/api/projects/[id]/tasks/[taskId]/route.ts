@@ -1,20 +1,29 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
-
-const USER_ID = "42c1eda0-18f2-4213-86b0-55b47ee003f3"
+import { createClient } from "@/lib/supabase/server"
 
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string; taskId: string }> }
 ) {
     try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            )
+        }
+
         const { id: projectId, taskId } = await params
         const body = await req.json()
         const { text, startDate, endDate, completed } = body
 
         // Verify task belongs to user and project
         const task = await prisma.task.findFirst({
-            where: { id: taskId, projectId, userId: USER_ID }
+            where: { id: taskId, projectId, userId: user.id }
         })
 
         if (!task) {
@@ -49,11 +58,21 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string; taskId: string }> }
 ) {
     try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            )
+        }
+
         const { id: projectId, taskId } = await params
 
         // Verify task belongs to user and project
         const task = await prisma.task.findFirst({
-            where: { id: taskId, projectId, userId: USER_ID }
+            where: { id: taskId, projectId, userId: user.id }
         })
 
         if (!task) {

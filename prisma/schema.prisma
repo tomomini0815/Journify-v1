@@ -138,6 +138,7 @@ model Task {
   id            String    @id @default(uuid())
   text          String
   completed     Boolean   @default(false)
+  color         String?   @default("#6366f1") // Task color (hex code)
   scheduledDate DateTime?
   startDate     DateTime?
   endDate       DateTime?
