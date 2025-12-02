@@ -1,25 +1,9 @@
-"use client"
-
 import { DashboardLayout } from "@/components/DashboardLayout"
-import { HappinessChart } from "@/components/HappinessChart"
-import { LifeBalanceChart } from "@/components/LifeBalanceChart"
-import { motion } from "framer-motion"
-import { BookOpen, Target, TrendingUp, Calendar } from "lucide-react"
+import { DashboardStats } from "@/components/DashboardStats"
+import { DashboardCharts } from "@/components/DashboardCharts"
+import { createClient } from "@/lib/supabase/server"
+import prisma from "@/lib/prisma"
 import Link from "next/link"
-import { useState, useEffect } from "react"
-
-interface Journal {
-    id: string
-    title: string
-    mood: number
-    date: string
-}
-
-interface Goal {
-    id: string
-    title: string
-    progress: number
-}
 
 // Helper function to convert mood integer to emoji
 function getMoodEmoji(mood: number | null | undefined): string {
@@ -41,126 +25,222 @@ function getMoodEmoji(mood: number | null | undefined): string {
     }
 }
 
-export default function DashboardPage() {
-    const [stats, setStats] = useState({ journalCount: 0, goalCount: 0, streak: 0, happiness: 0 })
-    const [recentJournals, setRecentJournals] = useState<Journal[]>([])
-    const [goals, setGoals] = useState<Goal[]>([])
-    const [lifeBalance, setLifeBalance] = useState<any[]>([])
-    const [happinessData, setHappinessData] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+function getGreeting() {
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour < 12) {
+        return {
+            title: "おはようございます! ☀️",
+            message: "今日も素晴らしい1日の始まりですね。朝の積み重ねが、未来を変えます。"
+        }
+    } else if (hour >= 12 && hour < 18) {
+        return {
+            title: "こんにちは! 🌿",
+            message: "調子はいかがですか?一息ついて、後半戦も楽しみましょう。"
+        }
+    } else if (hour >= 18 && hour < 23) {
+        return {
+            title: "こんばんは! 🌙",
+            message: "今日もお疲れ様でした。1日の振り返りをして、心を整えましょう。"
+        }
+    } else {
+        return {
+            title: "夜遅くまでお疲れ様です ✨",
+            message: "星が綺麗ですね。無理せず、ゆっくり休んでくださいね。"
+        }
+    }
+}
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res = await fetch("/api/dashboard")
-                if (res.ok) {
-                    const data = await res.json()
-                    setStats(data.stats)
-                    setRecentJournals(data.recentJournals)
-                    setGoals(data.goals)
-                    setLifeBalance(data.lifeBalance)
-                    setHappinessData(data.happinessData)
+export default async function DashboardPage() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return null // Middleware will redirect
+    }
+
+    // Fetch all data in parallel
+    const [
+        journalCount,
+        goalCount,
+        recentJournals,
+        goals,
+        lifeBalanceEntries,
+        journalEntries,
+        allJournalDates
+    ] = await Promise.all([
+        // Count queries
+        prisma.journalEntry.count({
+            where: { userId: user.id },
+        }),
+        prisma.goal.count({
+            where: { userId: user.id, progress: { lt: 100 } },
+        }),
+        // Recent journals - only fetch needed fields
+        prisma.journalEntry.findMany({
+            where: { userId: user.id },
+            select: {
+                id: true,
+                title: true,
+                mood: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: "desc" },
+            take: 3,
+        }),
+        // Goals - only fetch needed fields
+        prisma.goal.findMany({
+            where: { userId: user.id },
+            select: {
+                id: true,
+                title: true,
+                progress: true,
+            },
+            orderBy: { createdAt: "desc" },
+            take: 3,
+        }),
+        // Life Balance entries
+        prisma.lifeBalanceEntry.findMany({
+            where: { userId: user.id },
+            select: {
+                category: true,
+                score: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+        }),
+        // Happiness data
+        prisma.journalEntry.findMany({
+            where: {
+                userId: user.id,
+                mood: { gt: 0 },
+                createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+            },
+            select: {
+                mood: true,
+                createdAt: true
+            },
+            orderBy: { createdAt: "asc" }
+        }),
+        // All journal dates for streak
+        prisma.journalEntry.findMany({
+            where: { userId: user.id },
+            select: { createdAt: true },
+            orderBy: { createdAt: 'desc' }
+        })
+    ])
+
+    // Process life balance data
+    const latestLifeBalance: Record<string, number> = {}
+    const categories = [
+        "身体的健康",
+        "精神的健康",
+        "人間関係",
+        "社会貢献",
+        "仕事・キャリア",
+        "経済的安定",
+        "学習・成長",
+        "自己実現",
+        "趣味・余暇"
+    ]
+
+    categories.forEach(c => latestLifeBalance[c] = 0)
+
+    lifeBalanceEntries.forEach((entry: any) => {
+        if (latestLifeBalance[entry.category] === 0) {
+            latestLifeBalance[entry.category] = entry.score
+        }
+    })
+
+    const lifeBalanceData = Object.entries(latestLifeBalance).map(([category, value]) => ({
+        category,
+        value
+    }))
+
+    // Calculate happiness data
+    const dailyMap = new Map<string, { total: number, count: number }>()
+    journalEntries.forEach((entry: any) => {
+        if (!entry.mood) return
+        const dateKey = entry.createdAt.toISOString().split('T')[0]
+        if (!dailyMap.has(dateKey)) {
+            dailyMap.set(dateKey, { total: 0, count: 0 })
+        }
+        const current = dailyMap.get(dateKey)!
+        current.total += entry.mood
+        current.count += 1
+    })
+
+    const happinessData = Array.from(dailyMap.entries()).map(([date, data]) => ({
+        date,
+        score: Math.round((data.total / data.count / 5) * 100)
+    })).sort((a, b) => a.date.localeCompare(b.date))
+
+    // Calculate average happiness
+    const totalMood = journalEntries.reduce((sum: number, entry: any) => sum + (entry.mood || 0), 0)
+    const averageHappiness = journalEntries.length > 0
+        ? Math.round((totalMood / journalEntries.length / 5) * 100)
+        : 0
+
+    // Calculate streak
+    let streak = 0
+    if (allJournalDates.length > 0) {
+        const uniqueDates = new Set(
+            allJournalDates.map(j => j.createdAt.toISOString().split('T')[0])
+        )
+
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
+
+        if (uniqueDates.has(todayStr) || uniqueDates.has(yesterdayStr)) {
+            let checkDate = new Date(today)
+
+            if (!uniqueDates.has(todayStr)) {
+                checkDate = yesterday
+            }
+
+            while (true) {
+                const dateStr = checkDate.toISOString().split('T')[0]
+                if (uniqueDates.has(dateStr)) {
+                    streak++
+                    checkDate.setDate(checkDate.getDate() - 1)
+                } else {
+                    break
                 }
-            } catch (error) {
-                console.error("Failed to fetch dashboard data", error)
-            } finally {
-                setIsLoading(false)
             }
         }
-        fetchData()
-    }, [])
+    }
 
-    const [greeting, setGreeting] = useState({ title: "", message: "" })
+    const stats = {
+        journalCount,
+        goalCount,
+        streak,
+        happiness: averageHappiness,
+    }
 
-    useEffect(() => {
-        const hour = new Date().getHours()
-        if (hour >= 5 && hour < 12) {
-            setGreeting({
-                title: "おはようございます！ ☀️",
-                message: "今日も素晴らしい1日の始まりですね。朝の積み重ねが、未来を変えます。"
-            })
-        } else if (hour >= 12 && hour < 18) {
-            setGreeting({
-                title: "こんにちは！ 🌿",
-                message: "調子はいかがですか？一息ついて、後半戦も楽しみましょう。"
-            })
-        } else if (hour >= 18 && hour < 23) {
-            setGreeting({
-                title: "こんばんは！ 🌙",
-                message: "今日もお疲れ様でした。1日の振り返りをして、心を整えましょう。"
-            })
-        } else {
-            setGreeting({
-                title: "夜遅くまでお疲れ様です ✨",
-                message: "星が綺麗ですね。無理せず、ゆっくり休んでくださいね。"
-            })
-        }
-    }, [])
+    const greeting = getGreeting()
 
     return (
         <DashboardLayout>
             {/* Welcome Section */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="mb-8"
-            >
+            <div className="mb-8">
                 <h1 className="text-2xl md:text-4xl font-bold mb-2">{greeting.title}</h1>
                 <p className="text-white/60">{greeting.message}</p>
-            </motion.div>
+            </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard
-                    icon={BookOpen}
-                    label="今月の記録数"
-                    value={stats.journalCount}
-                    trend="+3"
-                    delay={0.1}
-                />
-                <StatCard
-                    icon={Target}
-                    label="進行中の目標"
-                    value={stats.goalCount}
-                    trend="→"
-                    delay={0.2}
-                />
-                <StatCard
-                    icon={TrendingUp}
-                    label="平均幸福度(過去30日)"
-                    value={stats.happiness}
-                    trend="+5%"
-                    delay={0.3}
-                />
-                <StatCard
-                    icon={Calendar}
-                    label="連続日数"
-                    value={stats.streak}
-                    trend="+2"
-                    delay={0.4}
-                />
-            </div>
+            <DashboardStats stats={stats} />
 
             {/* Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Life Balance Radar Chart */}
-                <LifeBalanceChart data={lifeBalance} />
-
-                {/* Happiness Chart */}
-                <HappinessChart data={happinessData} />
-            </div>
+            <DashboardCharts happinessData={happinessData} lifeBalance={lifeBalanceData} />
 
             {/* Recent Journals and Goals */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
                 {/* Recent Journals */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
-                >
+                <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h3 className="text-xl font-bold mb-1">最近の記録</h3>
@@ -184,19 +264,14 @@ export default function DashboardPage() {
                                     <h4 className="font-medium">{journal.title}</h4>
                                     <span className="text-2xl">{getMoodEmoji(journal.mood)}</span>
                                 </div>
-                                <p className="text-white/60 text-sm">{journal.date}</p>
+                                <p className="text-white/60 text-sm">{journal.createdAt.toISOString().split('T')[0]}</p>
                             </div>
                         ))}
                     </div>
-                </motion.div>
+                </div>
 
                 {/* Goal Progress */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                    className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
-                >
+                <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h3 className="text-xl font-bold mb-1">目標の進捗</h3>
@@ -226,30 +301,8 @@ export default function DashboardPage() {
                             </div>
                         ))}
                     </div>
-                </motion.div>
+                </div>
             </div>
         </DashboardLayout>
-    )
-}
-
-function StatCard({ icon: Icon, label, value, trend, delay }: any) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay }}
-            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:from-white/15 hover:to-white/10 transition-colors"
-        >
-            <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-lg">
-                    <Icon className="w-5 h-5 text-emerald-400" />
-                </div>
-                <span className="text-sm text-green-400">{trend}</span>
-            </div>
-            <div>
-                <p className="text-2xl font-bold mb-1">{value}</p>
-                <p className="text-sm text-white/60">{label}</p>
-            </div>
-        </motion.div>
     )
 }
