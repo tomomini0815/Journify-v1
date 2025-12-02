@@ -31,6 +31,18 @@ export default function LandingPage() {
   }
 
   useEffect(() => {
+    const checkUser = async () => {
+      const { createClient } = await import("@/lib/supabase/client")
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        window.location.href = "/dashboard"
+      }
+    }
+    checkUser()
+  }, [])
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       mouseX.set(e.clientX / window.innerWidth)
       mouseY.set(e.clientY / window.innerHeight)

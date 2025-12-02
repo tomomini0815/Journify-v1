@@ -13,6 +13,7 @@ interface Goal {
     targetDate: Date | null
     priority: string
     progress: number
+    timeframe: string
 }
 
 interface GoalsClientProps {
@@ -22,6 +23,7 @@ interface GoalsClientProps {
 export function GoalsClient({ initialGoals }: GoalsClientProps) {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [goals, setGoals] = useState<Goal[]>(initialGoals)
+    const [activeTab, setActiveTab] = useState<'short' | 'mid' | 'long'>('short')
 
     const handleAddGoal = async (newGoal: { title: string; description: string; deadline: string; priority: string }) => {
         try {
@@ -33,6 +35,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                     description: newGoal.description,
                     targetDate: newGoal.deadline,
                     priority: newGoal.priority,
+                    timeframe: activeTab,
                     progress: 0,
                 }),
             })
@@ -45,6 +48,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                     targetDate: goal.targetDate ? new Date(goal.targetDate) : null,
                     priority: goal.priority || "medium",
                     progress: goal.progress,
+                    timeframe: goal.timeframe || "short",
                 }, ...goals])
             }
         } catch (error) {
@@ -113,6 +117,8 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
         }
     }
 
+    const filteredGoals = goals.filter(goal => goal.timeframe === activeTab)
+
     return (
         <>
             {/* Header */}
@@ -136,7 +142,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-3 gap-4 mb-8">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -144,7 +150,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                     className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
                 >
                     <p className="text-white/60 text-sm mb-1">総目標数</p>
-                    <p className="text-2xl md:text-3xl font-bold">{goals.length}</p>
+                    <p className="text-2xl md:text-3xl font-bold">{filteredGoals.length}</p>
                 </motion.div>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -154,7 +160,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                 >
                     <p className="text-white/60 text-sm mb-1">達成済み</p>
                     <p className="text-2xl md:text-3xl font-bold text-green-400">
-                        {goals.filter(g => g.progress === 100).length}
+                        {filteredGoals.filter(g => g.progress === 100).length}
                     </p>
                 </motion.div>
                 <motion.div
@@ -165,19 +171,57 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                 >
                     <p className="text-white/60 text-sm mb-1">進行中</p>
                     <p className="text-2xl md:text-3xl font-bold text-blue-400">
-                        {goals.filter(g => g.progress < 100).length}
+                        {filteredGoals.filter(g => g.progress < 100).length}
                     </p>
                 </motion.div>
             </div>
 
+            {/* Timeframe Tabs */}
+            <div className="mb-8">
+                <div className="flex gap-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-1">
+                    <button
+                        onClick={() => setActiveTab('short')}
+                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'short'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg shadow-emerald-500/20'
+                            : 'text-white/60 hover:text-emerald-300 hover:bg-emerald-500/10'
+                            }`}
+                    >
+                        短期目標
+                        <span className="ml-2 text-xs opacity-75">({goals.filter(g => g.timeframe === 'short').length})</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('mid')}
+                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'mid'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg shadow-emerald-500/20'
+                            : 'text-white/60 hover:text-emerald-300 hover:bg-emerald-500/10'
+                            }`}
+                    >
+                        中期目標
+                        <span className="ml-2 text-xs opacity-75">({goals.filter(g => g.timeframe === 'mid').length})</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('long')}
+                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'long'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg shadow-emerald-500/20'
+                            : 'text-white/60 hover:text-emerald-300 hover:bg-emerald-500/10'
+                            }`}
+                    >
+                        長期目標
+                        <span className="ml-2 text-xs opacity-75">({goals.filter(g => g.timeframe === 'long').length})</span>
+                    </button>
+                </div>
+            </div>
+
             {/* Goals List */}
             <div className="space-y-4">
-                {goals.length === 0 ? (
+                {filteredGoals.length === 0 ? (
                     <div className="text-center py-12 text-white/60">
-                        目標がまだありません。新しい目標を追加しましょう!
+                        {activeTab === 'short' && '短期目標がまだありません。新しい目標を追加しましょう!'}
+                        {activeTab === 'mid' && '中期目標がまだありません。新しい目標を追加しましょう!'}
+                        {activeTab === 'long' && '長期目標がまだありません。新しい目標を追加しましょう!'}
                     </div>
                 ) : (
-                    goals.map((goal, index) => (
+                    filteredGoals.map((goal, index) => (
                         <motion.div
                             key={goal.id}
                             initial={{ opacity: 0, y: 20 }}

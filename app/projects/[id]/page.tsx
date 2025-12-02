@@ -18,6 +18,9 @@ type Milestone = {
 type Task = {
     id: string
     text: string
+    description?: string
+    status: string
+    priority: string
     completed: boolean
     color?: string
     createdAt: string
@@ -44,7 +47,15 @@ export default function ProjectDetailsPage() {
     const [showMilestoneModal, setShowMilestoneModal] = useState(false)
     const [showTaskModal, setShowTaskModal] = useState(false)
     const [newMilestone, setNewMilestone] = useState({ title: "", date: "" })
-    const [newTask, setNewTask] = useState({ text: "", startDate: "", endDate: "", color: "#6366f1" })
+    const [newTask, setNewTask] = useState({
+        text: "",
+        description: "",
+        status: "todo",
+        priority: "medium",
+        startDate: "",
+        endDate: "",
+        color: "#6366f1"
+    })
     const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list')
     const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone', id: string, title: string } | null>(null)
@@ -97,12 +108,14 @@ export default function ProjectDetailsPage() {
 
     const createTask = async (e: React.FormEvent) => {
         e.preventDefault()
+        console.log("createTask called", { editingItem, newTask })
         try {
             const url = editingItem
                 ? `/api/projects/${params.id}/tasks/${editingItem.id}`
                 : `/api/projects/${params.id}/tasks`
 
             const method = editingItem ? "PATCH" : "POST"
+            console.log("Fetching", url, method)
 
             const res = await fetch(url, {
                 method,
@@ -110,16 +123,31 @@ export default function ProjectDetailsPage() {
                 body: JSON.stringify(newTask)
             })
 
+            console.log("Response status:", res.status)
+
             if (res.ok) {
                 await fetchProject()
                 setShowTaskModal(false)
-                setNewTask({ text: "", startDate: "", endDate: "", color: "#6366f1" })
+                setNewTask({
+                    text: "",
+                    description: "",
+                    status: "todo",
+                    priority: "medium",
+                    startDate: "",
+                    endDate: "",
+                    color: "#6366f1"
+                })
                 setEditingItem(null)
+            } else {
+                const errorData = await res.json()
+                console.error("Task save failed", errorData)
             }
         } catch (error) {
             console.error("Failed to save task", error)
         }
     }
+
+
 
     const handleDeleteTask = async (taskId: string) => {
         try {
@@ -152,6 +180,9 @@ export default function ProjectDetailsPage() {
     const openEditTaskModal = (task: Task) => {
         setNewTask({
             text: task.text,
+            description: task.description || "",
+            status: task.status || "todo",
+            priority: task.priority || "medium",
             startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : "",
             endDate: task.endDate ? new Date(task.endDate).toISOString().split('T')[0] : "",
             color: task.color || "#6366f1"
@@ -243,7 +274,15 @@ export default function ProjectDetailsPage() {
                             </button>
                             <button
                                 onClick={() => {
-                                    setNewTask({ text: "", startDate: "", endDate: "", color: "#6366f1" })
+                                    setNewTask({
+                                        text: "",
+                                        description: "",
+                                        status: "todo",
+                                        priority: "medium",
+                                        startDate: "",
+                                        endDate: "",
+                                        color: "#6366f1"
+                                    })
                                     setEditingItem(null)
                                     setShowTaskModal(true)
                                 }}
@@ -286,7 +325,10 @@ export default function ProjectDetailsPage() {
                                 <div className="space-y-2">
                                     <h3 className="text-sm font-medium text-white/60 mb-2 pl-1">タスク</h3>
                                     {project.tasks.map((task) => (
-                                        <div key={task.id} className="bg-white/5 border border-white/10 rounded-xl p-4 group">
+                                        <div key={task.id}
+                                            className="bg-white/5 border rounded-xl p-4 group transition-all hover:bg-white/10"
+                                            style={{ borderColor: task.color || 'rgba(255,255,255,0.1)' }}
+                                        >
                                             <div className="flex items-start justify-between mb-2">
                                                 <h4 className="font-medium text-white">{task.text}</h4>
                                                 <div className="flex items-center gap-2">
@@ -618,6 +660,40 @@ export default function ProjectDetailsPage() {
                                     onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-white/60 mb-2">詳細説明</label>
+                                <textarea
+                                    value={newTask.description}
+                                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors min-h-[100px]"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-white/60 mb-2">ステータス</label>
+                                    <select
+                                        value={newTask.status}
+                                        onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
+                                    >
+                                        <option value="todo">未着手</option>
+                                        <option value="in_progress">進行中</option>
+                                        <option value="done">完了</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-white/60 mb-2">優先度</label>
+                                    <select
+                                        value={newTask.priority}
+                                        onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
+                                    >
+                                        <option value="high">高</option>
+                                        <option value="medium">中</option>
+                                        <option value="low">低</option>
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-white/60 mb-2">カラー</label>

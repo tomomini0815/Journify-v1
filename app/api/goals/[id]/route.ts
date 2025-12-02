@@ -16,7 +16,7 @@ export async function PATCH(
     try {
         const { id } = await params
         const body = await request.json()
-        const { title, description, targetDate, progress, completed } = body
+        const { title, description, targetDate, progress, completed, timeframe } = body
 
         // Verify ownership
         const existingGoal = await prisma.goal.findUnique({
@@ -37,6 +37,7 @@ export async function PATCH(
                 description,
                 targetDate: targetDate ? new Date(targetDate) : undefined,
                 progress,
+                timeframe,
                 // If completed is true, set progress to 100, else use provided progress
                 // This logic might need adjustment based on requirements, but for now let's trust the input
             },

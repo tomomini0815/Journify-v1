@@ -93,6 +93,7 @@ model Goal {
   description String?
   progress    Int      @default(0)
   priority    String   @default("medium")
+  timeframe   String   @default("short") // "short", "mid", "long"
   targetDate  DateTime?
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -100,6 +101,7 @@ model Goal {
   updatedAt   DateTime @updatedAt
 
   @@index([userId, progress])
+  @@index([userId, timeframe])
 }
 
 model LifeBalanceEntry {
@@ -137,6 +139,9 @@ model VisionBoardItem {
 model Task {
   id            String    @id @default(uuid())
   text          String
+  description   String?
+  status        String    @default("todo") // todo, in_progress, done
+  priority      String    @default("medium") // high, medium, low
   completed     Boolean   @default(false)
   color         String?   @default("#6366f1") // Task color (hex code)
   scheduledDate DateTime?

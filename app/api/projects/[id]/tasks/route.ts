@@ -1,20 +1,30 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 
-const USER_ID = "42c1eda0-18f2-4213-86b0-55b47ee003f3"
+import { createClient } from "@/lib/supabase/server"
 
 export async function POST(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            )
+        }
+
         const { id: projectId } = await params
         const body = await req.json()
-        const { text, startDate, endDate } = body
+        const { text, startDate, endDate, description, priority, status, color } = body
 
         // Verify project belongs to user
         const project = await prisma.project.findFirst({
-            where: { id: projectId, userId: USER_ID }
+            where: { id: projectId, userId: user.id }
         })
 
         if (!project) {
@@ -29,7 +39,11 @@ export async function POST(
                 text,
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
-                userId: USER_ID,
+                description,
+                priority,
+                status,
+                color,
+                userId: user.id,
                 projectId
             }
         })

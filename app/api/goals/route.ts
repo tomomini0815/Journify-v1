@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json()
-        const { title, description, targetDate, progress, priority } = body
+        const { title, description, targetDate, progress, priority, timeframe } = body
 
         const goal = await prisma.goal.create({
             data: {
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
                 targetDate: targetDate ? new Date(targetDate) : null,
                 progress: progress || 0,
                 priority: priority || "medium",
+                timeframe: timeframe || "short",
                 userId: user.id,
             },
         })

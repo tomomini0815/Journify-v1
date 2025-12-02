@@ -6,11 +6,13 @@ export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string; taskId: string }> }
 ) {
+    console.log("PATCH /api/projects/[id]/tasks/[taskId] called")
     try {
         const supabase = await createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-        if (!user) {
+        if (authError || !user) {
+            console.error("Auth error:", authError)
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
@@ -18,8 +20,12 @@ export async function PATCH(
         }
 
         const { id: projectId, taskId } = await params
+        console.log("Params:", { projectId, taskId, userId: user.id })
+
         const body = await req.json()
-        const { text, startDate, endDate, completed } = body
+        console.log("Body:", body)
+
+        const { text, startDate, endDate, completed, description, priority, status, color } = body
 
         // Verify task belongs to user and project
         const task = await prisma.task.findFirst({
@@ -27,21 +33,28 @@ export async function PATCH(
         })
 
         if (!task) {
+            console.error("Task not found or access denied")
             return NextResponse.json(
                 { error: "Task not found" },
                 { status: 404 }
             )
         }
 
+        console.log("Updating task:", taskId)
         const updatedTask = await prisma.task.update({
             where: { id: taskId },
             data: {
                 text,
                 startDate: startDate ? new Date(startDate) : undefined,
                 endDate: endDate ? new Date(endDate) : undefined,
-                completed
+                completed,
+                description,
+                priority,
+                status,
+                color
             }
         })
+        console.log("Task updated successfully")
 
         return NextResponse.json(updatedTask)
     } catch (error: any) {

@@ -7,7 +7,10 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "db:push": "prisma db push && prisma generate",
+    "db:migrate": "prisma migrate dev && prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
