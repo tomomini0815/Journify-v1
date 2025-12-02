@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { AddGoalModal } from "@/components/AddGoalModal"
 
 interface Goal {
-    id: number
+    id: string
     title: string
-    description: string
+    description: string | null
     targetDate: Date | null
     priority: string
     progress: number
@@ -41,7 +41,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                 setGoals([{
                     id: goal.id,
                     title: goal.title,
-                    description: goal.description || "",
+                    description: goal.description,
                     targetDate: goal.targetDate ? new Date(goal.targetDate) : null,
                     priority: goal.priority || "medium",
                     progress: goal.progress,
@@ -52,7 +52,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
         }
     }
 
-    const updateProgress = async (id: number, newProgress: number) => {
+    const updateProgress = async (id: string, newProgress: number) => {
         const goal = goals.find(g => g.id === id)
         if (!goal) return
 
@@ -72,7 +72,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
         }
     }
 
-    const toggleComplete = async (id: number) => {
+    const toggleComplete = async (id: string) => {
         const goal = goals.find(g => g.id === id)
         if (!goal) return
 
@@ -80,7 +80,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
         updateProgress(id, newProgress)
     }
 
-    const deleteGoal = async (id: number) => {
+    const deleteGoal = async (id: string) => {
         if (!confirm("本当にこの目標を削除しますか?")) return
 
         try {
