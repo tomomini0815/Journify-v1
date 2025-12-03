@@ -10,7 +10,8 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push && prisma generate",
-    "db:migrate": "prisma migrate dev && prisma generate"
+    "db:migrate": "prisma migrate dev && prisma generate",
+    "clear-test-data": "tsx scripts/clear-test-data.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -41,6 +42,7 @@
     "eslint-config-next": "16.0.4",
     "prisma": "^5.22.0",
     "tailwindcss": "^4",
+    "tsx": "^4.7.0",
     "typescript": "^5"
   }
 }
