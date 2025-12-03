@@ -182,6 +182,7 @@ export function LifeBalanceChart({ data: initialData }: { data?: { category: str
         { id: '1day', label: '1日' },
         { id: '1week', label: '1週間' },
         { id: '1month', label: '1ヶ月' },
+        { id: '3months', label: '3ヶ月' },
         { id: '6months', label: '半年' },
         { id: '1year', label: '1年' },
     ]
@@ -196,13 +197,13 @@ export function LifeBalanceChart({ data: initialData }: { data?: { category: str
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-xl font-bold mb-1 text-white">
-                        幸福度バランス
+                        ライフバランス
                     </h3>
                     <p className="text-white/60 text-sm">9つの項目で人生の充実度を可視化</p>
                 </div>
 
                 {/* 期間セレクター */}
-                <div className="flex bg-black/40 p-1 rounded-xl overflow-x-auto">
+                <div className="flex flex-wrap bg-black/40 p-1 rounded-xl gap-1">
                     {periods.map((p) => (
                         <button
                             key={p.id}
