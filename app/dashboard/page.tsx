@@ -1,11 +1,8 @@
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { DashboardStats } from "@/components/DashboardStats"
 import dynamic from 'next/dynamic'
-import { ChartsSkeleton } from "./loading"
 
-const DashboardCharts = dynamic(() => import("@/components/DashboardCharts").then(mod => mod.DashboardCharts), {
-    loading: () => <ChartsSkeleton />
-})
+const DashboardCharts = dynamic(() => import("@/components/DashboardCharts").then(mod => mod.DashboardCharts))
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
@@ -123,7 +120,7 @@ const getCachedLifeBalanceData = unstable_cache(
 )
 
 import { Suspense } from "react"
-import { StatsSkeleton, RecentJournalsSkeleton, GoalProgressSkeleton } from "./loading"
+import { StatsSkeleton, ChartsSkeleton, RecentJournalsSkeleton, GoalProgressSkeleton } from "./loading"
 
 // ... (keep cached data fetching functions)
 
