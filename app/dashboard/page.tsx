@@ -229,6 +229,16 @@ async function ChartsSection({ userId }: { userId: string }) {
             score: Math.round((data.total / data.count / 5) * 100)
         })).sort((a, b) => a.date.localeCompare(b.date))
 
+        // Show empty state if no data
+        if (happinessData.length === 0 && lifeBalanceData.every(d => d.value === 0)) {
+            return (
+                <div className="p-8 text-center bg-white/5 rounded-3xl border border-white/10">
+                    <p className="text-white/60 mb-2">まだデータがありません</p>
+                    <p className="text-sm text-white/40">ジャーナルを記録すると、ここにチャートが表示されます</p>
+                </div>
+            )
+        }
+
         return <DashboardCharts happinessData={happinessData} lifeBalance={lifeBalanceData} />
     } catch (error) {
         console.error("ChartsSection Error:", error)
