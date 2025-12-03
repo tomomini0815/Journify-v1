@@ -29,30 +29,7 @@ function getMoodEmoji(mood: number | null | undefined): string {
     }
 }
 
-function getGreeting() {
-    const hour = new Date().getHours()
-    if (hour >= 5 && hour < 12) {
-        return {
-            title: "おはようございます! ☀️",
-            message: "今日も素晴らしい1日の始まりですね。朝の積み重ねが、未来を変えます。"
-        }
-    } else if (hour >= 12 && hour < 18) {
-        return {
-            title: "こんにちは! 🌿",
-            message: "調子はいかがですか?一息ついて、後半戦も楽しみましょう。"
-        }
-    } else if (hour >= 18 && hour < 23) {
-        return {
-            title: "こんばんは! 🌙",
-            message: "今日もお疲れ様でした。1日の振り返りをして、心を整えましょう。"
-        }
-    } else {
-        return {
-            title: "夜遅くまでお疲れ様です ✨",
-            message: "星が綺麗ですね。無理せず、ゆっくり休んでくださいね。"
-        }
-    }
-}
+import { DashboardGreeting } from "@/components/DashboardGreeting"
 
 // Cached data fetching functions
 const getCachedJournalData = unstable_cache(
@@ -186,7 +163,7 @@ async function StatsSection({ userId }: { userId: string }) {
 
     // Calculate average happiness (need journal entries for this, fetching again but cached)
     const [, , journalEntries] = await getCachedJournalData(userId)
-    const totalMood = journalEntries.reduce((sum: number, entry: any) => sum + (entry.mood || 0), 0)
+    const totalMood = journalEntries.reduce((sum: number, entry) => sum + (entry.mood || 0), 0)
     const averageHappiness = journalEntries.length > 0
         ? Math.round((totalMood / journalEntries.length / 5) * 100)
         : 0
@@ -217,7 +194,7 @@ async function ChartsSection({ userId }: { userId: string }) {
 
     categories.forEach(c => latestLifeBalance[c] = 0)
 
-    lifeBalanceEntries.forEach((entry: any) => {
+    lifeBalanceEntries.forEach((entry) => {
         if (latestLifeBalance[entry.category] === 0) {
             latestLifeBalance[entry.category] = entry.score
         }
@@ -230,7 +207,7 @@ async function ChartsSection({ userId }: { userId: string }) {
 
     // Calculate happiness data
     const dailyMap = new Map<string, { total: number, count: number }>()
-    journalEntries.forEach((entry: any) => {
+    journalEntries.forEach((entry) => {
         if (!entry.mood) return
         const dateKey = new Date(entry.createdAt).toISOString().split('T')[0]
         if (!dailyMap.has(dateKey)) {
@@ -331,15 +308,10 @@ export default async function DashboardPage() {
         return null // Middleware will redirect
     }
 
-    const greeting = getGreeting()
-
     return (
         <DashboardLayout>
             {/* Welcome Section */}
-            <div className="mb-8">
-                <h1 className="text-2xl md:text-4xl font-bold mb-2">{greeting.title}</h1>
-                <p className="text-white/60">{greeting.message}</p>
-            </div>
+            <DashboardGreeting />
 
             {/* Stats Cards */}
             <Suspense fallback={<StatsSkeleton />}>

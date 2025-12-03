@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
-import { calculateLifeBalanceScores } from "@/lib/lifeBalanceScoring"
+import { calculateLifeBalanceScores, JournalActivities } from "@/lib/lifeBalanceScoring"
 
 export async function POST(request: Request) {
     try {
@@ -58,10 +58,15 @@ export async function POST(request: Request) {
         })
 
         // スコア計算
+        // スコア計算
         const scores = calculateLifeBalanceScores(
-            journals as any,
-            tasks as any,
-            goals as any
+            journals.map(j => ({
+                ...j,
+                tags: j.tags as string[],
+                activities: j.activities as unknown as JournalActivities
+            })),
+            tasks,
+            goals
         )
 
         // カテゴリー名マッピング

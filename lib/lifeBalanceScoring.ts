@@ -1,6 +1,20 @@
 // Life Balance Scoring Algorithm
 // 完全無料・高精度の幸福度分析システム
 
+export interface JournalActivities {
+    exercise?: boolean
+    socializing?: boolean
+    workDone?: boolean
+    learning?: boolean
+    hobby?: boolean
+    healthyMeal?: boolean
+    meditation?: boolean
+    outdoor?: boolean
+    helping?: boolean
+    grateful?: boolean
+    [key: string]: boolean | undefined
+}
+
 interface JournalData {
     content: string
     tags: string[]
@@ -8,7 +22,7 @@ interface JournalData {
     energy?: number | null
     stress?: number | null
     sleep?: number | null
-    activities?: any
+    activities?: JournalActivities | null
     createdAt: Date
 }
 
@@ -131,7 +145,7 @@ function analyzeJournals(journals: JournalData[], days: number = 30) {
 
         // 活動データ集計
         if (journal.activities) {
-            const acts = journal.activities as any
+            const acts = journal.activities
             if (acts.exercise) analysis.activities.exercise++
             if (acts.socializing) analysis.activities.socializing++
             if (acts.workDone) analysis.activities.workDone++

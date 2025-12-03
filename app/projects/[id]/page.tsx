@@ -109,6 +109,7 @@ export default function ProjectDetailsPage() {
     const createTask = async (e: React.FormEvent) => {
         e.preventDefault()
         console.log("createTask called", { editingItem, newTask })
+        const updatedTaskId = editingItem?.id
         try {
             const url = editingItem
                 ? `/api/projects/${params.id}/tasks/${editingItem.id}`
@@ -126,6 +127,7 @@ export default function ProjectDetailsPage() {
             console.log("Response status:", res.status)
 
             if (res.ok) {
+                const savedTask = await res.json()
                 await fetchProject()
                 setShowTaskModal(false)
                 setNewTask({
@@ -138,6 +140,22 @@ export default function ProjectDetailsPage() {
                     color: "#6366f1"
                 })
                 setEditingItem(null)
+
+                // Scroll to updated/created task after a short delay
+                const targetId = savedTask.id
+                if (targetId) {
+                    setTimeout(() => {
+                        const taskElement = document.getElementById(`task-${targetId}`)
+                        if (taskElement) {
+                            taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                            // Highlight effect
+                            taskElement.classList.add('ring-2', 'ring-emerald-400')
+                            setTimeout(() => {
+                                taskElement.classList.remove('ring-2', 'ring-emerald-400')
+                            }, 2000)
+                        }
+                    }, 300)
+                }
             } else {
                 const errorData = await res.json()
                 console.error("Task save failed", errorData)
@@ -420,7 +438,7 @@ export default function ProjectDetailsPage() {
                                     <div className="flex-1 overflow-y-hidden">
                                         {project.tasks.map((task) => (
                                             <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate">
-                                                <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 ${task.completed ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                                                <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0`} style={{ backgroundColor: task.color || '#6366f1' }} />
                                                 <span className="text-sm truncate">{task.text}</span>
                                             </div>
                                         ))}
@@ -532,15 +550,22 @@ export default function ProjectDetailsPage() {
                                                 const left = ((taskStart.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
                                                 const width = Math.max(((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth, dayWidth)
                                                 const duration = Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24))
+                                                const taskColor = task.color || '#6366f1'
 
                                                 return (
                                                     <div key={task.id} className="h-12 border-b border-white/5 relative group">
                                                         <div
-                                                            className={`absolute top-2.5 h-7 rounded-lg flex items-center px-3 cursor-pointer transition-all shadow-lg ${task.completed
-                                                                ? 'bg-emerald-500/50 border border-emerald-400/60 hover:bg-emerald-500/70'
-                                                                : 'bg-indigo-500/50 border border-indigo-400/60 hover:bg-indigo-500/70'
+                                                            id={`task-${task.id}`}
+                                                            className={`absolute top-2.5 h-7 rounded-lg flex items-center px-3 cursor-pointer transition-all shadow-lg ${task.completed ? 'opacity-60' : ''
                                                                 }`}
-                                                            style={{ left: `${left}px`, width: `${width}px` }}
+                                                            style={{
+                                                                left: `${left}px`,
+                                                                width: `${width}px`,
+                                                                backgroundColor: `${taskColor}80`,
+                                                                borderColor: `${taskColor}cc`,
+                                                                borderWidth: '1px'
+                                                            }}
+                                                            onClick={() => openEditTaskModal(task)}
                                                         >
                                                             <span className="text-xs text-white font-medium truncate">{task.text}</span>
                                                             {/* Tooltip on hover */}
@@ -550,7 +575,7 @@ export default function ProjectDetailsPage() {
                                                                     <div className="text-xs text-white/60">
                                                                         {taskStart.toLocaleDateString('ja-JP')} - {taskEnd.toLocaleDateString('ja-JP')}
                                                                     </div>
-                                                                    <div className="text-xs text-white/40 mt-1">期間: {duration}日</div>
+                                                                    <div className="text-xs text-white/40 mt-1">期限: {duration}日</div>
                                                                 </div>
                                                             </div>
                                                         </div>

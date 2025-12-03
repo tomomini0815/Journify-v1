@@ -80,7 +80,7 @@ export async function GET() {
 
         categories.forEach(c => latestLifeBalance[c] = 0)
 
-        lifeBalanceEntries.forEach((entry: any) => {
+        lifeBalanceEntries.forEach((entry) => {
             if (latestLifeBalance[entry.category] === 0) {
                 latestLifeBalance[entry.category] = entry.score
             }
@@ -118,7 +118,7 @@ export async function GET() {
 
         // Calculate daily average mood and convert to 0-100 score
         const dailyMap = new Map<string, { total: number, count: number }>()
-        journalEntries.forEach((entry: any) => {
+        journalEntries.forEach((entry) => {
             if (!entry.mood) return
             const dateKey = entry.createdAt.toISOString().split('T')[0]
             if (!dailyMap.has(dateKey)) {
@@ -135,7 +135,7 @@ export async function GET() {
         })).sort((a, b) => a.date.localeCompare(b.date))
 
         // Calculate overall average for the period
-        const totalMood = journalEntries.reduce((sum: number, entry: any) => sum + (entry.mood || 0), 0)
+        const totalMood = journalEntries.reduce((sum, entry) => sum + (entry.mood || 0), 0)
         const averageHappiness = journalEntries.length > 0
             ? Math.round((totalMood / journalEntries.length / 5) * 100)
             : 0
@@ -176,7 +176,7 @@ export async function GET() {
         }
 
         // Format recent journals
-        const formattedJournals = recentJournals.map((j: any) => ({
+        const formattedJournals = recentJournals.map((j) => ({
             ...j,
             date: j.createdAt.toISOString().split('T')[0]
         }))

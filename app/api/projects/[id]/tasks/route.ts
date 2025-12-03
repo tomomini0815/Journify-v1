@@ -49,10 +49,10 @@ export async function POST(
         })
 
         return NextResponse.json(task)
-    } catch (error: any) {
+    } catch (error) {
         console.error("Failed to create task:", error)
         return NextResponse.json(
-            { error: "Failed to create task", details: error.message },
+            { error: "Failed to create task", details: error instanceof Error ? error.message : "Unknown error" },
             { status: 500 }
         )
     }

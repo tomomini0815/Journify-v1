@@ -57,10 +57,10 @@ export async function PATCH(
         console.log("Task updated successfully")
 
         return NextResponse.json(updatedTask)
-    } catch (error: any) {
+    } catch (error) {
         console.error("Failed to update task:", error)
         return NextResponse.json(
-            { error: "Failed to update task", details: error.message },
+            { error: "Failed to update task", details: error instanceof Error ? error.message : "Unknown error" },
             { status: 500 }
         )
     }
@@ -100,10 +100,10 @@ export async function DELETE(
         })
 
         return NextResponse.json({ success: true })
-    } catch (error: any) {
+    } catch (error) {
         console.error("Failed to delete task:", error)
         return NextResponse.json(
-            { error: "Failed to delete task", details: error.message },
+            { error: "Failed to delete task", details: error instanceof Error ? error.message : "Unknown error" },
             { status: 500 }
         )
     }

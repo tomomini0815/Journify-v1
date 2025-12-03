@@ -28,6 +28,18 @@ interface Letter {
     createdAt: string
 }
 
+interface VisionBoardItemResponse {
+    id: string
+    type: "image" | "dream" | "affirmation" | "letter"
+    content: string
+    metadata?: {
+        completed?: boolean
+        category?: string
+        period?: "1year" | "5years" | "10years"
+    }
+    createdAt: string
+}
+
 export default function VisionBoardPage() {
     const [activeTab, setActiveTab] = useState<Tab>("collage")
     const [isLoading, setIsLoading] = useState(true)
@@ -77,24 +89,24 @@ export default function VisionBoardPage() {
                 const affirmationList: Affirmation[] = []
                 const letterList: Letter[] = []
 
-                data.forEach((item: any) => {
+                data.forEach((item: VisionBoardItemResponse) => {
                     if (item.type === "image") {
                         collageImages.push({ id: item.id, content: item.content })
                     } else if (item.type === "dream") {
                         dreamList.push({
-                            id: item.id,
+                            id: Number(item.id) || Date.now(), // Handle potential string/number mismatch if needed, though interface says string. Dream interface uses number id.
                             text: item.content,
                             completed: item.metadata?.completed || false,
                             category: item.metadata?.category || "その他"
                         })
                     } else if (item.type === "affirmation") {
                         affirmationList.push({
-                            id: item.id,
+                            id: Number(item.id) || Date.now(),
                             text: item.content
                         })
                     } else if (item.type === "letter") {
                         letterList.push({
-                            id: item.id,
+                            id: Number(item.id) || Date.now(),
                             content: item.content,
                             period: item.metadata?.period || "1year",
                             createdAt: item.createdAt

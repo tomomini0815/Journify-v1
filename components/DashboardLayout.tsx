@@ -24,7 +24,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const pathname = usePathname()
     const router = useRouter()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const [navigation, setNavigation] = useState(defaultNavigation)
+    const [navigation, setNavigation] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const cached = localStorage.getItem('enableProjects')
+            if (cached === 'true') {
+                const newNav = [...defaultNavigation]
+                newNav.splice(newNav.length - 1, 0, {
+                    name: "プロジェクト",
+                    href: "/projects",
+                    icon: Briefcase
+                })
+                return newNav
+            }
+        }
+        return defaultNavigation
+    })
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -32,6 +46,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 const res = await fetch("/api/user/settings", { cache: 'no-store' })
                 if (res.ok) {
                     const settings = await res.json()
+                    // Update localStorage
+                    localStorage.setItem('enableProjects', String(settings.enableProjects))
+
                     if (settings.enableProjects) {
                         const newNav = [...defaultNavigation]
                         // Insert Projects before Profile (last item)
@@ -41,6 +58,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             icon: Briefcase
                         })
                         setNavigation(newNav)
+                    } else {
+                        setNavigation(defaultNavigation)
                     }
                 }
             } catch (error) {

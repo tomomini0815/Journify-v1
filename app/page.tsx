@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { motion, useScroll, useTransform, useSpring, AnimatePresence, useMotionValue } from "framer-motion"
+import { motion, useScroll, useTransform, useSpring, AnimatePresence, useMotionValue, MotionValue } from "framer-motion"
 import { ArrowUpRight, Menu, CheckCircle2, Calendar, BarChart3 } from "lucide-react"
 import CustomCursor from "@/components/CustomCursor"
 import MagneticButton from "@/components/MagneticButton"
@@ -82,7 +82,7 @@ export default function LandingPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const useParallax = (value: any, distance: number) => {
+  const useParallax = (value: MotionValue<number>, distance: number) => {
     return useTransform(value, [0, 1], [-distance, distance])
   }
 
