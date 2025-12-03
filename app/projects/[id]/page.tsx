@@ -167,6 +167,37 @@ export default function ProjectDetailsPage() {
 
 
 
+    const toggleTaskCompletion = async (task: Task) => {
+        if (!project) return
+
+        // Optimistic update
+        const newCompletedStatus = !task.completed
+        const updatedTasks = project.tasks.map(t =>
+            t.id === task.id ? { ...t, completed: newCompletedStatus } : t
+        )
+        setProject({ ...project, tasks: updatedTasks })
+
+        try {
+            const res = await fetch(`/api/projects/${params.id}/tasks/${task.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ completed: newCompletedStatus })
+            })
+
+            if (!res.ok) {
+                // Revert on failure
+                throw new Error("Failed to update task")
+            }
+        } catch (error) {
+            console.error("Failed to toggle task", error)
+            // Revert state
+            const revertedTasks = project.tasks.map(t =>
+                t.id === task.id ? { ...t, completed: !newCompletedStatus } : t
+            )
+            setProject({ ...project, tasks: revertedTasks })
+        }
+    }
+
     const handleDeleteTask = async (taskId: string) => {
         try {
             const res = await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
@@ -350,9 +381,15 @@ export default function ProjectDetailsPage() {
                                             <div className="flex items-start justify-between mb-2">
                                                 <h4 className="font-medium text-white">{task.text}</h4>
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`px-2 py-1 rounded text-xs ${task.completed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white/60'}`}>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            toggleTaskCompletion(task)
+                                                        }}
+                                                        className={`px-2 py-1 rounded text-xs transition-colors ${task.completed ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-white/10 text-white/60 hover:bg-white/20'}`}
+                                                    >
                                                         {task.completed ? '完了' : '未完了'}
-                                                    </span>
+                                                    </button>
                                                     <div className="flex gap-1 transition-opacity">
                                                         <button
                                                             onClick={() => openEditTaskModal(task)}

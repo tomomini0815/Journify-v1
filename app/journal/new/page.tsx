@@ -3,7 +3,17 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/DashboardLayout"
-import { JournalEditor } from "@/components/JournalEditor"
+import dynamic from 'next/dynamic'
+import { Loader2 } from "lucide-react"
+
+const JournalEditor = dynamic(() => import("@/components/JournalEditor").then(mod => mod.JournalEditor), {
+    loading: () => (
+        <div className="h-[300px] w-full bg-white/5 rounded-xl animate-pulse flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-white/20 animate-spin" />
+        </div>
+    ),
+    ssr: false
+})
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { motion } from "framer-motion"
