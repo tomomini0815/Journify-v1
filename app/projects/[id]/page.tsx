@@ -939,6 +939,7 @@ export default function ProjectDetailsPage() {
                         </motion.div>
                     </div>
                 )}
+            </div>
         </DashboardLayout>
     )
 }
