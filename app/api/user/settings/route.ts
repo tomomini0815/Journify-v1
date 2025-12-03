@@ -1,38 +1,41 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
-
-// Mock user ID for now
-const USER_ID = "42c1eda0-18f2-4213-86b0-55b47ee003f3"
+import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
     try {
+        const supabase = await createClient()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            )
+        }
+
         let settings = await prisma.userSettings.findUnique({
-            where: { userId: USER_ID }
+            where: { userId: user.id }
         })
 
         if (!settings) {
             settings = await prisma.userSettings.create({
                 data: {
-                    userId: USER_ID,
+                    userId: user.id,
                     enableProjects: false
                 }
             })
         }
 
         return NextResponse.json(settings)
-    } catch (error: any) {
+    } catch (error) {
         console.error("Failed to fetch user settings:", error)
-        console.error("Error details:", {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-        })
         return NextResponse.json(
             {
                 error: "Failed to fetch user settings",
-                details: error.message
+                details: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         )
@@ -41,14 +44,24 @@ export async function GET() {
 
 export async function PATCH(req: Request) {
     try {
+        const supabase = await createClient()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            )
+        }
+
         const body = await req.json()
         const { enableProjects } = body
 
         const settings = await prisma.userSettings.upsert({
-            where: { userId: USER_ID },
+            where: { userId: user.id },
             update: { enableProjects },
             create: {
-                userId: USER_ID,
+                userId: user.id,
                 enableProjects
             }
         })
