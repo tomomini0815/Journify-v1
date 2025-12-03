@@ -179,51 +179,63 @@ async function StatsSection({ userId }: { userId: string }) {
 }
 
 async function ChartsSection({ userId }: { userId: string }) {
-    const [[, , journalEntries], , lifeBalanceEntries] = await Promise.all([
-        getCachedJournalData(userId),
-        getCachedGoalData(userId),
-        getCachedLifeBalanceData(userId)
-    ])
+    try {
+        const [[, , journalEntries], , lifeBalanceEntries] = await Promise.all([
+            getCachedJournalData(userId),
+            getCachedGoalData(userId),
+            getCachedLifeBalanceData(userId)
+        ])
 
-    // Process life balance data
-    const latestLifeBalance: Record<string, number> = {}
-    const categories = [
-        "身体的健康", "精神的健康", "人間関係", "社会貢献",
-        "仕事・キャリア", "経済的安定", "学習・成長", "自己実現", "趣味・余暇"
-    ]
+        // Process life balance data
+        const latestLifeBalance: Record<string, number> = {}
+        const categories = [
+            "身体的健康", "精神的健康", "人間関係", "社会貢献",
+            "仕事・キャリア", "経済的安定", "学習・成長", "自己実現", "趣味・余暇"
+        ]
 
-    categories.forEach(c => latestLifeBalance[c] = 0)
+        categories.forEach(c => latestLifeBalance[c] = 0)
 
-    lifeBalanceEntries.forEach((entry) => {
-        if (latestLifeBalance[entry.category] === 0) {
-            latestLifeBalance[entry.category] = entry.score
-        }
-    })
+        lifeBalanceEntries.forEach((entry) => {
+            if (latestLifeBalance[entry.category] === 0) {
+                latestLifeBalance[entry.category] = entry.score
+            }
+        })
 
-    const lifeBalanceData = Object.entries(latestLifeBalance).map(([category, value]) => ({
-        category,
-        value
-    }))
+        const lifeBalanceData = Object.entries(latestLifeBalance).map(([category, value]) => ({
+            category,
+            value
+        }))
 
-    // Calculate happiness data
-    const dailyMap = new Map<string, { total: number, count: number }>()
-    journalEntries.forEach((entry) => {
-        if (!entry.mood) return
-        const dateKey = new Date(entry.createdAt).toISOString().split('T')[0]
-        if (!dailyMap.has(dateKey)) {
-            dailyMap.set(dateKey, { total: 0, count: 0 })
-        }
-        const current = dailyMap.get(dateKey)!
-        current.total += entry.mood
-        current.count += 1
-    })
+        // Calculate happiness data
+        const dailyMap = new Map<string, { total: number, count: number }>()
+        journalEntries.forEach((entry) => {
+            if (!entry.mood || !entry.createdAt) return
+            const dateObj = new Date(entry.createdAt)
+            if (isNaN(dateObj.getTime())) return
+            const dateKey = dateObj.toISOString().split('T')[0]
 
-    const happinessData = Array.from(dailyMap.entries()).map(([date, data]) => ({
-        date,
-        score: Math.round((data.total / data.count / 5) * 100)
-    })).sort((a, b) => a.date.localeCompare(b.date))
+            if (!dailyMap.has(dateKey)) {
+                dailyMap.set(dateKey, { total: 0, count: 0 })
+            }
+            const current = dailyMap.get(dateKey)!
+            current.total += entry.mood
+            current.count += 1
+        })
 
-    return <DashboardCharts happinessData={happinessData} lifeBalance={lifeBalanceData} />
+        const happinessData = Array.from(dailyMap.entries()).map(([date, data]) => ({
+            date,
+            score: Math.round((data.total / data.count / 5) * 100)
+        })).sort((a, b) => a.date.localeCompare(b.date))
+
+        return <DashboardCharts happinessData={happinessData} lifeBalance={lifeBalanceData} />
+    } catch (error) {
+        console.error("ChartsSection Error:", error)
+        return (
+            <div className="p-4 text-center text-red-400 bg-red-500/10 rounded-xl border border-red-500/20">
+                データの読み込みに失敗しました
+            </div>
+        )
+    }
 }
 
 async function RecentJournalsSection({ userId }: { userId: string }) {
