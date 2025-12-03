@@ -4,8 +4,7 @@ import dynamic from 'next/dynamic'
 import { ChartsSkeleton } from "./loading"
 
 const DashboardCharts = dynamic(() => import("@/components/DashboardCharts").then(mod => mod.DashboardCharts), {
-    loading: () => <ChartsSkeleton />,
-    ssr: false // Charts are client-side only anyway
+    loading: () => <ChartsSkeleton />
 })
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"

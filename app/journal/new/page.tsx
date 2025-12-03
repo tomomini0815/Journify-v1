@@ -11,8 +11,7 @@ const JournalEditor = dynamic(() => import("@/components/JournalEditor").then(mo
         <div className="h-[300px] w-full bg-white/5 rounded-xl animate-pulse flex items-center justify-center">
             <Loader2 className="w-8 h-8 text-white/20 animate-spin" />
         </div>
-    ),
-    ssr: false
+    )
 })
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
