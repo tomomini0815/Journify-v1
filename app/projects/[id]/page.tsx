@@ -17,6 +17,8 @@ const TaskDescriptionEditor = dynamic(
 import { DndContext, DragEndEvent, useDroppable, useSensor, useSensors, PointerSensor } from "@dnd-kit/core"
 import { WorkflowTemplatesPanel } from "@/components/WorkflowTemplates"
 import { WorkflowTemplate } from "@/lib/workflowTemplates"
+import { MilestoneTemplatesPanel } from "@/components/MilestoneTemplatesPanel"
+import { MilestoneTemplate } from "@/lib/milestoneTemplates"
 type Milestone = {
     id: string
     title: string
@@ -330,6 +332,52 @@ export default function ProjectDetailsPage() {
         const dropDate = over.id as string // Date string from droppable id
 
         if (!dropDate) return
+
+        // Handle milestone template drop
+        if (active.data.current.type === 'milestone-template') {
+            const template = active.data.current.template as MilestoneTemplate
+
+            // Optimistic update
+            const newMilestone: Milestone = {
+                id: `temp-${Date.now()}`,
+                title: template.name,
+                date: dropDate,
+                completed: false
+            }
+
+            if (project) {
+                setProject({
+                    ...project,
+                    milestones: [...project.milestones, newMilestone]
+                })
+            }
+
+            // Save to server
+            try {
+                await fetch(`/api/projects/${params.id}/milestones`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: template.name,
+                        date: dropDate
+                    })
+                })
+                await fetchProject()
+            } catch (error) {
+                console.error("Failed to create milestone", error)
+                // Revert on error
+                if (project) {
+                    setProject({
+                        ...project,
+                        milestones: project.milestones.filter(m => m.id !== newMilestone.id)
+                    })
+                }
+            }
+            return
+        }
+
+        // Handle workflow template drop (existing code)
+        if (active.data.current.type !== 'template') return
 
         // Create tasks from template
         let currentDate = new Date(dropDate)
@@ -665,6 +713,7 @@ export default function ProjectDetailsPage() {
                             <div className="flex flex-col flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                                 <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
                                     <WorkflowTemplatesPanel />
+                                    <MilestoneTemplatesPanel />
                                     <div className="flex flex-1 overflow-hidden">
                                         {/* Left Sidebar: Task List */}
                                         <div className={`${sidebarCollapsed ? 'w-12' : 'w-64'} flex-shrink-0 border-r border-white/10 bg-[#1a1a1a] flex flex-col transition-all duration-300`}>
