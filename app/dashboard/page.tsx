@@ -1,12 +1,12 @@
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { DashboardStats } from "@/components/DashboardStats"
 import dynamic from 'next/dynamic'
-
-const DashboardCharts = dynamic(() => import("@/components/DashboardCharts").then(mod => mod.DashboardCharts))
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
 import { unstable_cache } from "next/cache"
+
+import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 
 // Revalidate every 60 seconds
 export const revalidate = 60
@@ -239,7 +239,7 @@ async function ChartsSection({ userId }: { userId: string }) {
             )
         }
 
-        return <DashboardCharts happinessData={happinessData} lifeBalance={lifeBalanceData} />
+        return <DashboardChartsWrapper happinessData={happinessData} lifeBalance={lifeBalanceData} />
     } catch (error) {
         console.error("ChartsSection Error:", error)
         return (

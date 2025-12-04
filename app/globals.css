@@ -48,3 +48,16 @@ body {
 .recharts-layer:focus {
   outline: none !important;
 }
+/* Subtask checkbox positioning - checkboxes on the left */
+.prose ul li {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.prose ul li input[type="checkbox"] {
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+}

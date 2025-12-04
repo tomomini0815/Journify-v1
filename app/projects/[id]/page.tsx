@@ -7,9 +7,14 @@ import { DashboardLayout } from "@/components/DashboardLayout"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { isHoliday } from "@/lib/holidays"
-import { TaskDescriptionEditor } from "@/components/TaskDescriptionEditor"
+import dynamic from "next/dynamic"
 
-import { DndContext, DragEndEvent, useDroppable } from "@dnd-kit/core"
+const TaskDescriptionEditor = dynamic(
+    () => import("@/components/TaskDescriptionEditor").then((mod) => mod.TaskDescriptionEditor),
+    { ssr: false }
+)
+
+import { DndContext, DragEndEvent, useDroppable, useSensor, useSensors, PointerSensor } from "@dnd-kit/core"
 import { WorkflowTemplatesPanel } from "@/components/WorkflowTemplates"
 import { WorkflowTemplate } from "@/lib/workflowTemplates"
 type Milestone = {
@@ -80,6 +85,47 @@ export default function ProjectDetailsPage() {
     const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list')
     const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone', id: string, title: string } | null>(null)
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+    // Configure DnD sensors to prevent blocking scroll
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    )
+
+    // Auto-scroll timeline to today on mount
+    useEffect(() => {
+        if (activeTab === 'timeline' && project) {
+            const scrollContainer = document.getElementById('timeline-scroll-container')
+            if (scrollContainer) {
+                // Calculate today's position
+                const today = new Date()
+                const minDate = new Date(Math.min(
+                    Date.now(),
+                    project.startDate ? new Date(project.startDate).getTime() : Date.now(),
+                    project.endDate ? new Date(project.endDate).getTime() : Date.now(),
+                    ...project.tasks.flatMap(t => [
+                        t.startDate ? new Date(t.startDate).getTime() : null,
+                        t.endDate ? new Date(t.endDate).getTime() : null
+                    ]).filter((d): d is number => d !== null),
+                    ...project.milestones.map(m => new Date(m.date).getTime())
+                ))
+                const adjustedMinDate = new Date(minDate)
+                adjustedMinDate.setDate(adjustedMinDate.getDate() - 3)
+
+                const dayWidth = 50
+                const todayOffset = ((today.getTime() - adjustedMinDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
+
+                // Scroll to center today
+                setTimeout(() => {
+                    scrollContainer.scrollLeft = todayOffset - (scrollContainer.clientWidth / 2)
+                }, 100)
+            }
+        }
+    }, [activeTab, project])
 
     useEffect(() => {
         fetchProject()
@@ -233,6 +279,48 @@ export default function ProjectDetailsPage() {
         }
     }
 
+    const handleSubtaskToggle = async (taskId: string, checkboxIndex: number, checked: boolean) => {
+        if (!project) return
+
+        const task = project.tasks.find(t => t.id === taskId)
+        if (!task || !task.description) return
+
+        // Parse HTML and update checkbox state
+        const parser = new DOMParser()
+        const doc = parser.parseFromString(task.description, 'text/html')
+        const checkboxes = doc.querySelectorAll('input[type="checkbox"]')
+
+        if (checkboxes[checkboxIndex]) {
+            const checkbox = checkboxes[checkboxIndex] as HTMLInputElement
+            if (checked) {
+                checkbox.setAttribute('checked', 'checked')
+            } else {
+                checkbox.removeAttribute('checked')
+            }
+        }
+
+        const updatedDescription = doc.body.innerHTML
+
+        // Optimistic update
+        const updatedTasks = project.tasks.map(t =>
+            t.id === taskId ? { ...t, description: updatedDescription } : t
+        )
+        setProject({ ...project, tasks: updatedTasks })
+
+        // Persist to server
+        try {
+            await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ description: updatedDescription })
+            })
+        } catch (error) {
+            console.error("Failed to update subtask", error)
+            // Revert on error
+            setProject(project)
+        }
+    }
+
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event
 
@@ -259,7 +347,7 @@ export default function ProjectDetailsPage() {
 
             const newTask: Task = {
                 id: `temp-${Date.now()}-${Math.random()}`,
-                text: templateTask.title,
+                text: `${template.name}: ${templateTask.title}`,
                 description: templateTask.description || '',
                 status: 'todo',
                 priority: 'medium',
@@ -364,7 +452,7 @@ export default function ProjectDetailsPage() {
         ...project.milestones.map(m => new Date(m.date).getTime())
     ]
 
-    const minDate = new Date(Math.min(...dates))
+    const minDate = new Date(Math.min(Date.now(), ...dates))
     const maxDate = new Date(Math.max(...dates))
 
     // Add padding to dates
@@ -465,7 +553,7 @@ export default function ProjectDetailsPage() {
                         </div>
 
                         {activeTab === 'list' ? (
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 h-full" style={{ overscrollBehavior: 'contain' }}>
                                 {/* Tasks List */}
                                 <div className="space-y-2">
                                     <h3 className="text-sm font-medium text-white/60 mb-2 pl-1">タスク</h3>
@@ -516,6 +604,18 @@ export default function ProjectDetailsPage() {
                                                     </div>
                                                 )}
                                             </div>
+                                            {/* Description preview on hover */}
+                                            {task.description && (
+                                                <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
+                                                    <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none
+                                                        [&_ul]:list-none [&_ul]:pl-0 [&_ul]:space-y-1
+                                                        [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:flex-row-reverse [&_li]:justify-end
+                                                        [&_li]:text-white/60 [&_li]:text-xs
+                                                        [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-default"
+                                                        dangerouslySetInnerHTML={{ __html: task.description }}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                     {project.tasks.length === 0 && (
@@ -562,21 +662,29 @@ export default function ProjectDetailsPage() {
                             </div>
                         ) : (
                             /* Timeline View */
-                            /* Timeline View */
-                            <div className="flex flex-col flex-1 overflow-hidden">
-                                <WorkflowTemplatesPanel />
-                                <DndContext onDragEnd={handleDragEnd}>
+                            <div className="flex flex-col flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
+                                <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
+                                    <WorkflowTemplatesPanel />
                                     <div className="flex flex-1 overflow-hidden">
                                         {/* Left Sidebar: Task List */}
-                                        <div className="w-64 flex-shrink-0 border-r border-white/10 bg-[#1a1a1a] flex flex-col">
-                                            <div className="h-16 border-b border-white/10 flex items-center px-4 font-medium text-white/60 bg-[#252525]">
-                                                タスク名
+                                        <div className={`${sidebarCollapsed ? 'w-12' : 'w-64'} flex-shrink-0 border-r border-white/10 bg-[#1a1a1a] flex flex-col transition-all duration-300`}>
+                                            <div className="h-16 border-b border-white/10 flex items-center px-4 font-medium text-white/60 bg-[#252525] sticky top-0 z-30 justify-between">
+                                                {!sidebarCollapsed && <span>タスク名</span>}
+                                                <button
+                                                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                                                    className="p-1 hover:bg-white/10 rounded transition-colors"
+                                                    title={sidebarCollapsed ? '展開' : '折りたたむ'}
+                                                >
+                                                    <svg className={`w-4 h-4 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                                    </svg>
+                                                </button>
                                             </div>
-                                            <div className="flex-1 overflow-y-hidden">
+                                            <div className="flex-1">
                                                 {project.tasks.map((task) => (
-                                                    <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate">
-                                                        <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0`} style={{ backgroundColor: task.color || '#6366f1' }} />
-                                                        <span className="text-sm truncate">{task.text}</span>
+                                                    <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate" title={sidebarCollapsed ? task.text : ''}>
+                                                        <div className={`w-2 h-2 rounded-full ${sidebarCollapsed ? '' : 'mr-2'} flex-shrink-0`} style={{ backgroundColor: task.color || '#6366f1' }} />
+                                                        {!sidebarCollapsed && <span className="text-sm truncate">{task.text}</span>}
                                                     </div>
                                                 ))}
                                                 {/* Milestones in list */}
@@ -590,7 +698,7 @@ export default function ProjectDetailsPage() {
                                         </div>
 
                                         {/* Right Content: Timeline */}
-                                        <div className="flex-1 overflow-auto bg-[#151515] relative">
+                                        <div id="timeline-scroll-container" className="flex-1 overflow-x-auto bg-[#151515] relative">
                                             <div className="min-w-full" style={{ width: `${totalDays * dayWidth}px` }}>
                                                 {/* Date Header */}
                                                 <div className="h-16 border-b border-white/10 bg-[#252525] sticky top-0 z-20">
@@ -699,13 +807,44 @@ export default function ProjectDetailsPage() {
                                                                 >
                                                                     <span className="text-xs text-white font-medium truncate">{task.text}</span>
                                                                     {/* Tooltip on hover */}
-                                                                    <div className="absolute bottom-full left-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                                                                        <div className="bg-[#1a1a1a] border border-white/20 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                                                                    <div
+                                                                        className={`absolute ${(() => {
+                                                                            const taskIndex = project.tasks.findIndex(t => t.id === task.id)
+                                                                            return taskIndex < 3 ? 'top-full mt-2' : 'bottom-full mb-2'
+                                                                        })()} left-0 opacity-0 group-hover:opacity-100 transition-opacity z-20`}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    >
+                                                                        <div className="bg-[#1a1a1a] border border-white/20 rounded-lg px-3 py-2 shadow-xl min-w-[200px] max-w-[320px]">
                                                                             <div className="text-sm font-medium text-white mb-1">{task.text}</div>
                                                                             <div className="text-xs text-white/60">
                                                                                 {taskStart.toLocaleDateString('ja-JP')} - {taskEnd.toLocaleDateString('ja-JP')}
                                                                             </div>
                                                                             <div className="text-xs text-white/40 mt-1">期限: {duration}日</div>
+                                                                            {task.description && (
+                                                                                <div className="mt-3 pt-3 border-t border-white/10">
+                                                                                    <div className="text-xs text-white/70 mb-2 font-medium">細分化タスク:</div>
+                                                                                    <div
+                                                                                        className="text-xs text-white/60 max-h-48 overflow-y-auto prose prose-invert prose-sm max-w-none
+                                                                                            [&_ul]:list-none [&_ul]:pl-0 [&_ul]:space-y-1.5 [&_ul]:my-0
+                                                                                            [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:my-0 [&_li]:flex-row-reverse [&_li]:justify-end
+                                                                                            [&_li]:text-white/60 [&_li]:text-xs
+                                                                                            [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-pointer
+                                                                                            [&_input[type=checkbox]]:accent-indigo-500"
+                                                                                        dangerouslySetInnerHTML={{ __html: task.description }}
+                                                                                        onClick={(e) => {
+                                                                                            const target = e.target as HTMLElement
+                                                                                            if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                                                                                                const checkbox = target as HTMLInputElement
+                                                                                                const checkboxes = Array.from(
+                                                                                                    e.currentTarget.querySelectorAll('input[type="checkbox"]')
+                                                                                                )
+                                                                                                const index = checkboxes.indexOf(checkbox)
+                                                                                                handleSubtaskToggle(task.id, index, checkbox.checked)
+                                                                                            }
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </div>

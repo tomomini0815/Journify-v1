@@ -75,12 +75,18 @@ function DraggableTemplate({ template }: { template: WorkflowTemplate }) {
                 <GripVertical className="w-4 h-4 text-white/40" />
             </div>
             <p className="text-xs text-white/60 mb-3 line-clamp-2">{template.description}</p>
-            <div className="flex flex-wrap gap-1">
-                {template.tasks.slice(0, 3).map((task, i) => (
-                    <div key={i} className="h-1.5 rounded-full flex-1" style={{ backgroundColor: task.color }} />
+            {/* Subtasks preview */}
+            <div className="mb-3 max-h-32 overflow-y-auto">
+                {template.tasks.slice(0, 4).map((task, i) => (
+                    <div key={i} className="flex items-center gap-2 mb-1.5">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: task.color }} />
+                        <span className="text-xs text-white/60 truncate">{task.title}</span>
+                    </div>
                 ))}
-                {template.tasks.length > 3 && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                {template.tasks.length > 4 && (
+                    <div className="text-xs text-white/40 text-center mt-1">
+                        +{template.tasks.length - 4} more
+                    </div>
                 )}
             </div>
             <div className="mt-2 text-xs text-white/40 text-right">

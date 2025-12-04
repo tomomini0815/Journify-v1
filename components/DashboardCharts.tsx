@@ -8,7 +8,7 @@ interface DashboardChartsProps {
     lifeBalance: { category: string; value: number }[]
 }
 
-export function DashboardCharts({ happinessData, lifeBalance }: DashboardChartsProps) {
+export default function DashboardCharts({ happinessData, lifeBalance }: DashboardChartsProps) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Life Balance Radar Chart */}
