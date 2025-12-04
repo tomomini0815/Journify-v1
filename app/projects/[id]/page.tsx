@@ -464,7 +464,7 @@ export default function ProjectDetailsPage() {
 
     return (
         <DashboardLayout>
-            <div className="max-w-[1600px] mx-auto h-[calc(100vh-100px)] flex flex-col">
+            <div className="h-full flex flex-col px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="flex-shrink-0 mb-6">
                     <Link href="/projects" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-4 transition-colors">
@@ -527,7 +527,7 @@ export default function ProjectDetailsPage() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col flex-1 overflow-hidden bg-[#1a1a1a]">
+                    <div className="h-full flex flex-col overflow-hidden bg-[#1a1a1a]">
                         {/* View Toggle Tabs */}
                         <div className="flex gap-2 p-4 border-b border-white/10 flex-shrink-0">
                             <button
@@ -698,10 +698,10 @@ export default function ProjectDetailsPage() {
                                         </div>
 
                                         {/* Right Content: Timeline */}
-                                        <div id="timeline-scroll-container" className="flex-1 overflow-x-auto bg-[#151515] relative">
-                                            <div className="min-w-full" style={{ width: `${totalDays * dayWidth}px` }}>
+                                        <div id="timeline-scroll-container" className="flex-1 overflow-x-auto bg-[#151515] relative touch-pan-x">
+                                            <div className="min-w-full" style={{ width: `${totalDays * dayWidth}px`, minWidth: '100%' }}>
                                                 {/* Date Header */}
-                                                <div className="h-16 border-b border-white/10 bg-[#252525] sticky top-0 z-20">
+                                                <div className="h-16 border-b border-white/10 bg-[#252525] sticky top-0 z-20 select-none">
                                                     <div className="flex h-full">
                                                         {Array.from({ length: totalDays }).map((_, i) => {
                                                             const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
@@ -715,7 +715,7 @@ export default function ProjectDetailsPage() {
                                                             return (
                                                                 <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={holiday.isHoliday} width={dayWidth}>
                                                                     {isFirstOfMonth && (
-                                                                        <div className="absolute -top-1 left-0 right-0 text-center">
+                                                                        <div className="absolute -top-1 left-0 right-0 text-center pointer-events-none">
                                                                             <span className="text-[10px] font-bold text-white/80 bg-[#252525] px-1 rounded">
                                                                                 {date.getMonth() + 1}月
                                                                             </span>
@@ -880,205 +880,211 @@ export default function ProjectDetailsPage() {
                             </div>
                         )}
                     </div>
-                </div>
+                </div >
 
                 {/* Milestone Modal */}
-                {showMilestoneModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
-                        >
-                            <h2 className="text-xl font-bold mb-6">
-                                {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
-                            </h2>
-                            <form onSubmit={createMilestone} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={newMilestone.title}
-                                        onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={newMilestone.date}
-                                        onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                    />
-                                </div>
-                                <div className="flex justify-end gap-3 mt-6">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowMilestoneModal(false)}
-                                        className="px-4 py-2 text-white/60 hover:text-white transition-colors"
-                                    >
-                                        キャンセル
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
-                                    >
-                                        {editingItem ? '更新' : '作成'}
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
+                {
+                    showMilestoneModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                            >
+                                <h2 className="text-xl font-bold mb-6">
+                                    {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
+                                </h2>
+                                <form onSubmit={createMilestone} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newMilestone.title}
+                                            onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={newMilestone.date}
+                                            onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-3 mt-6">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMilestoneModal(false)}
+                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                        >
+                                            キャンセル
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                        >
+                                            {editingItem ? '更新' : '作成'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    )
+                }
 
                 {/* Task Modal */}
-                {showTaskModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
-                        >
-                            <h2 className="text-xl font-bold mb-6">
-                                {editingItem ? 'タスクを編集' : '新規タスク'}
-                            </h2>
-                            <form onSubmit={createTask} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={newTask.text}
-                                        onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-2">詳細説明</label>
-                                    <TaskDescriptionEditor
-                                        content={newTask.description}
-                                        onChange={(content) => setNewTask({ ...newTask, description: content })}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                {
+                    showTaskModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                            >
+                                <h2 className="text-xl font-bold mb-6">
+                                    {editingItem ? 'タスクを編集' : '新規タスク'}
+                                </h2>
+                                <form onSubmit={createTask} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">ステータス</label>
-                                        <select
-                                            value={newTask.status}
-                                            onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
-                                        >
-                                            <option value="todo">未着手</option>
-                                            <option value="in_progress">進行中</option>
-                                            <option value="done">完了</option>
-                                        </select>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newTask.text}
+                                            onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                        />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">優先度</label>
-                                        <select
-                                            value={newTask.priority}
-                                            onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
-                                        >
-                                            <option value="high">高</option>
-                                            <option value="medium">中</option>
-                                            <option value="low">低</option>
-                                        </select>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">詳細説明</label>
+                                        <TaskDescriptionEditor
+                                            content={newTask.description}
+                                            onChange={(content) => setNewTask({ ...newTask, description: content })}
+                                        />
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-white/60 mb-2">カラー</label>
-                                    <div className="flex gap-2">
-                                        {['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'].map((color) => (
-                                            <button
-                                                key={color}
-                                                type="button"
-                                                onClick={() => setNewTask({ ...newTask, color })}
-                                                className={`w-8 h-8 rounded-lg transition-all ${newTask.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1a1a] scale-110' : 'hover:scale-105'}`}
-                                                style={{ backgroundColor: color }}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">ステータス</label>
+                                            <select
+                                                value={newTask.status}
+                                                onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
+                                            >
+                                                <option value="todo">未着手</option>
+                                                <option value="in_progress">進行中</option>
+                                                <option value="done">完了</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">優先度</label>
+                                            <select
+                                                value={newTask.priority}
+                                                onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
+                                            >
+                                                <option value="high">高</option>
+                                                <option value="medium">中</option>
+                                                <option value="low">低</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">カラー</label>
+                                        <div className="flex gap-2">
+                                            {['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'].map((color) => (
+                                                <button
+                                                    key={color}
+                                                    type="button"
+                                                    onClick={() => setNewTask({ ...newTask, color })}
+                                                    className={`w-8 h-8 rounded-lg transition-all ${newTask.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1a1a] scale-110' : 'hover:scale-105'}`}
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
+                                            <input
+                                                type="date"
+                                                value={newTask.startDate}
+                                                onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
                                             />
-                                        ))}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">終了日</label>
+                                            <input
+                                                type="date"
+                                                value={newTask.endDate}
+                                                onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
-                                        <input
-                                            type="date"
-                                            value={newTask.startDate}
-                                            onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                        />
+                                    <div className="flex justify-end gap-3 mt-6">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowTaskModal(false)}
+                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                        >
+                                            キャンセル
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                        >
+                                            {editingItem ? '更新' : '作成'}
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">終了日</label>
-                                        <input
-                                            type="date"
-                                            value={newTask.endDate}
-                                            onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-3 mt-6">
+                                </form>
+                            </motion.div>
+                        </div>
+                    )
+                }
+
+                {/* Delete Confirmation Modal */}
+                {
+                    deleteConfirm && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                            >
+                                <h2 className="text-xl font-bold mb-4">削除の確認</h2>
+                                <p className="text-white/60 mb-6">
+                                    {deleteConfirm.type === 'task' ? 'タスク' : 'マイルストーン'}「{deleteConfirm.title}」を削除してもよろしいですか？
+                                </p>
+                                <div className="flex justify-end gap-3">
                                     <button
-                                        type="button"
-                                        onClick={() => setShowTaskModal(false)}
+                                        onClick={() => setDeleteConfirm(null)}
                                         className="px-4 py-2 text-white/60 hover:text-white transition-colors"
                                     >
                                         キャンセル
                                     </button>
                                     <button
-                                        type="submit"
-                                        className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                        onClick={() => {
+                                            if (deleteConfirm.type === 'task') {
+                                                handleDeleteTask(deleteConfirm.id)
+                                            } else {
+                                                handleDeleteMilestone(deleteConfirm.id)
+                                            }
+                                        }}
+                                        className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors"
                                     >
-                                        {editingItem ? '更新' : '作成'}
+                                        削除
                                     </button>
                                 </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-
-                {/* Delete Confirmation Modal */}
-                {deleteConfirm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
-                        >
-                            <h2 className="text-xl font-bold mb-4">削除の確認</h2>
-                            <p className="text-white/60 mb-6">
-                                {deleteConfirm.type === 'task' ? 'タスク' : 'マイルストーン'}「{deleteConfirm.title}」を削除してもよろしいですか？
-                            </p>
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => setDeleteConfirm(null)}
-                                    className="px-4 py-2 text-white/60 hover:text-white transition-colors"
-                                >
-                                    キャンセル
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (deleteConfirm.type === 'task') {
-                                            handleDeleteTask(deleteConfirm.id)
-                                        } else {
-                                            handleDeleteMilestone(deleteConfirm.id)
-                                        }
-                                    }}
-                                    className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors"
-                                >
-                                    削除
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </div>
-        </DashboardLayout>
+                            </motion.div>
+                        </div>
+                    )
+                }
+            </div >
+        </DashboardLayout >
     )
 }
