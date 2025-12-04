@@ -2,13 +2,15 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Trash2, Check, Calendar, CalendarPlus, List, CalendarDays } from "lucide-react"
+import { Plus, Trash2, Check, Calendar, CalendarPlus, List, CalendarDays, GripVertical } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
+import { DndContext, DragEndEvent, useDraggable, useDroppable, closestCenter } from "@dnd-kit/core"
 
 type Task = {
     id: string
     text: string
     completed: boolean
+    status: 'todo' | 'in-progress' | 'done'
     createdAt: Date
     scheduledDate?: Date
 }
@@ -17,6 +19,7 @@ interface SerializedTask {
     id: string
     text: string
     completed: boolean
+    status?: 'todo' | 'in-progress' | 'done'
     createdAt: string
     scheduledDate?: string | null
 }
@@ -28,6 +31,7 @@ interface TasksClientProps {
 export function TasksClient({ initialTasks }: TasksClientProps) {
     const [tasks, setTasks] = useState<Task[]>(initialTasks.map(t => ({
         ...t,
+        status: t.status || (t.completed ? 'done' : 'todo'),
         createdAt: new Date(t.createdAt),
         scheduledDate: t.scheduledDate ? new Date(t.scheduledDate) : undefined
     })))
@@ -35,7 +39,8 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const [scheduledDate, setScheduledDate] = useState("")
     const [activeCalendarMenu, setActiveCalendarMenu] = useState<string | null>(null)
     const [error, setError] = useState("")
-    const [activeTab, setActiveTab] = useState<'list' | 'calendar'>('list')
+    const [activeTab, setActiveTab] = useState<'kanban' | 'calendar'>('kanban')
+    const [mobileKanbanTab, setMobileKanbanTab] = useState<'todo' | 'in-progress' | 'done'>('todo')
 
     const addTask = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -47,7 +52,8 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     text: newTask,
-                    scheduledDate: scheduledDate ? new Date(scheduledDate).toISOString() : null
+                    scheduledDate: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+                    status: 'todo'
                 }),
             })
 
@@ -55,6 +61,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 const task = await res.json()
                 setTasks([{
                     ...task,
+                    status: task.status || 'todo',
                     createdAt: new Date(task.createdAt),
                     scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : undefined
                 }, ...tasks])
@@ -70,27 +77,22 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         }
     }
 
-    const toggleTask = async (id: string) => {
-        const task = tasks.find(t => t.id === id)
-        if (!task) return
-
-        const newCompleted = !task.completed
-
+    const updateTaskStatus = async (taskId: string, newStatus: 'todo' | 'in-progress' | 'done') => {
+        // Optimistic update
         setTasks(tasks.map(t =>
-            t.id === id ? { ...t, completed: newCompleted } : t
+            t.id === taskId ? { ...t, status: newStatus, completed: newStatus === 'done' } : t
         ))
 
         try {
-            await fetch(`/api/tasks/${id}`, {
+            await fetch(`/api/tasks/${taskId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ completed: newCompleted }),
+                body: JSON.stringify({ status: newStatus, completed: newStatus === 'done' }),
             })
         } catch (error) {
-            console.error("Failed to toggle task", error)
-            setTasks(tasks.map(t =>
-                t.id === id ? { ...t, completed: !newCompleted } : t
-            ))
+            console.error("Failed to update task status", error)
+            // Revert on error
+            setTasks(tasks)
         }
     }
 
@@ -109,56 +111,14 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         }
     }
 
-    const generateCalendarUrl = (service: 'google' | 'outlook' | 'yahoo' | 'ical', task: any) => {
-        const title = encodeURIComponent(task.text)
-        const details = encodeURIComponent("Journifyからのタスク")
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event
+        if (!over) return
 
-        const startDate = task.scheduledDate || new Date()
-        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000)
+        const taskId = active.id as string
+        const newStatus = over.id as 'todo' | 'in-progress' | 'done'
 
-        const formatTime = (date: Date) => date.toISOString().replace(/-|:|\\.\\d+/g, "")
-
-        const start = formatTime(startDate)
-        const end = formatTime(endDate)
-
-        switch (service) {
-            case 'google':
-                return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${start}/${end}`
-            case 'outlook':
-                return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&body=${details}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}`
-            case 'yahoo':
-                return `https://calendar.yahoo.com/?v=60&view=d&type=20&title=${title}&st=${start}&et=${end}&desc=${details}`
-            case 'ical':
-                const icsContent = [
-                    'BEGIN:VCALENDAR',
-                    'VERSION:2.0',
-                    'BEGIN:VEVENT',
-                    `DTSTART:${start}`,
-                    `DTEND:${end}`,
-                    `SUMMARY:${task.text}`,
-                    `DESCRIPTION:Journifyからのタスク`,
-                    'END:VEVENT',
-                    'END:VCALENDAR'
-                ].join('\\n')
-                return `data:text/calendar;charset=utf8,${encodeURIComponent(icsContent)}`
-            default:
-                return '#'
-        }
-    }
-
-    const handleCalendarClick = (service: 'google' | 'outlook' | 'yahoo' | 'ical', task: any) => {
-        const url = generateCalendarUrl(service, task)
-        if (service === 'ical') {
-            const link = document.createElement('a')
-            link.href = url
-            link.download = `${task.text}.ics`
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-        } else {
-            window.open(url, '_blank')
-        }
-        setActiveCalendarMenu(null)
+        updateTaskStatus(taskId, newStatus)
     }
 
     const handleDateSelect = (date: Date) => {
@@ -169,7 +129,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         const minutes = String(date.getMinutes()).padStart(2, '0')
 
         setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`)
-        setActiveTab('list')
+        setActiveTab('kanban')
 
         setTimeout(() => {
             const input = document.querySelector('input[type="text"]') as HTMLInputElement
@@ -177,11 +137,15 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         }, 100)
     }
 
+    const todoTasks = tasks.filter(t => t.status === 'todo')
+    const inProgressTasks = tasks.filter(t => t.status === 'in-progress')
+    const doneTasks = tasks.filter(t => t.status === 'done')
+
     const completedCount = tasks.filter(t => t.completed).length
     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0
 
     return (
-        <div className="max-w-4xl mx-auto" onClick={() => setActiveCalendarMenu(null)}>
+        <div className="h-full flex flex-col" onClick={() => setActiveCalendarMenu(null)}>
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-white mb-2">日々のタスク</h1>
@@ -202,14 +166,14 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
             {/* Tab Navigation */}
             <div className="flex gap-2 mb-6">
                 <button
-                    onClick={() => setActiveTab('list')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'list'
+                    onClick={() => setActiveTab('kanban')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'kanban'
                         ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
                         : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                         }`}
                 >
                     <List className="w-4 h-4" />
-                    リスト
+                    カンバン
                 </button>
                 <button
                     onClick={() => setActiveTab('calendar')}
@@ -223,7 +187,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 </button>
             </div>
 
-            {activeTab === 'list' ? (
+            {activeTab === 'kanban' ? (
                 <>
                     {/* Progress Card */}
                     <motion.div
@@ -268,7 +232,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-6 pr-4 text-white placeholder:text-white/40 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
                             />
                         </div>
-                        <div className="relative w-48">
+                        <div className="relative w-48 hidden md:block">
                             <input
                                 type="datetime-local"
                                 value={scheduledDate}
@@ -285,110 +249,228 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                         </button>
                     </motion.form>
 
-                    {/* Task List */}
-                    <div className="space-y-3">
-                        <AnimatePresence mode="popLayout">
-                            {tasks.map((task) => (
-                                <motion.div
-                                    key={task.id}
-                                    layout
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className={`group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${task.completed
-                                        ? "bg-white/5 border-white/5"
-                                        : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-4 flex-1">
-                                        <button
-                                            onClick={() => toggleTask(task.id)}
-                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.completed
-                                                ? "bg-emerald-500 border-emerald-500 text-white"
-                                                : "border-white/40 hover:border-emerald-500 text-transparent"
-                                                }`}
-                                        >
-                                            <Check className="w-4 h-4" />
-                                        </button>
-                                        <div className="flex flex-col">
-                                            <span className={`text-lg transition-all ${task.completed ? "text-white/40 line-through" : "text-white"
-                                                }`}>
-                                                {task.text}
-                                            </span>
-                                            {task.scheduledDate && (
-                                                <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
-                                                    <Calendar className="w-3 h-3" />
-                                                    <span>{task.scheduledDate.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 relative">
-                                        <div className="relative">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setActiveCalendarMenu(activeCalendarMenu === task.id ? null : task.id)
-                                                }}
-                                                className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                                                title="カレンダーに追加"
-                                            >
-                                                <CalendarPlus className="w-4 h-4" />
-                                            </button>
-
-                                            <AnimatePresence>
-                                                {activeCalendarMenu === task.id && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                                        className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl overflow-hidden z-50"
-                                                    >
-                                                        <div className="p-1">
-                                                            <button onClick={() => handleCalendarClick('google', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
-                                                                Google Calendar
-                                                            </button>
-                                                            <button onClick={() => handleCalendarClick('outlook', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
-                                                                Outlook
-                                                            </button>
-                                                            <button onClick={() => handleCalendarClick('yahoo', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
-                                                                Yahoo Calendar
-                                                            </button>
-                                                            <button onClick={() => handleCalendarClick('ical', task)} className="w-full text-left px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2">
-                                                                iCal (Apple)
-                                                            </button>
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-                                        </div>
-
-                                        <button
-                                            onClick={() => deleteTask(task.id)}
-                                            className="p-2 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-
-                        {tasks.length === 0 && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-center py-12 text-white/40"
-                            >
-                                <p>タスクがありません。新しいタスクを追加しましょう!</p>
-                            </motion.div>
-                        )}
+                    {/* Mobile Kanban Tabs */}
+                    <div className="md:hidden flex gap-2 mb-4">
+                        <button
+                            onClick={() => setMobileKanbanTab('todo')}
+                            className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${mobileKanbanTab === 'todo'
+                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/50'
+                                : 'bg-white/5 text-white/60'
+                                }`}
+                        >
+                            未着手 ({todoTasks.length})
+                        </button>
+                        <button
+                            onClick={() => setMobileKanbanTab('in-progress')}
+                            className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${mobileKanbanTab === 'in-progress'
+                                ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50'
+                                : 'bg-white/5 text-white/60'
+                                }`}
+                        >
+                            進行中 ({inProgressTasks.length})
+                        </button>
+                        <button
+                            onClick={() => setMobileKanbanTab('done')}
+                            className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${mobileKanbanTab === 'done'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
+                                : 'bg-white/5 text-white/60'
+                                }`}
+                        >
+                            完了 ({doneTasks.length})
+                        </button>
                     </div>
+
+                    {/* Kanban Board */}
+                    <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+                        {/* Desktop: 3 Columns */}
+                        <div className="hidden md:grid md:grid-cols-3 gap-4 flex-1">
+                            <KanbanColumn
+                                title="未着手"
+                                status="todo"
+                                tasks={todoTasks}
+                                onDelete={deleteTask}
+                                onStatusChange={updateTaskStatus}
+                                activeCalendarMenu={activeCalendarMenu}
+                                setActiveCalendarMenu={setActiveCalendarMenu}
+                            />
+                            <KanbanColumn
+                                title="進行中"
+                                status="in-progress"
+                                tasks={inProgressTasks}
+                                onDelete={deleteTask}
+                                onStatusChange={updateTaskStatus}
+                                activeCalendarMenu={activeCalendarMenu}
+                                setActiveCalendarMenu={setActiveCalendarMenu}
+                            />
+                            <KanbanColumn
+                                title="完了"
+                                status="done"
+                                tasks={doneTasks}
+                                onDelete={deleteTask}
+                                onStatusChange={updateTaskStatus}
+                                activeCalendarMenu={activeCalendarMenu}
+                                setActiveCalendarMenu={setActiveCalendarMenu}
+                            />
+                        </div>
+
+                        {/* Mobile: Single Column with Tabs */}
+                        <div className="md:hidden flex-1">
+                            <KanbanColumn
+                                title={mobileKanbanTab === 'todo' ? '未着手' : mobileKanbanTab === 'in-progress' ? '進行中' : '完了'}
+                                status={mobileKanbanTab}
+                                tasks={mobileKanbanTab === 'todo' ? todoTasks : mobileKanbanTab === 'in-progress' ? inProgressTasks : doneTasks}
+                                onDelete={deleteTask}
+                                onStatusChange={updateTaskStatus}
+                                activeCalendarMenu={activeCalendarMenu}
+                                setActiveCalendarMenu={setActiveCalendarMenu}
+                                isMobile
+                            />
+                        </div>
+                    </DndContext>
                 </>
             ) : (
                 <TaskCalendar tasks={tasks} onDateSelect={handleDateSelect} />
             )}
         </div>
+    )
+}
+
+function KanbanColumn({
+    title,
+    status,
+    tasks,
+    onDelete,
+    onStatusChange,
+    activeCalendarMenu,
+    setActiveCalendarMenu,
+    isMobile = false
+}: {
+    title: string
+    status: 'todo' | 'in-progress' | 'done'
+    tasks: Task[]
+    onDelete: (id: string) => void
+    onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
+    activeCalendarMenu: string | null
+    setActiveCalendarMenu: (id: string | null) => void
+    isMobile?: boolean
+}) {
+    const { setNodeRef } = useDroppable({ id: status })
+
+    const statusColors = {
+        'todo': 'from-blue-500/20 to-blue-600/20 border-blue-500/50',
+        'in-progress': 'from-yellow-500/20 to-yellow-600/20 border-yellow-500/50',
+        'done': 'from-emerald-500/20 to-emerald-600/20 border-emerald-500/50'
+    }
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className={`hidden md:block bg-gradient-to-br ${statusColors[status]} border rounded-2xl p-4 mb-4`}>
+                <h3 className="font-bold text-white text-lg">{title}</h3>
+                <p className="text-white/60 text-sm">{tasks.length}個のタスク</p>
+            </div>
+
+            <div ref={setNodeRef} className="flex-1 space-y-3 overflow-y-auto">
+                <AnimatePresence mode="popLayout">
+                    {tasks.map((task) => (
+                        <DraggableTask
+                            key={task.id}
+                            task={task}
+                            onDelete={onDelete}
+                            onStatusChange={onStatusChange}
+                            activeCalendarMenu={activeCalendarMenu}
+                            setActiveCalendarMenu={setActiveCalendarMenu}
+                            isMobile={isMobile}
+                        />
+                    ))}
+                </AnimatePresence>
+
+                {tasks.length === 0 && (
+                    <div className="text-center py-12 text-white/40">
+                        <p>タスクがありません</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+function DraggableTask({
+    task,
+    onDelete,
+    onStatusChange,
+    activeCalendarMenu,
+    setActiveCalendarMenu,
+    isMobile
+}: {
+    task: Task
+    onDelete: (id: string) => void
+    onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
+    activeCalendarMenu: string | null
+    setActiveCalendarMenu: (id: string | null) => void
+    isMobile?: boolean
+}) {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: task.id,
+        data: { task }
+    })
+
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            ref={setNodeRef}
+            className={`group p-4 rounded-2xl border transition-all ${isDragging ? 'opacity-50 ring-2 ring-emerald-500' : ''
+                } ${task.completed
+                    ? "bg-white/5 border-white/5"
+                    : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
+                }`}
+        >
+            <div className="flex items-start gap-3">
+                {!isMobile && (
+                    <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing mt-1">
+                        <GripVertical className="w-4 h-4 text-white/40" />
+                    </div>
+                )}
+                <div className="flex-1">
+                    <div className={`text-lg transition-all ${task.completed ? "text-white/40 line-through" : "text-white"}`}>
+                        {task.text}
+                    </div>
+                    {task.scheduledDate && (
+                        <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{task.scheduledDate.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                    )}
+                    {isMobile && (
+                        <div className="flex gap-2 mt-3">
+                            {task.status !== 'todo' && (
+                                <button
+                                    onClick={() => onStatusChange(task.id, task.status === 'done' ? 'in-progress' : 'todo')}
+                                    className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-white transition-colors"
+                                >
+                                    ← {task.status === 'done' ? '進行中へ' : '未着手へ'}
+                                </button>
+                            )}
+                            {task.status !== 'done' && (
+                                <button
+                                    onClick={() => onStatusChange(task.id, task.status === 'todo' ? 'in-progress' : 'done')}
+                                    className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-xs text-emerald-300 transition-colors"
+                                >
+                                    {task.status === 'todo' ? '進行中へ' : '完了へ'} →
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+                <button
+                    onClick={() => onDelete(task.id)}
+                    className="p-2 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </div>
+        </motion.div>
     )
 }
