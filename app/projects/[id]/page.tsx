@@ -955,7 +955,7 @@ export default function ProjectDetailsPage() {
                                             </div>
 
                                             {/* Calendar cells */}
-                                            <div id="bottom-calendar-scroll-container" className="flex-1 overflow-x-auto bg-[#151515]">
+                                            <div id="bottom-calendar-scroll-container" className="flex-1 min-w-0 overflow-x-auto bg-[#151515]">
                                                 <div className="flex h-16" style={{ width: `${totalDays * dayWidth}px`, minWidth: '100%' }}>
                                                     {Array.from({ length: totalDays }).map((_, i) => {
                                                         const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
