@@ -24,7 +24,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const pathname = usePathname()
     const router = useRouter()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const [navigation, setNavigation] = useState(defaultNavigation)
+    const [navigation, setNavigation] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('enableProjects')
+            if (stored === 'true') {
+                const newNav = [...defaultNavigation]
+                newNav.splice(newNav.length - 1, 0, {
+                    name: "プロジェクト",
+                    href: "/projects",
+                    icon: Briefcase
+                })
+                return newNav
+            }
+        }
+        return defaultNavigation
+    })
 
     useEffect(() => {
         const fetchSettings = async () => {

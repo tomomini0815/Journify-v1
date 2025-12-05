@@ -20,6 +20,8 @@ export async function GET() {
             where: { userId: user.id }
         })
 
+        console.log(`GET /api/user/settings for ${user.id}:`, settings)
+
         if (!settings) {
             settings = await prisma.userSettings.create({
                 data: {
@@ -27,6 +29,7 @@ export async function GET() {
                     enableProjects: false
                 }
             })
+            console.log("Created default settings:", settings)
         }
 
         return NextResponse.json(settings)
@@ -57,6 +60,15 @@ export async function PATCH(req: Request) {
         const body = await req.json()
         const { enableProjects } = body
 
+        if (typeof enableProjects !== 'boolean') {
+            return NextResponse.json(
+                { error: "enableProjects must be a boolean" },
+                { status: 400 }
+            )
+        }
+
+        console.log(`PATCH /api/user/settings for ${user.id}: enableProjects=${enableProjects}`)
+
         const settings = await prisma.userSettings.upsert({
             where: { userId: user.id },
             update: { enableProjects },
@@ -65,6 +77,7 @@ export async function PATCH(req: Request) {
                 enableProjects
             }
         })
+        console.log("Updated settings:", settings)
 
         return NextResponse.json(settings)
     } catch (error) {

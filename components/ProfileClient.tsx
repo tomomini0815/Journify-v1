@@ -60,6 +60,10 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 body: JSON.stringify({ enableProjects })
             })
 
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('enableProjects', String(enableProjects))
+            }
+
             window.location.reload()
 
             if (!response.ok) {
