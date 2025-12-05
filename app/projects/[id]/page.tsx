@@ -14,7 +14,7 @@ const TaskDescriptionEditor = dynamic(
     { ssr: false }
 )
 
-import { DndContext, DragEndEvent, useDroppable, useSensor, useSensors, PointerSensor } from "@dnd-kit/core"
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useDroppable, useDraggable, useSensor, useSensors, PointerSensor, defaultDropAnimationSideEffects } from "@dnd-kit/core"
 import { WorkflowTemplatesPanel } from "@/components/WorkflowTemplates"
 import { WorkflowTemplate } from "@/lib/workflowTemplates"
 import { MilestoneTemplatesPanel } from "@/components/MilestoneTemplatesPanel"
@@ -88,6 +88,7 @@ export default function ProjectDetailsPage() {
     const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone', id: string, title: string } | null>(null)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const [activeDragItem, setActiveDragItem] = useState<{ type: 'task', task: Task } | null>(null)
 
     // Configure DnD sensors to prevent blocking scroll
     const sensors = useSensors(
@@ -323,19 +324,69 @@ export default function ProjectDetailsPage() {
         }
     }
 
+    const handleDragStart = (event: DragStartEvent) => {
+        const { active } = event
+        if (active.data.current?.type === 'task') {
+            setActiveDragItem({ type: 'task', task: active.data.current.task })
+        }
+    }
+
+    const updateTaskStatus = async (taskId: string, newStatus: string) => {
+        if (!project) return
+
+        const task = project.tasks.find(t => t.id === taskId)
+        if (!task || task.status === newStatus) return
+
+        // Validate status
+        if (!['todo', 'in-progress', 'done'].includes(newStatus)) return
+
+        // Optimistic update
+        const updatedTasks = project.tasks.map(t =>
+            t.id === taskId ? { ...t, status: newStatus } : t
+        )
+        setProject({ ...project, tasks: updatedTasks })
+
+        // Persist to server
+        try {
+            const res = await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: newStatus })
+            })
+
+            if (!res.ok) {
+                throw new Error("Failed to update task status")
+            }
+        } catch (error) {
+            console.error("Failed to update task status", error)
+            // Revert on error
+            setProject(project)
+        }
+    }
+
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event
+        setActiveDragItem(null)
 
-        if (!over || !active.data.current || active.data.current.type !== 'template') return
+        if (!over) return
 
-        const template = active.data.current.template as WorkflowTemplate
-        const dropDate = over.id as string // Date string from droppable id
+        // Handle Kanban task drop
+        if (active.data.current?.type === 'task') {
+            const taskId = active.id as string
+            const newStatus = over.id as string
 
-        if (!dropDate) return
+            if (['todo', 'in-progress', 'done'].includes(newStatus)) {
+                await updateTaskStatus(taskId, newStatus)
+                return
+            }
+        }
 
         // Handle milestone template drop
-        if (active.data.current.type === 'milestone-template') {
+        if (active.data.current?.type === 'milestone-template') {
             const template = active.data.current.template as MilestoneTemplate
+            const dropDate = over.id as string
+
+            if (!dropDate) return
 
             // Optimistic update
             const newMilestone: Milestone = {
@@ -376,8 +427,13 @@ export default function ProjectDetailsPage() {
             return
         }
 
-        // Handle workflow template drop (existing code)
-        if (active.data.current.type !== 'template') return
+        // Handle workflow template drop
+        if (active.data.current?.type !== 'template') return
+
+        const template = active.data.current.template as WorkflowTemplate
+        const dropDate = over.id as string // Date string from droppable id
+
+        if (!dropDate) return
 
         // Create tasks from template
         let currentDate = new Date(dropDate)
@@ -512,9 +568,9 @@ export default function ProjectDetailsPage() {
 
     return (
         <DashboardLayout>
-            <div className="h-full flex flex-col px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex flex-col -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
                 {/* Header */}
-                <div className="flex-shrink-0 mb-6">
+                <div className="flex-shrink-0 mb-6 px-4 sm:px-6 lg:px-8 pt-8">
                     <Link href="/projects" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-4 transition-colors">
                         <ArrowLeft className="w-4 h-4" />
                         プロジェクト一覧に戻る
@@ -535,7 +591,7 @@ export default function ProjectDetailsPage() {
                 </div>
 
                 {/* Main Content Container */}
-                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden flex flex-col flex-1 min-h-0">
+                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden flex flex-col mx-4 sm:mx-6 lg:mx-8 mb-8">
                     <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1a1a1a] flex-shrink-0">
                         <h2 className="text-xl font-bold flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-indigo-400" />
@@ -575,7 +631,7 @@ export default function ProjectDetailsPage() {
                         </div>
                     </div>
 
-                    <div className="h-full flex flex-col overflow-hidden bg-[#1a1a1a]">
+                    <div className="flex flex-col bg-[#1a1a1a]">
                         {/* View Toggle Tabs */}
                         <div className="flex gap-2 p-4 border-b border-white/10 flex-shrink-0">
                             <button
@@ -601,120 +657,72 @@ export default function ProjectDetailsPage() {
                         </div>
 
                         {activeTab === 'list' ? (
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4 h-full" style={{ overscrollBehavior: 'contain' }}>
-                                {/* Tasks List */}
-                                <div className="space-y-2">
-                                    <h3 className="text-sm font-medium text-white/60 mb-2 pl-1">タスク</h3>
-                                    {project.tasks.map((task) => (
-                                        <div key={task.id}
-                                            className="bg-white/5 border rounded-xl p-4 group transition-all hover:bg-white/10"
-                                            style={{ borderColor: task.color || 'rgba(255,255,255,0.1)' }}
-                                        >
-                                            <div className="flex items-start justify-between mb-2">
-                                                <h4 className="font-medium text-white">{task.text}</h4>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            toggleTaskCompletion(task)
-                                                        }}
-                                                        className={`px-2 py-1 rounded text-xs transition-colors ${task.completed ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-white/10 text-white/60 hover:bg-white/20'}`}
-                                                    >
-                                                        {task.completed ? '完了' : '未完了'}
-                                                    </button>
-                                                    <div className="flex gap-1 transition-opacity">
-                                                        <button
-                                                            onClick={() => openEditTaskModal(task)}
-                                                            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-                                                        >
-                                                            <Pencil className="w-3.5 h-3.5 text-white/60" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setDeleteConfirm({ type: 'task', id: task.id, title: task.text })}
-                                                            className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-wrap gap-3 text-xs text-white/40">
-                                                {task.startDate && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Calendar className="w-3 h-3" />
-                                                        <span>開始: {new Date(task.startDate).toLocaleDateString()}</span>
-                                                    </div>
-                                                )}
-                                                {task.endDate && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" />
-                                                        <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {/* Description preview on hover */}
-                                            {task.description && (
-                                                <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
-                                                    <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none
-                                                        [&_ul]:list-none [&_ul]:pl-0 [&_ul]:space-y-1
-                                                        [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:flex-row-reverse [&_li]:justify-end
-                                                        [&_li]:text-white/60 [&_li]:text-xs
-                                                        [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-default"
-                                                        dangerouslySetInnerHTML={{ __html: task.description }}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                    {project.tasks.length === 0 && (
-                                        <div className="text-center py-8 text-white/40 bg-white/5 rounded-xl border border-white/5 border-dashed">
-                                            タスクがありません
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="p-4">
+                                <DndContext
+                                    sensors={sensors}
+                                    onDragStart={handleDragStart}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <div className="flex gap-4 overflow-x-auto pb-2">
+                                        {/* 未着手 Column */}
+                                        <KanbanColumn
+                                            id="todo"
+                                            title="未着手"
+                                            tasks={project.tasks.filter(t => t.status === 'todo' || (!t.status && !t.completed))}
+                                            openEditTaskModal={openEditTaskModal}
+                                            setDeleteConfirm={setDeleteConfirm}
+                                            toggleTaskCompletion={toggleTaskCompletion}
+                                        />
 
-                                {/* Milestones List */}
-                                <div className="space-y-2 mt-6">
-                                    <h3 className="text-sm font-medium text-white/60 mb-2 pl-1">マイルストーン</h3>
-                                    {project.milestones.map((milestone) => (
-                                        <div key={milestone.id} className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3 group">
-                                            <div className="w-2 h-2 rotate-45 bg-amber-400" />
-                                            <div className="flex-1">
-                                                <h4 className="font-medium text-white">{milestone.title}</h4>
-                                                <p className="text-xs text-white/40 mt-1">
-                                                    {new Date(milestone.date).toLocaleDateString()}
-                                                </p>
+                                        {/* 進行中 Column */}
+                                        <KanbanColumn
+                                            id="in-progress"
+                                            title="進行中"
+                                            tasks={project.tasks.filter(t => t.status === 'in-progress')}
+                                            openEditTaskModal={openEditTaskModal}
+                                            setDeleteConfirm={setDeleteConfirm}
+                                            toggleTaskCompletion={toggleTaskCompletion}
+                                        />
+
+                                        {/* 完了 Column */}
+                                        <KanbanColumn
+                                            id="done"
+                                            title="完了"
+                                            tasks={project.tasks.filter(t => t.status === 'done' || (t.status !== 'in-progress' && t.status !== 'todo' && t.completed))}
+                                            openEditTaskModal={openEditTaskModal}
+                                            setDeleteConfirm={setDeleteConfirm}
+                                            toggleTaskCompletion={toggleTaskCompletion}
+                                        />
+                                    </div>
+
+                                    <DragOverlay dropAnimation={{
+                                        sideEffects: defaultDropAnimationSideEffects({
+                                            styles: {
+                                                active: {
+                                                    opacity: '0.5',
+                                                },
+                                            },
+                                        }),
+                                    }}>
+                                        {activeDragItem?.type === 'task' && (
+                                            <div className="w-[300px]">
+                                                <KanbanTaskCard
+                                                    task={activeDragItem.task}
+                                                    openEditTaskModal={() => { }}
+                                                    setDeleteConfirm={() => { }}
+                                                    toggleTaskCompletion={() => { }}
+                                                />
                                             </div>
-                                            <div className="flex gap-1 transition-opacity">
-                                                <button
-                                                    onClick={() => openEditMilestoneModal(milestone)}
-                                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-                                                >
-                                                    <Pencil className="w-3.5 h-3.5 text-white/60" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setDeleteConfirm({ type: 'milestone', id: milestone.id, title: milestone.title })}
-                                                    className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {project.milestones.length === 0 && (
-                                        <div className="text-center py-8 text-white/40 bg-white/5 rounded-xl border border-white/5 border-dashed">
-                                            マイルストーンがありません
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                    </DragOverlay>
+                                </DndContext>
                             </div>
                         ) : (
                             /* Timeline View */
-                            <div className="flex flex-col flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
+                            <div className="flex flex-col">
                                 <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
-                                    <WorkflowTemplatesPanel />
-                                    <MilestoneTemplatesPanel />
-                                    <div className="flex flex-1 overflow-hidden">
+                                    {/* Main Timeline Area - Calendar at Top */}
+                                    <div className="flex overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                                         {/* Left Sidebar: Task List */}
                                         <div className={`${sidebarCollapsed ? 'w-12' : 'w-64'} flex-shrink-0 border-r border-white/10 bg-[#1a1a1a] flex flex-col transition-all duration-300`}>
                                             <div className="h-16 border-b border-white/10 flex items-center px-4 font-medium text-white/60 bg-[#252525] sticky top-0 z-30 justify-between">
@@ -740,7 +748,7 @@ export default function ProjectDetailsPage() {
                                                 {project.milestones.map((milestone) => (
                                                     <div key={milestone.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5">
                                                         <Flag className="w-3 h-3 text-amber-400 mr-2 flex-shrink-0" />
-                                                        <span className="text-sm truncate text-amber-200">{milestone.title}</span>
+                                                        {!sidebarCollapsed && <span className="text-sm truncate text-amber-200">{milestone.title}</span>}
                                                     </div>
                                                 ))}
                                             </div>
@@ -924,6 +932,12 @@ export default function ProjectDetailsPage() {
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* Template Panels at Bottom */}
+                                    <div className="border-t border-white/10">
+                                        <WorkflowTemplatesPanel />
+                                        <MilestoneTemplatesPanel />
                                     </div>
                                 </DndContext>
                             </div>
@@ -1135,5 +1149,138 @@ export default function ProjectDetailsPage() {
                 }
             </div >
         </DashboardLayout >
+    )
+}
+
+// Kanban Column Component
+function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, toggleTaskCompletion }: {
+    id: string
+    title: string
+    tasks: Task[]
+    openEditTaskModal: (task: Task) => void
+    setDeleteConfirm: (confirm: { type: 'task' | 'milestone', id: string, title: string }) => void
+    toggleTaskCompletion: (task: Task) => void
+}) {
+    const { setNodeRef } = useDroppable({
+        id: id,
+    })
+
+    return (
+        <div ref={setNodeRef} className="flex-1 min-w-[320px] bg-white/5 rounded-xl flex flex-col h-full max-h-full border border-white/5">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#1a1a1a] z-10 rounded-t-xl">
+                <h3 className="font-bold text-white">{title}</h3>
+                <span className="text-xs text-white/40 bg-white/10 px-2 py-1 rounded-full">{tasks.length}</span>
+            </div>
+            <div className="p-4 space-y-3 overflow-y-auto flex-1">
+                {tasks.map((task) => (
+                    <KanbanTaskCard
+                        key={task.id}
+                        task={task}
+                        openEditTaskModal={openEditTaskModal}
+                        setDeleteConfirm={setDeleteConfirm}
+                        toggleTaskCompletion={toggleTaskCompletion}
+                    />
+                ))}
+                {tasks.length === 0 && (
+                    <div className="text-center py-8 text-white/20 text-sm border border-white/5 border-dashed rounded-lg">
+                        繧ｿ繧ｹ繧ｯ縺ｪ縺・
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// Kanban Task Card Component - Using Original Design
+function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskCompletion }: {
+    task: Task
+    openEditTaskModal: (task: Task) => void
+    setDeleteConfirm: (confirm: { type: 'task' | 'milestone', id: string, title: string }) => void
+    toggleTaskCompletion: (task: Task) => void
+}) {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+        id: task.id,
+        data: { task, type: 'task' }
+    })
+
+    const style = transform ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    } : undefined
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={{
+                ...style,
+                borderColor: task.color || 'rgba(255,255,255,0.1)'
+            }}
+            {...listeners}
+            {...attributes}
+            className={`bg-white/5 border rounded-xl p-4 group transition-all hover:bg-white/10 cursor-grab active:cursor-grabbing relative ${isDragging ? 'opacity-50 z-50 ring-2 ring-indigo-500' : ''
+                }`}
+        >
+            <div className="flex items-start justify-between mb-2">
+                <h4 className="font-medium text-white text-sm line-clamp-2">{task.text}</h4>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            toggleTaskCompletion(task)
+                        }}
+                        className={`px-2 py-1 rounded text-xs transition-colors ${task.completed ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-white/10 text-white/60 hover:bg-white/20'}`}
+                    >
+                        {task.completed ? '完了' : '未完了'}
+                    </button>
+                    <div className="flex gap-1 transition-opacity opacity-0 group-hover:opacity-100">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                openEditTaskModal(task)
+                            }}
+                            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                        >
+                            <Pencil className="w-3.5 h-3.5 text-white/60" />
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setDeleteConfirm({ type: 'task', id: task.id, title: task.text })
+                            }}
+                            className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
+                        >
+                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 text-xs text-white/40">
+                {task.startDate && (
+                    <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>開始: {new Date(task.startDate).toLocaleDateString()}</span>
+                    </div>
+                )}
+                {task.endDate && (
+                    <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Description preview on hover */}
+            {task.description && (
+                <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
+                    <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none
+                        [&_ul]:list-none [&_ul]:pl-0 [&_ul]:space-y-1
+                        [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:flex-row-reverse [&_li]:justify-end
+                        [&_li]:text-white/60 [&_li]:text-xs
+                        [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-default"
+                        dangerouslySetInnerHTML={{ __html: task.description }}
+                    />
+                </div>
+            )}
+        </div>
     )
 }

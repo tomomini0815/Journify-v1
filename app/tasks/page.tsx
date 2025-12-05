@@ -34,6 +34,7 @@ export default async function TasksPage() {
     // Serialize dates
     const serializedTasks = tasks.map(task => ({
         ...task,
+        status: (task.status === 'in-progress' || task.status === 'done' ? task.status : 'todo') as 'todo' | 'in-progress' | 'done',
         createdAt: new Date(task.createdAt).toISOString(),
         scheduledDate: task.scheduledDate ? new Date(task.scheduledDate).toISOString() : null
     }))

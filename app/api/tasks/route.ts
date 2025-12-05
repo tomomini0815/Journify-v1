@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json()
-        const { text, scheduledDate } = body
+        const { text, scheduledDate, status } = body
 
         if (!text) {
             return NextResponse.json({ error: "Text is required" }, { status: 400 })
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
             data: {
                 text,
                 scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+                status: status || 'todo',
                 userId: user.id,
             },
         })

@@ -2,9 +2,8 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Trash2, Check, Calendar, CalendarPlus, List, CalendarDays, GripVertical } from "lucide-react"
+import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
-import { DndContext, DragEndEvent, useDraggable, useDroppable, closestCenter } from "@dnd-kit/core"
 
 type Task = {
     id: string
@@ -37,7 +36,6 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     })))
     const [newTask, setNewTask] = useState("")
     const [scheduledDate, setScheduledDate] = useState("")
-    const [activeCalendarMenu, setActiveCalendarMenu] = useState<string | null>(null)
     const [error, setError] = useState("")
     const [activeTab, setActiveTab] = useState<'kanban' | 'calendar'>('kanban')
     const [mobileKanbanTab, setMobileKanbanTab] = useState<'todo' | 'in-progress' | 'done'>('todo')
@@ -111,16 +109,6 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         }
     }
 
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event
-        if (!over) return
-
-        const taskId = active.id as string
-        const newStatus = over.id as 'todo' | 'in-progress' | 'done'
-
-        updateTaskStatus(taskId, newStatus)
-    }
-
     const handleDateSelect = (date: Date) => {
         const year = date.getFullYear()
         const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -145,9 +133,9 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0
 
     return (
-        <div className="h-full flex flex-col" onClick={() => setActiveCalendarMenu(null)}>
+        <div className="h-full flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-8 flex-shrink-0">
                 <h1 className="text-3xl font-bold text-white mb-2">日々のタスク</h1>
                 <p className="text-white/60">小さな達成の積み重ねが、大きな成長につながります。</p>
             </div>
@@ -157,14 +145,14 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-2xl text-red-200"
+                    className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-2xl text-red-200 flex-shrink-0"
                 >
                     {error}
                 </motion.div>
             )}
 
             {/* Tab Navigation */}
-            <div className="flex gap-2 mb-6">
+            <div className="flex gap-2 mb-6 flex-shrink-0">
                 <button
                     onClick={() => setActiveTab('kanban')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'kanban'
@@ -188,12 +176,12 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
             </div>
 
             {activeTab === 'kanban' ? (
-                <>
+                <div className="flex-1 flex flex-col min-h-0">
                     {/* Progress Card */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mb-8 relative overflow-hidden"
+                        className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mb-8 relative overflow-hidden flex-shrink-0"
                     >
                         <div className="relative z-10 flex items-center justify-between mb-4">
                             <div>
@@ -221,7 +209,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
                         onSubmit={addTask}
-                        className="mb-8 relative flex gap-4"
+                        className="mb-8 relative flex gap-4 flex-shrink-0"
                     >
                         <div className="relative flex-1">
                             <input
@@ -249,49 +237,15 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                         </button>
                     </motion.form>
 
-                    {/* Mobile Kanban Tabs */}
-                    <div className="md:hidden flex gap-2 mb-4">
-                        <button
-                            onClick={() => setMobileKanbanTab('todo')}
-                            className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${mobileKanbanTab === 'todo'
-                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/50'
-                                : 'bg-white/5 text-white/60'
-                                }`}
-                        >
-                            未着手 ({todoTasks.length})
-                        </button>
-                        <button
-                            onClick={() => setMobileKanbanTab('in-progress')}
-                            className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${mobileKanbanTab === 'in-progress'
-                                ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50'
-                                : 'bg-white/5 text-white/60'
-                                }`}
-                        >
-                            進行中 ({inProgressTasks.length})
-                        </button>
-                        <button
-                            onClick={() => setMobileKanbanTab('done')}
-                            className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${mobileKanbanTab === 'done'
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
-                                : 'bg-white/5 text-white/60'
-                                }`}
-                        >
-                            完了 ({doneTasks.length})
-                        </button>
-                    </div>
-
-                    {/* Kanban Board */}
-                    <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
-                        {/* Desktop: 3 Columns */}
-                        <div className="hidden md:grid md:grid-cols-3 gap-4 flex-1">
+                    {/* Kanban Board - Scrollable Container */}
+                    <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+                        <div className="h-full min-w-[900px] grid grid-cols-3 gap-4 pb-4">
                             <KanbanColumn
                                 title="未着手"
                                 status="todo"
                                 tasks={todoTasks}
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
-                                activeCalendarMenu={activeCalendarMenu}
-                                setActiveCalendarMenu={setActiveCalendarMenu}
                             />
                             <KanbanColumn
                                 title="進行中"
@@ -299,8 +253,6 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 tasks={inProgressTasks}
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
-                                activeCalendarMenu={activeCalendarMenu}
-                                setActiveCalendarMenu={setActiveCalendarMenu}
                             />
                             <KanbanColumn
                                 title="完了"
@@ -308,26 +260,10 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 tasks={doneTasks}
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
-                                activeCalendarMenu={activeCalendarMenu}
-                                setActiveCalendarMenu={setActiveCalendarMenu}
                             />
                         </div>
-
-                        {/* Mobile: Single Column with Tabs */}
-                        <div className="md:hidden flex-1">
-                            <KanbanColumn
-                                title={mobileKanbanTab === 'todo' ? '未着手' : mobileKanbanTab === 'in-progress' ? '進行中' : '完了'}
-                                status={mobileKanbanTab}
-                                tasks={mobileKanbanTab === 'todo' ? todoTasks : mobileKanbanTab === 'in-progress' ? inProgressTasks : doneTasks}
-                                onDelete={deleteTask}
-                                onStatusChange={updateTaskStatus}
-                                activeCalendarMenu={activeCalendarMenu}
-                                setActiveCalendarMenu={setActiveCalendarMenu}
-                                isMobile
-                            />
-                        </div>
-                    </DndContext>
-                </>
+                    </div>
+                </div>
             ) : (
                 <TaskCalendar tasks={tasks} onDateSelect={handleDateSelect} />
             )}
@@ -341,8 +277,6 @@ function KanbanColumn({
     tasks,
     onDelete,
     onStatusChange,
-    activeCalendarMenu,
-    setActiveCalendarMenu,
     isMobile = false
 }: {
     title: string
@@ -350,12 +284,8 @@ function KanbanColumn({
     tasks: Task[]
     onDelete: (id: string) => void
     onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
-    activeCalendarMenu: string | null
-    setActiveCalendarMenu: (id: string | null) => void
     isMobile?: boolean
 }) {
-    const { setNodeRef } = useDroppable({ id: status })
-
     const statusColors = {
         'todo': 'from-blue-500/20 to-blue-600/20 border-blue-500/50',
         'in-progress': 'from-yellow-500/20 to-yellow-600/20 border-yellow-500/50',
@@ -369,16 +299,14 @@ function KanbanColumn({
                 <p className="text-white/60 text-sm">{tasks.length}個のタスク</p>
             </div>
 
-            <div ref={setNodeRef} className="flex-1 space-y-3 overflow-y-auto">
+            <div className="flex-1 space-y-3 overflow-y-auto">
                 <AnimatePresence mode="popLayout">
                     {tasks.map((task) => (
-                        <DraggableTask
+                        <TaskCard
                             key={task.id}
                             task={task}
                             onDelete={onDelete}
                             onStatusChange={onStatusChange}
-                            activeCalendarMenu={activeCalendarMenu}
-                            setActiveCalendarMenu={setActiveCalendarMenu}
                             isMobile={isMobile}
                         />
                     ))}
@@ -394,45 +322,29 @@ function KanbanColumn({
     )
 }
 
-function DraggableTask({
+function TaskCard({
     task,
     onDelete,
     onStatusChange,
-    activeCalendarMenu,
-    setActiveCalendarMenu,
     isMobile
 }: {
     task: Task
     onDelete: (id: string) => void
     onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
-    activeCalendarMenu: string | null
-    setActiveCalendarMenu: (id: string | null) => void
     isMobile?: boolean
 }) {
-    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-        id: task.id,
-        data: { task }
-    })
-
     return (
         <motion.div
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            ref={setNodeRef}
-            className={`group p-4 rounded-2xl border transition-all ${isDragging ? 'opacity-50 ring-2 ring-emerald-500' : ''
-                } ${task.completed
-                    ? "bg-white/5 border-white/5"
-                    : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
+            className={`group p-4 rounded-2xl border transition-all ${task.completed
+                ? "bg-white/5 border-white/5"
+                : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
                 }`}
         >
             <div className="flex items-start gap-3">
-                {!isMobile && (
-                    <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing mt-1">
-                        <GripVertical className="w-4 h-4 text-white/40" />
-                    </div>
-                )}
                 <div className="flex-1">
                     <div className={`text-lg transition-all ${task.completed ? "text-white/40 line-through" : "text-white"}`}>
                         {task.text}
@@ -443,26 +355,28 @@ function DraggableTask({
                             <span>{task.scheduledDate.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                     )}
-                    {isMobile && (
-                        <div className="flex gap-2 mt-3">
-                            {task.status !== 'todo' && (
-                                <button
-                                    onClick={() => onStatusChange(task.id, task.status === 'done' ? 'in-progress' : 'todo')}
-                                    className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-white transition-colors"
-                                >
-                                    ← {task.status === 'done' ? '進行中へ' : '未着手へ'}
-                                </button>
-                            )}
-                            {task.status !== 'done' && (
-                                <button
-                                    onClick={() => onStatusChange(task.id, task.status === 'todo' ? 'in-progress' : 'done')}
-                                    className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-xs text-emerald-300 transition-colors"
-                                >
-                                    {task.status === 'todo' ? '進行中へ' : '完了へ'} →
-                                </button>
-                            )}
-                        </div>
-                    )}
+
+                    {/* Status Change Buttons */}
+                    <div className="flex gap-2 mt-3">
+                        {task.status !== 'todo' && (
+                            <button
+                                onClick={() => onStatusChange(task.id, task.status === 'done' ? 'in-progress' : 'todo')}
+                                className="flex items-center gap-1 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-white transition-colors"
+                            >
+                                <ArrowLeft className="w-3 h-3" />
+                                {task.status === 'done' ? '進行中へ' : '未着手へ'}
+                            </button>
+                        )}
+                        {task.status !== 'done' && (
+                            <button
+                                onClick={() => onStatusChange(task.id, task.status === 'todo' ? 'in-progress' : 'done')}
+                                className="flex items-center gap-1 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-xs text-emerald-300 transition-colors"
+                            >
+                                {task.status === 'todo' ? '進行中へ' : '完了へ'}
+                                <ArrowRight className="w-3 h-3" />
+                            </button>
+                        )}
+                    </div>
                 </div>
                 <button
                     onClick={() => onDelete(task.id)}

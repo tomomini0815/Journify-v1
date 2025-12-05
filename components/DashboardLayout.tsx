@@ -66,7 +66,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
 
     return (
-        <div className="h-screen flex flex-col bg-[#0a0a0a] text-white overflow-hidden">
+        <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-white">
             {/* Noise texture */}
             <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
                 style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
@@ -186,8 +186,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
 
             {/* Main content */}
-            <main className="md:pl-64 pt-16 md:pt-0 flex-1 overflow-hidden">
-                <div className="relative z-10 h-full overflow-y-auto">
+            <main className="md:pl-64 pt-16 md:pt-0 flex-1">
+                <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-8">
                     {children}
                 </div>
             </main>
