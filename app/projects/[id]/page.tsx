@@ -88,7 +88,7 @@ export default function ProjectDetailsPage() {
     const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone', id: string, title: string } | null>(null)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-    const [activeDragItem, setActiveDragItem] = useState<{ type: 'task', task: Task } | null>(null)
+    const [activeDragItem, setActiveDragItem] = useState<{ type: 'task', task: Task } | { type: 'milestone-template', template: MilestoneTemplate } | null>(null)
 
     // Configure DnD sensors to prevent blocking scroll
     const sensors = useSensors(
@@ -103,6 +103,7 @@ export default function ProjectDetailsPage() {
     useEffect(() => {
         if (activeTab === 'timeline' && project) {
             const scrollContainer = document.getElementById('timeline-scroll-container')
+            const bottomScrollContainer = document.getElementById('bottom-calendar-scroll-container')
             if (scrollContainer) {
                 // Calculate today's position
                 const today = new Date()
@@ -122,9 +123,12 @@ export default function ProjectDetailsPage() {
                 const dayWidth = 50
                 const todayOffset = ((today.getTime() - adjustedMinDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
 
-                // Scroll to center today
+                // Scroll to show today at the left edge
                 setTimeout(() => {
-                    scrollContainer.scrollLeft = todayOffset - (scrollContainer.clientWidth / 2)
+                    scrollContainer.scrollLeft = todayOffset
+                    if (bottomScrollContainer) {
+                        bottomScrollContainer.scrollLeft = todayOffset
+                    }
                 }, 100)
             }
         }
@@ -328,6 +332,8 @@ export default function ProjectDetailsPage() {
         const { active } = event
         if (active.data.current?.type === 'task') {
             setActiveDragItem({ type: 'task', task: active.data.current.task })
+        } else if (active.data.current?.type === 'milestone-template') {
+            setActiveDragItem({ type: 'milestone-template', template: active.data.current.template })
         }
     }
 
@@ -720,7 +726,7 @@ export default function ProjectDetailsPage() {
                         ) : (
                             /* Timeline View */
                             <div className="flex flex-col">
-                                <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
+                                <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd} sensors={sensors}>
                                     {/* Main Timeline Area - Calendar at Top */}
                                     <div className="flex overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                                         {/* Left Sidebar: Task List */}
@@ -939,6 +945,74 @@ export default function ProjectDetailsPage() {
                                         <WorkflowTemplatesPanel />
                                         <MilestoneTemplatesPanel />
                                     </div>
+
+                                    {/* Bottom Calendar for Easy Drag & Drop */}
+                                    <div className="border-t border-white/10 bg-[#1a1a1a] overflow-x-auto">
+                                        <div className="flex">
+                                            {/* Left spacer to align with sidebar */}
+                                            <div className={`${sidebarCollapsed ? 'w-12' : 'w-64'} flex-shrink-0 border-r border-white/10 bg-[#252525] flex items-center justify-center transition-all duration-300`}>
+                                                <span className="text-xs text-white/40 font-medium">ドロップゾーン</span>
+                                            </div>
+
+                                            {/* Calendar cells */}
+                                            <div id="bottom-calendar-scroll-container" className="flex-1 overflow-x-auto bg-[#151515]">
+                                                <div className="flex h-16" style={{ width: `${totalDays * dayWidth}px`, minWidth: '100%' }}>
+                                                    {Array.from({ length: totalDays }).map((_, i) => {
+                                                        const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
+                                                        const isToday = date.toDateString() === new Date().toDateString()
+                                                        const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                                                        const holiday = isHoliday(date)
+                                                        const isFirstOfMonth = date.getDate() === 1
+
+                                                        return (
+                                                            <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={holiday.isHoliday} width={dayWidth}>
+                                                                {isFirstOfMonth && (
+                                                                    <div className="absolute -top-1 left-0 right-0 text-center pointer-events-none">
+                                                                        <span className="text-[10px] font-bold text-white/80 bg-[#252525] px-1 rounded">
+                                                                            {date.getMonth() + 1}月
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                <span className={`font-medium ${isToday ? 'text-indigo-300' :
+                                                                    holiday.isHoliday ? 'text-red-300' :
+                                                                        'text-white/60'
+                                                                    }`}>
+                                                                    {date.getDate()}
+                                                                </span>
+                                                                <span className={`text-[10px] ${isToday ? 'text-indigo-400' :
+                                                                    holiday.isHoliday ? 'text-red-400' :
+                                                                        isWeekend ? 'text-red-400/60' : 'text-white/30'
+                                                                    }`}>
+                                                                    {holiday.isHoliday ? holiday.name?.substring(0, 2) : ['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
+                                                                </span>
+                                                            </DroppableCell>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Drag Overlay for visual feedback */}
+                                    <DragOverlay dropAnimation={{
+                                        sideEffects: defaultDropAnimationSideEffects({
+                                            styles: {
+                                                active: {
+                                                    opacity: '0.5',
+                                                },
+                                            },
+                                        }),
+                                    }}>
+                                        {activeDragItem?.type === 'milestone-template' && (
+                                            <div className="flex-shrink-0 w-[180px] bg-white/5 border border-amber-400/50 rounded-xl p-3 shadow-2xl">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Flag className="w-3.5 h-3.5" style={{ color: activeDragItem.template.color }} />
+                                                </div>
+                                                <h4 className="font-medium text-white text-sm mb-1">{activeDragItem.template.name}</h4>
+                                                <p className="text-xs text-white/60 line-clamp-2">{activeDragItem.template.description}</p>
+                                            </div>
+                                        )}
+                                    </DragOverlay>
                                 </DndContext>
                             </div>
                         )}
