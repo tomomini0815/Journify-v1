@@ -458,8 +458,32 @@ export default function ProjectDetailsPage() {
             // Skip weekends if needed (simple implementation for now)
 
             const startDate = currentDate.toISOString().split('T')[0]
-            const endDateObj = new Date(currentDate)
-            endDateObj.setDate(endDateObj.getDate() + templateTask.duration - 1)
+
+            // Calculate end date considering weekends and holidays
+            let endDateObj = new Date(currentDate)
+            let remainingDays = templateTask.duration - 1 // -1 because start day counts as day 1
+
+            // If start date itself is a holiday/weekend, we should probably still count it as the start date
+            // but maybe push the "work" to the next day?
+            // The user request is "extend the due date".
+            // So if I start on Friday (1 day work), end is Friday.
+            // If I start on Friday (2 days work):
+            // Fri (Work 1), Sat (Rest), Sun (Rest), Mon (Work 2) -> End Mon.
+
+            // We need to iterate from start date
+            let tempDate = new Date(currentDate)
+            while (remainingDays > 0) {
+                tempDate.setDate(tempDate.getDate() + 1)
+                const day = tempDate.getDay()
+                const { isHoliday: isJpHoliday } = isHoliday(tempDate)
+
+                // If it's a workday, decrement remaining days
+                if (day !== 0 && day !== 6 && !isJpHoliday) {
+                    remainingDays--
+                }
+                // If it's weekend/holiday, we just advance the date (loop continues) without reducing remainingDays
+            }
+            endDateObj = tempDate
             const endDate = endDateObj.toISOString().split('T')[0]
 
             const newTask: Task = {
@@ -479,8 +503,9 @@ export default function ProjectDetailsPage() {
 
             newTasks.push(newTask)
 
-            // Advance date for next task
-            currentDate.setDate(currentDate.getDate() + templateTask.duration)
+            // Advance date for next task (start day after current task ends)
+            currentDate = new Date(endDateObj)
+            currentDate.setDate(currentDate.getDate() + 1)
         }
 
         if (project) {
