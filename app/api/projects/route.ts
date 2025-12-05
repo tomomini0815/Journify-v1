@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 
-// Mock user ID for now - in production this would come from auth session
-const USER_ID = "42c1eda0-18f2-4213-86b0-55b47ee003f3"
-
 export async function GET() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     try {
         const projects = await prisma.project.findMany({
-            where: { userId: USER_ID },
+            where: { userId: user.id },
             include: {
                 _count: {
                     select: { tasks: true }
@@ -26,6 +31,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     try {
         const body = await req.json()
         const { title, description, startDate, endDate } = body
@@ -43,7 +55,7 @@ export async function POST(req: Request) {
                 description,
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
-                userId: USER_ID,
+                userId: user.id,
             }
         })
 
