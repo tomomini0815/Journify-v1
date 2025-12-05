@@ -57,7 +57,7 @@ export function MilestoneTemplatesPanel() {
 
                         {isExpanded && (
                             <div className="px-4 pb-4">
-                                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                <div className="flex gap-2 overflow-x-auto pb-2">
                                     {templates.map((template) => (
                                         <DraggableMilestoneTemplate key={template.id} template={template} />
                                     ))}
