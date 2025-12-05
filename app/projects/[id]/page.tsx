@@ -761,7 +761,7 @@ export default function ProjectDetailsPage() {
                                         </div>
 
                                         {/* Right Content: Timeline */}
-                                        <div id="timeline-scroll-container" className="flex-1 overflow-x-auto bg-[#151515] relative touch-pan-x">
+                                        <div id="timeline-scroll-container" className="flex-1 min-w-0 overflow-x-auto bg-[#151515] relative touch-pan-x">
                                             <div className="min-w-full" style={{ width: `${totalDays * dayWidth}px`, minWidth: '100%' }}>
                                                 {/* Date Header */}
                                                 <div className="h-16 border-b border-white/10 bg-[#252525] sticky top-0 z-20 select-none">
