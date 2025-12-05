@@ -41,9 +41,9 @@ type Task = {
     workflowName?: string
 }
 
-function DroppableCell({ date, children, isHoliday, width }: { date: string, children: React.ReactNode, isHoliday: boolean, width: number }) {
+function DroppableCell({ date, children, isHoliday, width, idPrefix = "" }: { date: string, children: React.ReactNode, isHoliday: boolean, width: number, idPrefix?: string }) {
     const { setNodeRef, isOver } = useDroppable({
-        id: date,
+        id: `${idPrefix}${date}`,
     })
 
     return (
@@ -440,11 +440,16 @@ export default function ProjectDetailsPage() {
         if (active.data.current?.type !== 'template') return
 
         const template = active.data.current.template as WorkflowTemplate
-        const dropDate = over.id as string // Date string from droppable id
+        let dropDate = over.id as string // Date string from droppable id
 
         if (!dropDate) return
 
-        if (!dropDate) return
+        // Handle prefixed IDs (top-DATE, bottom-DATE)
+        if (dropDate.startsWith('top-')) {
+            dropDate = dropDate.replace('top-', '')
+        } else if (dropDate.startsWith('bottom-')) {
+            dropDate = dropDate.replace('bottom-', '')
+        }
 
         // Create tasks from template
         let currentDate = new Date(dropDate)
@@ -916,7 +921,7 @@ export default function ProjectDetailsPage() {
                                                             const isMonthChange = prevDate && date.getMonth() !== prevDate.getMonth()
 
                                                             return (
-                                                                <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={holiday.isHoliday} width={dayWidth}>
+                                                                <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={holiday.isHoliday} width={dayWidth} idPrefix="top-">
                                                                     {isFirstOfMonth && (
                                                                         <div className="absolute -top-1 left-0 right-0 text-center pointer-events-none">
                                                                             <span className="text-[10px] font-bold text-white/80 bg-[#252525] px-1 rounded">
@@ -1115,7 +1120,7 @@ export default function ProjectDetailsPage() {
                                                         const isFirstOfMonth = date.getDate() === 1
 
                                                         return (
-                                                            <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={holiday.isHoliday} width={dayWidth}>
+                                                            <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={holiday.isHoliday} width={dayWidth} idPrefix="bottom-">
                                                                 {isFirstOfMonth && (
                                                                     <div className="absolute -top-1 left-0 right-0 text-center pointer-events-none">
                                                                         <span className="text-[10px] font-bold text-white/80 bg-[#252525] px-1 rounded">
