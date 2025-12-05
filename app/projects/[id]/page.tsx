@@ -247,10 +247,16 @@ export default function ProjectDetailsPage() {
     const toggleTaskCompletion = async (task: Task) => {
         if (!project) return
 
-        // Optimistic update
         const newCompletedStatus = !task.completed
+        // If completing, set status to done. If uncompleting, set to todo (unless it was something else, but simplicity suggests todo)
+        // actually, if uncompleting from 'done', go to 'todo'. If uncompleting from 'todo' (already todo), stay todo.
+        // If uncompleting from 'in-progress' (checkbox in list), stay in-progress?
+        // Let's keep it simple: Complete -> Done. Uncomplete -> Todo.
+        const newStatus = newCompletedStatus ? 'done' : 'todo'
+
+        // Optimistic update
         const updatedTasks = project.tasks.map(t =>
-            t.id === task.id ? { ...t, completed: newCompletedStatus } : t
+            t.id === task.id ? { ...t, completed: newCompletedStatus, status: newStatus } : t
         )
         setProject({ ...project, tasks: updatedTasks })
 
@@ -258,7 +264,7 @@ export default function ProjectDetailsPage() {
             const res = await fetch(`/api/projects/${params.id}/tasks/${task.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ completed: newCompletedStatus })
+                body: JSON.stringify({ completed: newCompletedStatus, status: newStatus })
             })
 
             if (!res.ok) {
@@ -269,7 +275,7 @@ export default function ProjectDetailsPage() {
             console.error("Failed to toggle task", error)
             // Revert state
             const revertedTasks = project.tasks.map(t =>
-                t.id === task.id ? { ...t, completed: !newCompletedStatus } : t
+                t.id === task.id ? { ...t, completed: !newCompletedStatus, status: task.status } : t
             )
             setProject({ ...project, tasks: revertedTasks })
         }
