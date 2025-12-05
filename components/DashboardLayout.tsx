@@ -24,7 +24,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const pathname = usePathname()
     const router = useRouter()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const [navigation, setNavigation] = useState(() => {
+    const [navigation, setNavigation] = useState(defaultNavigation)
+
+    useEffect(() => {
+        // Initial check from localStorage to avoid flicker
         if (typeof window !== 'undefined') {
             const stored = localStorage.getItem('enableProjects')
             if (stored === 'true') {
@@ -34,13 +37,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     href: "/projects",
                     icon: Briefcase
                 })
-                return newNav
+                setNavigation(newNav)
             }
         }
-        return defaultNavigation
-    })
 
-    useEffect(() => {
         const fetchSettings = async () => {
             try {
                 const res = await fetch("/api/user/settings", { cache: 'no-store' })

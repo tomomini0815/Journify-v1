@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2 } from "lucide-react"
+import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -37,6 +37,8 @@ type Task = {
     createdAt: string
     startDate?: string
     endDate?: string
+    workflowId?: string
+    workflowName?: string
 }
 
 function DroppableCell({ date, children, isHoliday, width }: { date: string, children: React.ReactNode, isHoliday: boolean, width: number }) {
@@ -89,6 +91,7 @@ export default function ProjectDetailsPage() {
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone', id: string, title: string } | null>(null)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [activeDragItem, setActiveDragItem] = useState<{ type: 'task', task: Task } | { type: 'milestone-template', template: MilestoneTemplate } | null>(null)
+    const [collapsedWorkflows, setCollapsedWorkflows] = useState<Set<string>>(new Set())
 
     // Configure DnD sensors to prevent blocking scroll
     const sensors = useSensors(
@@ -441,8 +444,12 @@ export default function ProjectDetailsPage() {
 
         if (!dropDate) return
 
+        if (!dropDate) return
+
         // Create tasks from template
         let currentDate = new Date(dropDate)
+        const workflowId = `wf-${Date.now()}`
+        const workflowName = template.name
 
         // Optimistic update
         const newTasks: Task[] = []
@@ -465,7 +472,9 @@ export default function ProjectDetailsPage() {
                 color: templateTask.color,
                 createdAt: new Date().toISOString(),
                 startDate,
-                endDate
+                endDate,
+                workflowId,
+                workflowName
             }
 
             newTasks.push(newTask)
@@ -495,7 +504,9 @@ export default function ProjectDetailsPage() {
                         priority: task.priority,
                         color: task.color,
                         startDate: task.startDate,
-                        endDate: task.endDate
+                        endDate: task.endDate,
+                        workflowId: task.workflowId,
+                        workflowName: task.workflowName
                     })
                 })
             }
@@ -519,6 +530,79 @@ export default function ProjectDetailsPage() {
             console.error("Failed to delete milestone", error)
         }
     }
+
+    const handleDeleteWorkflow = async (workflowId: string) => {
+        if (!confirm('このワークフローテンプレートに含まれるすべてのタスクを削除しますか？')) return
+
+        try {
+            // Optimistic update
+            if (project) {
+                const updatedTasks = project.tasks.filter(t => t.workflowId !== workflowId)
+                setProject({ ...project, tasks: updatedTasks })
+            }
+
+            const res = await fetch(`/api/projects/${params.id}/workflows/${workflowId}`, {
+                method: "DELETE"
+            })
+
+            if (res.ok) {
+                await fetchProject()
+            } else {
+                // Revert if failed
+                await fetchProject()
+            }
+        } catch (error) {
+            console.error("Failed to delete workflow", error)
+        }
+    }
+
+    const toggleWorkflowCollapse = (workflowId: string) => {
+        const newSet = new Set(collapsedWorkflows)
+        if (newSet.has(workflowId)) {
+            newSet.delete(workflowId)
+        } else {
+            newSet.add(workflowId)
+        }
+        setCollapsedWorkflows(newSet)
+    }
+
+    // Helper to generate consistent rows for Sidebar and Timeline
+    const timelineRows = (() => {
+        if (!project) return []
+        const rows: ({ type: 'header', id: string, name: string } | { type: 'task', task: Task } | { type: 'milestone', milestone: Milestone })[] = []
+
+        // Group tasks by workflow
+        const workflowGroups = new Map<string, Task[]>()
+        const ungroupedTasks: Task[] = []
+
+        project.tasks.forEach(task => {
+            if (task.workflowId) {
+                if (!workflowGroups.has(task.workflowId)) {
+                    workflowGroups.set(task.workflowId, [])
+                }
+                workflowGroups.get(task.workflowId)!.push(task)
+            } else {
+                ungroupedTasks.push(task)
+            }
+        })
+
+        // Ungrouped tasks first
+        ungroupedTasks.forEach(task => rows.push({ type: 'task', task }))
+
+        // Grouped tasks
+        workflowGroups.forEach((tasks, workflowId) => {
+            const workflowName = tasks[0].workflowName || 'Workflow'
+            rows.push({ type: 'header', id: workflowId, name: workflowName })
+            if (!collapsedWorkflows.has(workflowId)) {
+                tasks.forEach(task => rows.push({ type: 'task', task }))
+            }
+        })
+
+        // Milestones
+        project.milestones.forEach(milestone => rows.push({ type: 'milestone', milestone }))
+
+        return rows
+    })()
 
     const openEditTaskModal = (task: Task) => {
         setNewTask({
@@ -744,19 +828,50 @@ export default function ProjectDetailsPage() {
                                                 </button>
                                             </div>
                                             <div className="flex-1">
-                                                {project.tasks.map((task) => (
-                                                    <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate" title={sidebarCollapsed ? task.text : ''}>
-                                                        <div className={`w-2 h-2 rounded-full ${sidebarCollapsed ? '' : 'mr-2'} flex-shrink-0`} style={{ backgroundColor: task.color || '#6366f1' }} />
-                                                        {!sidebarCollapsed && <span className="text-sm truncate">{task.text}</span>}
-                                                    </div>
-                                                ))}
-                                                {/* Milestones in list */}
-                                                {project.milestones.map((milestone) => (
-                                                    <div key={milestone.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5">
-                                                        <Flag className="w-3 h-3 text-amber-400 mr-2 flex-shrink-0" />
-                                                        {!sidebarCollapsed && <span className="text-sm truncate text-amber-200">{milestone.title}</span>}
-                                                    </div>
-                                                ))}
+                                                {timelineRows.map((row, i) => {
+                                                    if (row.type === 'header') {
+                                                        const isCollapsed = collapsedWorkflows.has(row.id)
+                                                        return (
+                                                            <div key={`header-${row.id}`} className="h-8 bg-white/5 border-b border-white/5 flex items-center px-2 justify-between group">
+                                                                <button
+                                                                    onClick={() => toggleWorkflowCollapse(row.id)}
+                                                                    className="flex items-center gap-1 text-xs font-medium text-white/80 hover:text-white truncate flex-1 text-left"
+                                                                >
+                                                                    {isCollapsed ? <ChevronRight className="w-3 h-3 flex-shrink-0" /> : <ChevronDown className="w-3 h-3 flex-shrink-0" />}
+                                                                    {!sidebarCollapsed && <span className="truncate">{row.name}</span>}
+                                                                </button>
+                                                                {!sidebarCollapsed && (
+                                                                    <button
+                                                                        onClick={() => handleDeleteWorkflow(row.id)}
+                                                                        className="p-1 text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                                                        title="テンプレート一式を削除"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    }
+                                                    if (row.type === 'task') {
+                                                        const task = row.task
+                                                        return (
+                                                            <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate" title={sidebarCollapsed ? task.text : ''}>
+                                                                <div className={`w-2 h-2 rounded-full ${sidebarCollapsed ? '' : 'mr-2'} flex-shrink-0`} style={{ backgroundColor: task.color || '#6366f1' }} />
+                                                                {!sidebarCollapsed && <span className="text-sm truncate">{task.text}</span>}
+                                                            </div>
+                                                        )
+                                                    }
+                                                    if (row.type === 'milestone') {
+                                                        const milestone = row.milestone
+                                                        return (
+                                                            <div key={milestone.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5">
+                                                                <Flag className="w-3 h-3 text-amber-400 mr-2 flex-shrink-0" />
+                                                                {!sidebarCollapsed && <span className="text-sm truncate text-amber-200">{milestone.title}</span>}
+                                                            </div>
+                                                        )
+                                                    }
+                                                    return null
+                                                })}
                                             </div>
                                         </div>
 
@@ -842,98 +957,108 @@ export default function ProjectDetailsPage() {
                                                         return null
                                                     })()}
 
-                                                    {/* Task Rows */}
-                                                    {project.tasks.map((task) => {
-                                                        if (!task.startDate || !task.endDate) return <div key={task.id} className="h-12 border-b border-white/5" />
+                                                    {/* Task & Milestone Rows */}
+                                                    {timelineRows.map((row, i) => {
+                                                        if (row.type === 'header') {
+                                                            return <div key={`header-${row.id}`} className="h-8 border-b border-white/5 bg-white/[0.02]" />
+                                                        }
 
-                                                        const taskStart = new Date(task.startDate)
-                                                        const taskEnd = new Date(task.endDate)
-                                                        const left = ((taskStart.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
-                                                        const width = Math.max(((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth, dayWidth)
-                                                        const duration = Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24))
-                                                        const taskColor = task.color || '#6366f1'
+                                                        if (row.type === 'task') {
+                                                            const task = row.task
+                                                            if (!task.startDate || !task.endDate) return <div key={task.id} className="h-12 border-b border-white/5" />
 
-                                                        return (
-                                                            <div key={task.id} className="h-12 border-b border-white/5 relative group">
-                                                                <div
-                                                                    id={`task-${task.id}`}
-                                                                    className={`absolute top-2.5 h-7 rounded-lg flex items-center px-3 cursor-pointer transition-all shadow-lg ${task.completed ? 'opacity-60' : ''
-                                                                        }`}
-                                                                    style={{
-                                                                        left: `${left}px`,
-                                                                        width: `${width}px`,
-                                                                        backgroundColor: `${taskColor}80`,
-                                                                        borderColor: `${taskColor}cc`,
-                                                                        borderWidth: '1px'
-                                                                    }}
-                                                                    onClick={() => openEditTaskModal(task)}
-                                                                >
-                                                                    <span className="text-xs text-white font-medium truncate">{task.text}</span>
-                                                                    {/* Tooltip on hover */}
+                                                            const taskStart = new Date(task.startDate)
+                                                            const taskEnd = new Date(task.endDate)
+                                                            const left = ((taskStart.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
+                                                            const width = Math.max(((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth, dayWidth)
+                                                            const duration = Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24))
+                                                            const taskColor = task.color || '#6366f1'
+
+                                                            return (
+                                                                <div key={task.id} className="h-12 border-b border-white/5 relative group">
                                                                     <div
-                                                                        className={`absolute ${(() => {
-                                                                            const taskIndex = project.tasks.findIndex(t => t.id === task.id)
-                                                                            return taskIndex < 3 ? 'top-full mt-2' : 'bottom-full mb-2'
-                                                                        })()} left-0 opacity-0 group-hover:opacity-100 transition-opacity z-20`}
-                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        id={`task-${task.id}`}
+                                                                        className={`absolute top-2.5 h-7 rounded-lg flex items-center px-3 cursor-pointer transition-all shadow-lg ${task.completed ? 'opacity-60' : ''}`}
+                                                                        style={{
+                                                                            left: `${left}px`,
+                                                                            width: `${width}px`,
+                                                                            backgroundColor: `${taskColor}80`,
+                                                                            borderColor: `${taskColor}cc`,
+                                                                            borderWidth: '1px'
+                                                                        }}
+                                                                        onClick={() => openEditTaskModal(task)}
                                                                     >
-                                                                        <div className="bg-[#1a1a1a] border border-white/20 rounded-lg px-3 py-2 shadow-xl min-w-[200px] max-w-[320px]">
-                                                                            <div className="text-sm font-medium text-white mb-1">{task.text}</div>
-                                                                            <div className="text-xs text-white/60">
-                                                                                {taskStart.toLocaleDateString('ja-JP')} - {taskEnd.toLocaleDateString('ja-JP')}
-                                                                            </div>
-                                                                            <div className="text-xs text-white/40 mt-1">期限: {duration}日</div>
-                                                                            {task.description && (
-                                                                                <div className="mt-3 pt-3 border-t border-white/10">
-                                                                                    <div className="text-xs text-white/70 mb-2 font-medium">細分化タスク:</div>
-                                                                                    <div
-                                                                                        className="text-xs text-white/60 max-h-48 overflow-y-auto prose prose-invert prose-sm max-w-none
-                                                                                            [&_ul]:list-none [&_ul]:pl-0 [&_ul]:space-y-1.5 [&_ul]:my-0
-                                                                                            [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:my-0 [&_li]:flex-row-reverse [&_li]:justify-end
-                                                                                            [&_li]:text-white/60 [&_li]:text-xs
-                                                                                            [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-pointer
-                                                                                            [&_input[type=checkbox]]:accent-indigo-500"
-                                                                                        dangerouslySetInnerHTML={{ __html: task.description }}
-                                                                                        onClick={(e) => {
-                                                                                            const target = e.target as HTMLElement
-                                                                                            if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
-                                                                                                const checkbox = target as HTMLInputElement
-                                                                                                const checkboxes = Array.from(
-                                                                                                    e.currentTarget.querySelectorAll('input[type="checkbox"]')
-                                                                                                )
-                                                                                                const index = checkboxes.indexOf(checkbox)
-                                                                                                handleSubtaskToggle(task.id, index, checkbox.checked)
-                                                                                            }
-                                                                                        }}
-                                                                                    />
+                                                                        <span className="text-xs text-white font-medium truncate">{task.text}</span>
+                                                                        {/* Tooltip on hover */}
+                                                                        <div
+                                                                            className={`absolute ${(() => {
+                                                                                const taskIndex = i // Use loop index for basic position logic
+                                                                                return taskIndex < 3 ? 'top-full mt-2' : 'bottom-full mb-2'
+                                                                            })()} left-0 opacity-0 group-hover:opacity-100 transition-opacity z-20`}
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        >
+                                                                            <div className="bg-[#1a1a1a] border border-white/20 rounded-lg px-3 py-2 shadow-xl min-w-[200px] max-w-[320px]">
+                                                                                <div className="text-sm font-medium text-white mb-1">{task.text}</div>
+                                                                                <div className="text-xs text-white/60">
+                                                                                    {taskStart.toLocaleDateString('ja-JP')} - {taskEnd.toLocaleDateString('ja-JP')}
                                                                                 </div>
-                                                                            )}
+                                                                                <div className="text-xs text-white/40 mt-1">期限: {duration}日</div>
+                                                                                {task.description && (
+                                                                                    <div className="mt-3 pt-3 border-t border-white/10">
+                                                                                        <div className="text-xs text-white/70 mb-2 font-medium">細分化タスク:</div>
+                                                                                        <div
+                                                                                            className="text-xs text-white/60 max-h-48 overflow-y-auto prose prose-invert prose-sm max-w-none
+                                                                                                [&_ul]:list-none [&_ul]:pl-0 [&_ul]:space-y-1.5 [&_ul]:my-0
+                                                                                                [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:my-0 [&_li]:flex-row-reverse [&_li]:justify-end
+                                                                                                [&_li]:text-white/60 [&_li]:text-xs
+                                                                                                [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-pointer
+                                                                                                [&_input[type=checkbox]]:accent-indigo-500"
+                                                                                            dangerouslySetInnerHTML={{ __html: task.description }}
+                                                                                            // ... rest of event handler logic (simplified for replacement, assume existing handles clicks if complex not needed or standard)
+                                                                                            // Actually I should keep the complex event handler. I made a mistake in assumption.
+                                                                                            // I'll assume the original event logic is fine to be replaced with what I write here, which should be correct.
+                                                                                            onClick={(e) => {
+                                                                                                const target = e.target as HTMLElement
+                                                                                                if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                                                                                                    const checkbox = target as HTMLInputElement
+                                                                                                    const checkboxes = Array.from(
+                                                                                                        e.currentTarget.querySelectorAll('input[type="checkbox"]')
+                                                                                                    )
+                                                                                                    const index = checkboxes.indexOf(checkbox)
+                                                                                                    handleSubtaskToggle(task.id, index, checkbox.checked)
+                                                                                                }
+                                                                                            }}
+                                                                                        />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        )
-                                                    })}
+                                                            )
+                                                        }
 
-                                                    {/* Milestone Rows */}
-                                                    {project.milestones.map((milestone) => {
-                                                        const date = new Date(milestone.date)
-                                                        const left = ((date.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
+                                                        if (row.type === 'milestone') {
+                                                            const milestone = row.milestone
+                                                            const date = new Date(milestone.date)
+                                                            const left = ((date.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
 
-                                                        return (
-                                                            <div key={milestone.id} className="h-12 border-b border-white/5 relative bg-amber-500/5">
-                                                                <div
-                                                                    className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-10"
-                                                                    style={{ left: `${left + (dayWidth / 2)}px` }}
-                                                                >
-                                                                    <div className="w-4 h-4 rotate-45 bg-amber-400 border-2 border-[#1a1a1a] shadow-lg" />
-                                                                    <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-amber-400/30 px-3 py-2 rounded-lg text-xs whitespace-nowrap shadow-xl">
-                                                                        <div className="font-medium text-amber-200">{milestone.title}</div>
-                                                                        <div className="text-white/60 text-[10px] mt-1">{date.toLocaleDateString('ja-JP')}</div>
+                                                            return (
+                                                                <div key={milestone.id} className="h-12 border-b border-white/5 relative bg-amber-500/5">
+                                                                    <div
+                                                                        className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-10"
+                                                                        style={{ left: `${left + (dayWidth / 2)}px` }}
+                                                                    >
+                                                                        <div className="w-4 h-4 rotate-45 bg-amber-400 border-2 border-[#1a1a1a] shadow-lg" />
+                                                                        <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a1a] border border-amber-400/30 px-3 py-2 rounded-lg text-xs whitespace-nowrap shadow-xl">
+                                                                            <div className="font-medium text-amber-200">{milestone.title}</div>
+                                                                            <div className="text-white/60 text-[10px] mt-1">{date.toLocaleDateString('ja-JP')}</div>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        )
+                                                            )
+                                                        }
+                                                        return null
                                                     })}
                                                 </div>
                                             </div>
@@ -1257,7 +1382,7 @@ function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, t
                 ))}
                 {tasks.length === 0 && (
                     <div className="text-center py-8 text-white/20 text-sm border border-white/5 border-dashed rounded-lg">
-                        繧ｿ繧ｹ繧ｯ縺ｪ縺・
+                        タスクなし
                     </div>
                 )}
             </div>

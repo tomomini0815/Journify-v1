@@ -25,7 +25,7 @@ export async function GET(
                     orderBy: { date: 'asc' }
                 },
                 tasks: {
-                    orderBy: { createdAt: 'desc' }
+                    orderBy: { createdAt: 'asc' }
                 }
             }
         })
