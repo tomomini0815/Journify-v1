@@ -1,14 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronDown, ChevronRight, GripVertical, Plus } from "lucide-react"
 import { useDraggable } from "@dnd-kit/core"
 import { WorkflowTemplate, defaultTemplates } from "@/lib/workflowTemplates"
+import Link from "next/link"
 
 export function WorkflowTemplatesPanel() {
     const [isOpen, setIsOpen] = useState(true)
     const [templates, setTemplates] = useState<WorkflowTemplate[]>(defaultTemplates)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        fetchTemplates()
+    }, [])
+
+    const fetchTemplates = async () => {
+        try {
+            const res = await fetch('/api/workflow-templates')
+            if (res.ok) {
+                const customTemplates = await res.json()
+                setTemplates([...defaultTemplates, ...customTemplates])
+            }
+        } catch (error) {
+            console.error('Failed to fetch custom templates:', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     return (
         <div className="bg-[#1a1a1a] border-b border-white/10">
@@ -36,11 +56,14 @@ export function WorkflowTemplatesPanel() {
                                 <DraggableTemplate key={template.id} template={template} />
                             ))}
 
-                            {/* Custom Template Button (Placeholder) */}
-                            <button className="flex flex-col items-center justify-center min-w-[200px] h-[100px] rounded-xl border border-white/10 border-dashed hover:bg-white/5 transition-colors group">
+                            {/* Custom Template Button */}
+                            <Link
+                                href="/workflow-templates"
+                                className="flex flex-col items-center justify-center min-w-[200px] h-[100px] rounded-xl border border-white/10 border-dashed hover:bg-white/5 transition-colors group"
+                            >
                                 <Plus className="w-6 h-6 text-white/40 group-hover:text-white/80 mb-2" />
                                 <span className="text-sm text-white/40 group-hover:text-white/80">カスタム作成</span>
-                            </button>
+                            </Link>
                         </div>
                     </motion.div>
                 )}

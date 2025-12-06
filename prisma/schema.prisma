@@ -24,6 +24,7 @@ model User {
   tasks            Task[]
   settings         UserSettings?
   visionBoardItems VisionBoardItem[]
+  workflowTemplates WorkflowTemplate[]
 }
 
 model UserSettings {
@@ -210,4 +211,17 @@ model Comment {
   project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+}
+
+model WorkflowTemplate {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String
+  tasks       Json     // WorkflowTask[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
 }

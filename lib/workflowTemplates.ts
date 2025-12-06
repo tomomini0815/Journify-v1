@@ -54,3 +54,27 @@ export const defaultTemplates: WorkflowTemplate[] = [
         ]
     }
 ]
+
+// Fetch custom templates from API
+export async function fetchCustomTemplates(): Promise<WorkflowTemplate[]> {
+    try {
+        const res = await fetch('/api/workflow-templates')
+        if (!res.ok) return []
+        const data = await res.json()
+        return data.map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            description: t.description,
+            tasks: t.tasks
+        }))
+    } catch (error) {
+        console.error('Failed to fetch custom templates:', error)
+        return []
+    }
+}
+
+// Get all templates (default + custom)
+export async function getAllTemplates(): Promise<WorkflowTemplate[]> {
+    const customTemplates = await fetchCustomTemplates()
+    return [...defaultTemplates, ...customTemplates]
+}
