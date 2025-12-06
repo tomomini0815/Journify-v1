@@ -274,8 +274,15 @@ export default function ProjectDetailsPage() {
                     }, 300)
                 }
             } else {
-                const errorData = await res.json()
-                console.error("Task save failed", errorData)
+                console.error("Task save failed with status:", res.status, res.statusText)
+                const responseText = await res.text()
+                console.error("Response body:", responseText)
+                try {
+                    const errorData = JSON.parse(responseText)
+                    console.error("Parsed error data:", errorData)
+                } catch (e) {
+                    console.error("Could not parse error response as JSON")
+                }
             }
         } catch (error) {
             console.error("Failed to save task", error)
