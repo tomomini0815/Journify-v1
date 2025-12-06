@@ -674,8 +674,13 @@ export default function ProjectDetailsPage() {
             }
         })
 
-        // Milestones
-        project.milestones.forEach(milestone => rows.push({ type: 'milestone', milestone }))
+        // Milestones Group
+        if (project.milestones.length > 0) {
+            rows.push({ type: 'header', id: 'milestones', name: 'マイルストーン' })
+            if (!collapsedWorkflows.has('milestones')) {
+                project.milestones.forEach(milestone => rows.push({ type: 'milestone', milestone }))
+            }
+        }
 
         return rows
     })()
@@ -991,9 +996,17 @@ export default function ProjectDetailsPage() {
                                                     if (row.type === 'milestone') {
                                                         const milestone = row.milestone
                                                         return (
-                                                            <div key={milestone.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5">
+                                                            <div key={milestone.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors bg-amber-500/5 group">
                                                                 <Flag className="w-3 h-3 text-amber-400 mr-2 flex-shrink-0" />
-                                                                {!sidebarCollapsed && <span className="text-sm truncate text-amber-200">{milestone.title}</span>}
+                                                                {!sidebarCollapsed && <span className="text-sm truncate text-amber-200 flex-1">{milestone.title}</span>}
+                                                                {!sidebarCollapsed && (
+                                                                    <button
+                                                                        onClick={() => setDeleteConfirm({ type: 'milestone', id: milestone.id, title: milestone.title })}
+                                                                        className="p-1 text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         )
                                                     }
@@ -1003,7 +1016,7 @@ export default function ProjectDetailsPage() {
                                         </div>
 
                                         {/* Right Content: Timeline */}
-                                        <div id="timeline-scroll-container" className="flex-1 min-w-0 overflow-x-auto bg-[#151515] relative touch-pan-x">
+                                        <div id="timeline-scroll-container" className="flex-1 min-w-0 overflow-x-auto bg-[#151515] relative">
                                             <div className="min-w-full" style={{ width: `${totalDays * dayWidth}px`, minWidth: '100%' }}>
                                                 {/* Date Header */}
                                                 <div className="h-16 border-b border-white/10 bg-[#252525] sticky top-0 z-20 select-none">
@@ -1270,7 +1283,7 @@ export default function ProjectDetailsPage() {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto overscroll-contain"
                             >
                                 <h2 className="text-xl font-bold mb-6">
                                     {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
@@ -1324,7 +1337,7 @@ export default function ProjectDetailsPage() {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto overscroll-contain"
                             >
                                 <h2 className="text-xl font-bold mb-6">
                                     {editingItem ? 'タスクを編集' : '新規タスク'}
