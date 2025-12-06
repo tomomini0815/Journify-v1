@@ -69,6 +69,26 @@ export function TaskCalendar({ tasks, onDateSelect }: TaskCalendarProps) {
             today.getDate() === day
     }
 
+    // Calculate moon phase for a given date
+    // Returns 'new' for new moon, 'full' for full moon, or null
+    const getMoonPhase = (day: number): 'new' | 'full' | null => {
+        const date = new Date(year, month, day)
+        // Known new moon: January 11, 2024
+        const knownNewMoon = new Date(2024, 0, 11)
+        const synodicMonth = 29.53058867 // days
+
+        const daysSinceKnownNewMoon = (date.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24)
+        const phase = daysSinceKnownNewMoon % synodicMonth
+
+        // New moon is around phase 0, full moon is around phase 14.76
+        if (Math.abs(phase) < 0.5 || Math.abs(phase - synodicMonth) < 0.5) {
+            return 'new'
+        } else if (Math.abs(phase - synodicMonth / 2) < 0.5) {
+            return 'full'
+        }
+        return null
+    }
+
     const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
     const dayNames = ["日", "月", "火", "水", "木", "金", "土"]
 
@@ -129,11 +149,18 @@ export function TaskCalendar({ tasks, onDateSelect }: TaskCalendarProps) {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             className={`aspect-square rounded-xl p-2 transition-all relative ${isToday(day)
-                                    ? 'bg-emerald-500/20 border-2 border-emerald-500 text-white font-bold'
-                                    : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
+                                ? 'bg-emerald-500/20 border-2 border-emerald-500 text-white font-bold'
+                                : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
                                 }`}
                         >
                             <div className="text-sm">{day}</div>
+
+                            {/* Moon phase indicator */}
+                            {getMoonPhase(day) && (
+                                <div className="absolute top-1 right-1 text-xs">
+                                    {getMoonPhase(day) === 'new' ? '🌑' : '🌕'}
+                                </div>
+                            )}
 
                             {/* Task indicators */}
                             {totalTasks > 0 && (
@@ -142,8 +169,8 @@ export function TaskCalendar({ tasks, onDateSelect }: TaskCalendarProps) {
                                         <div
                                             key={i}
                                             className={`w-1.5 h-1.5 rounded-full ${i < completedTasks
-                                                    ? 'bg-emerald-400'
-                                                    : 'bg-white/40'
+                                                ? 'bg-emerald-400'
+                                                : 'bg-white/40'
                                                 }`}
                                         />
                                     ))}

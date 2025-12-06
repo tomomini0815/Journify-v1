@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X, Download, Upload } from "lucide-react"
+import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X, ChevronDown } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
 
 type Task = {
@@ -286,6 +286,33 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         event.target.value = ''
     }
 
+    const generateCalendarLink = (task: Task, provider: 'google' | 'outlook' | 'yahoo') => {
+        const title = encodeURIComponent(task.text)
+        const startDate = task.scheduledDate || new Date()
+        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000) // 1 hour later
+
+        const formatDateForGoogle = (date: Date) => {
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+        }
+
+        const formatDateForOutlook = (date: Date) => {
+            return date.toISOString()
+        }
+
+        switch (provider) {
+            case 'google':
+                return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatDateForGoogle(startDate)}/${formatDateForGoogle(endDate)}`
+            case 'outlook':
+                return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${formatDateForOutlook(startDate)}&enddt=${formatDateForOutlook(endDate)}`
+            case 'yahoo':
+                const yahooStart = formatDateForGoogle(startDate)
+                const duration = '0100' // 1 hour in HHMM format
+                return `https://calendar.yahoo.com/?v=60&title=${title}&st=${yahooStart}&dur=${duration}`
+            default:
+                return ''
+        }
+    }
+
     const todoTasks = tasks.filter(t => t.status === 'todo')
     const inProgressTasks = tasks.filter(t => t.status === 'in-progress')
     const doneTasks = tasks.filter(t => t.status === 'done')
@@ -297,32 +324,8 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         <div className="h-full flex flex-col overflow-hidden">
             {/* Header */}
             <div className="mb-8 flex-shrink-0">
-                <div className="flex items-start justify-between mb-2">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">日々のタスク</h1>
-                        <p className="text-white/60">小さな達成の積み重ねが、大きな成長につながります。</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={exportToCalendar}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm text-white transition-colors whitespace-nowrap"
-                            title="カレンダーにエクスポート"
-                        >
-                            <Download className="w-4 h-4" />
-                            <span className="hidden sm:inline">エクスポート</span>
-                        </button>
-                        <label className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm text-white transition-colors cursor-pointer whitespace-nowrap">
-                            <Upload className="w-4 h-4" />
-                            <span className="hidden sm:inline">インポート</span>
-                            <input
-                                type="file"
-                                accept=".ics"
-                                onChange={importFromCalendar}
-                                className="hidden"
-                            />
-                        </label>
-                    </div>
-                </div>
+                <h1 className="text-3xl font-bold text-white mb-2">日々のタスク</h1>
+                <p className="text-white/60">小さな達成の積み重ねが、大きな成長につながります。</p>
             </div>
 
             {/* Error Message */}
@@ -583,6 +586,7 @@ function KanbanColumn({
                                 onDelete={onDelete}
                                 onStatusChange={onStatusChange}
                                 onEdit={onEdit}
+                                generateCalendarLink={generateCalendarLink}
                                 isMobile={isMobile}
                             />
                         ))}
@@ -604,14 +608,17 @@ function TaskCard({
     onDelete,
     onStatusChange,
     onEdit,
+    generateCalendarLink,
     isMobile
 }: {
     task: Task
     onDelete: (id: string) => void
     onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
     onEdit: (task: Task) => void
+    generateCalendarLink: (task: Task, provider: 'google' | 'outlook' | 'yahoo') => string
     isMobile?: boolean
 }) {
+    const [showCalendarMenu, setShowCalendarMenu] = useState(false)
     return (
         <motion.div
             layout
@@ -657,7 +664,48 @@ function TaskCard({
                         )}
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 relative">
+                    {/* Calendar Dropdown */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowCalendarMenu(!showCalendarMenu)}
+                            className="p-2 text-white/40 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                            title="カレンダーに追加"
+                        >
+                            <Calendar className="w-4 h-4" />
+                        </button>
+                        {showCalendarMenu && (
+                            <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden">
+                                <a
+                                    href={generateCalendarLink(task, 'google')}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                    onClick={() => setShowCalendarMenu(false)}
+                                >
+                                    Google Calendar
+                                </a>
+                                <a
+                                    href={generateCalendarLink(task, 'outlook')}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                    onClick={() => setShowCalendarMenu(false)}
+                                >
+                                    Outlook
+                                </a>
+                                <a
+                                    href={generateCalendarLink(task, 'yahoo')}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                    onClick={() => setShowCalendarMenu(false)}
+                                >
+                                    Yahoo Calendar
+                                </a>
+                            </div>
+                        )}
+                    </div>
                     <button
                         onClick={() => onEdit(task)}
                         className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
