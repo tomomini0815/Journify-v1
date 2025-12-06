@@ -3,10 +3,10 @@ import prisma from "@/lib/prisma"
 
 export async function GET(
     req: Request,
-    { params }: { params: { shareToken: string } }
+    { params }: { params: Promise<{ shareToken: string }> }
 ) {
     try {
-        const { shareToken } = params
+        const { shareToken } = await params
 
         const project = await prisma.project.findFirst({
             where: {
@@ -37,10 +37,10 @@ export async function GET(
 
 export async function POST(
     req: Request,
-    { params }: { params: { shareToken: string } }
+    { params }: { params: Promise<{ shareToken: string }> }
 ) {
     try {
-        const { shareToken } = params
+        const { shareToken } = await params
         const { content, authorName } = await req.json()
 
         if (!content || !authorName) {
