@@ -54,10 +54,24 @@ model Project {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   comments    Comment[]
-
+  documents   ProjectDocument[]
 
   @@index([userId])
   @@index([shareToken])
+}
+
+model ProjectDocument {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // MIME type
+  url       String   // URL or Data URI
+  size      Int
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 model Milestone {

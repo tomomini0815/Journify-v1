@@ -100,7 +100,7 @@ export default function ProjectDetailsPage() {
         approvalStatus: "none",
     })
     const [taskAttachments, setTaskAttachments] = useState<Attachment[]>([])
-    const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list')
+    const [activeTab, setActiveTab] = useState<'list' | 'timeline' | 'docs'>('list')
     const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone', id: string, title: string } | null>(null)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
