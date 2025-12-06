@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X } from "lucide-react"
+import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X, Download, Upload } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
 
 type Task = {
@@ -179,6 +179,113 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         }, 100)
     }
 
+    const exportToCalendar = () => {
+        // Create .ics file content
+        const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Journify//Daily Tasks//EN',
+            'CALSCALE:GREGORIAN',
+            ...tasks.map(task => {
+                const dtstart = task.scheduledDate
+                    ? task.scheduledDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+                    : new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+                const summary = task.text.replace(/[\n\r]/g, ' ')
+                const status = task.status === 'done' ? 'COMPLETED' : task.status === 'in-progress' ? 'IN-PROCESS' : 'NEEDS-ACTION'
+
+                return [
+                    'BEGIN:VEVENT',
+                    `UID:${task.id}@journify.app`,
+                    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+                    `DTSTART:${dtstart}`,
+                    `SUMMARY:${summary}`,
+                    `STATUS:${status}`,
+                    `DESCRIPTION:Status: ${task.status}`,
+                    'END:VEVENT'
+                ].join('\r\n')
+            }),
+            'END:VCALENDAR'
+        ].join('\r\n')
+
+        // Create and download file
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `journify-tasks-${new Date().toISOString().split('T')[0]}.ics`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+    }
+
+    const importFromCalendar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+
+        const text = await file.text()
+        const lines = text.split(/\r?\n/)
+
+        let currentEvent: any = null
+        const importedTasks: any[] = []
+
+        for (const line of lines) {
+            if (line === 'BEGIN:VEVENT') {
+                currentEvent = {}
+            } else if (line === 'END:VEVENT' && currentEvent) {
+                if (currentEvent.summary) {
+                    importedTasks.push({
+                        text: currentEvent.summary,
+                        scheduledDate: currentEvent.dtstart ? new Date(currentEvent.dtstart) : null,
+                        status: 'todo'
+                    })
+                }
+                currentEvent = null
+            } else if (currentEvent && line.includes(':')) {
+                const [key, ...valueParts] = line.split(':')
+                const value = valueParts.join(':')
+
+                if (key === 'SUMMARY') {
+                    currentEvent.summary = value
+                } else if (key.startsWith('DTSTART')) {
+                    // Parse YYYYMMDDTHHMMSSZ format
+                    const dateStr = value.replace(/[TZ]/g, '')
+                    const year = parseInt(dateStr.substring(0, 4))
+                    const month = parseInt(dateStr.substring(4, 6)) - 1
+                    const day = parseInt(dateStr.substring(6, 8))
+                    const hour = parseInt(dateStr.substring(8, 10) || '0')
+                    const minute = parseInt(dateStr.substring(10, 12) || '0')
+                    currentEvent.dtstart = new Date(Date.UTC(year, month, day, hour, minute))
+                }
+            }
+        }
+
+        // Import tasks to backend
+        for (const taskData of importedTasks) {
+            try {
+                const res = await fetch("/api/tasks", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(taskData),
+                })
+                if (res.ok) {
+                    const task = await res.json()
+                    setTasks(prev => [{
+                        ...task,
+                        status: task.status || 'todo',
+                        createdAt: new Date(task.createdAt),
+                        scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : undefined
+                    }, ...prev])
+                }
+            } catch (error) {
+                console.error("Failed to import task", error)
+            }
+        }
+
+        // Reset file input
+        event.target.value = ''
+    }
+
     const todoTasks = tasks.filter(t => t.status === 'todo')
     const inProgressTasks = tasks.filter(t => t.status === 'in-progress')
     const doneTasks = tasks.filter(t => t.status === 'done')
@@ -190,8 +297,32 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         <div className="h-full flex flex-col overflow-hidden">
             {/* Header */}
             <div className="mb-8 flex-shrink-0">
-                <h1 className="text-3xl font-bold text-white mb-2">日々のタスク</h1>
-                <p className="text-white/60">小さな達成の積み重ねが、大きな成長につながります。</p>
+                <div className="flex items-start justify-between mb-2">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white mb-2">日々のタスク</h1>
+                        <p className="text-white/60">小さな達成の積み重ねが、大きな成長につながります。</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={exportToCalendar}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm text-white transition-colors whitespace-nowrap"
+                            title="カレンダーにエクスポート"
+                        >
+                            <Download className="w-4 h-4" />
+                            <span className="hidden sm:inline">エクスポート</span>
+                        </button>
+                        <label className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm text-white transition-colors cursor-pointer whitespace-nowrap">
+                            <Upload className="w-4 h-4" />
+                            <span className="hidden sm:inline">インポート</span>
+                            <input
+                                type="file"
+                                accept=".ics"
+                                onChange={importFromCalendar}
+                                className="hidden"
+                            />
+                        </label>
+                    </div>
+                </div>
             </div>
 
             {/* Error Message */}
@@ -509,18 +640,18 @@ function TaskCard({
                         {task.status !== 'todo' && (
                             <button
                                 onClick={() => onStatusChange(task.id, task.status === 'done' ? 'in-progress' : 'todo')}
-                                className="flex items-center gap-1 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-white transition-colors"
+                                className="flex items-center gap-1 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-white transition-colors whitespace-nowrap"
                             >
                                 <ArrowLeft className="w-3 h-3" />
-                                {task.status === 'done' ? '進行中へ' : '未着手へ'}
+                                {task.status === 'done' ? '進行中' : '未着手'}
                             </button>
                         )}
                         {task.status !== 'done' && (
                             <button
                                 onClick={() => onStatusChange(task.id, task.status === 'todo' ? 'in-progress' : 'done')}
-                                className="flex items-center gap-1 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-xs text-emerald-300 transition-colors"
+                                className="flex items-center gap-1 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-xs text-emerald-300 transition-colors whitespace-nowrap"
                             >
-                                {task.status === 'todo' ? '進行中へ' : '完了へ'}
+                                {task.status === 'todo' ? '進行中' : '完了'}
                                 <ArrowRight className="w-3 h-3" />
                             </button>
                         )}
