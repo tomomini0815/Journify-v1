@@ -164,10 +164,15 @@ export default function ProjectDetailsPage() {
     useEffect(() => {
         if (showTaskModal || showMilestoneModal || deleteConfirm) {
             document.body.style.overflow = 'hidden'
+            document.documentElement.style.overflow = 'hidden'
         } else {
             document.body.style.overflow = ''
+            document.documentElement.style.overflow = ''
         }
-        return () => { document.body.style.overflow = '' }
+        return () => {
+            document.body.style.overflow = ''
+            document.documentElement.style.overflow = ''
+        }
     }, [showTaskModal, showMilestoneModal, deleteConfirm])
 
     useEffect(() => {
@@ -1621,15 +1626,15 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
             <div className="flex items-start justify-between mb-2">
                 <h4 className="font-medium text-white text-sm line-clamp-2">{task.text}</h4>
                 <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            toggleTaskCompletion(task)
-                        }}
-                        className={`px-2 py-1 rounded text-xs transition-colors ${task.completed ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-white/10 text-white/60 hover:bg-white/20'}`}
+                    <div
+                        className={`px-2 py-1 rounded text-xs font-medium ${task.status === 'done' ? 'bg-emerald-500/20 text-emerald-300' :
+                                task.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300' :
+                                    'bg-white/10 text-white/60'
+                            }`}
                     >
-                        {task.completed ? '完了' : '未完了'}
-                    </button>
+                        {task.status === 'done' ? '完了' :
+                            task.status === 'in_progress' ? '進行中' : '未着手'}
+                    </div>
                     <div className="flex gap-1 transition-opacity opacity-0 group-hover:opacity-100">
                         <button
                             onClick={(e) => {
