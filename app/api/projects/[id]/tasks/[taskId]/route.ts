@@ -25,7 +25,7 @@ export async function PATCH(
         const body = await req.json()
         console.log("Body:", body)
 
-        const { text, startDate, endDate, completed, description, priority, status, color } = body
+        const { text, startDate, endDate, completed, description, url, priority, status, color } = body
 
         // Verify task belongs to user and project
         const task = await prisma.task.findFirst({
@@ -49,6 +49,7 @@ export async function PATCH(
                 endDate: endDate ? new Date(endDate) : undefined,
                 completed,
                 description,
+                url,
                 priority,
                 status,
                 color
