@@ -162,6 +162,15 @@ export default function ProjectDetailsPage() {
     }, [activeTab, project])
 
     useEffect(() => {
+        if (showTaskModal || showMilestoneModal || deleteConfirm) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = ''
+        }
+        return () => { document.body.style.overflow = '' }
+    }, [showTaskModal, showMilestoneModal, deleteConfirm])
+
+    useEffect(() => {
         fetchProject()
     }, [])
 
@@ -393,11 +402,11 @@ export default function ProjectDetailsPage() {
         if (!task || task.status === newStatus) return
 
         // Validate status
-        if (!['todo', 'in-progress', 'done'].includes(newStatus)) return
+        const isCompleted = newStatus === 'done'
 
         // Optimistic update
         const updatedTasks = project.tasks.map(t =>
-            t.id === taskId ? { ...t, status: newStatus } : t
+            t.id === taskId ? { ...t, status: newStatus, completed: isCompleted } : t
         )
         setProject({ ...project, tasks: updatedTasks })
 
@@ -406,7 +415,7 @@ export default function ProjectDetailsPage() {
             const res = await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: newStatus })
+                body: JSON.stringify({ status: newStatus, completed: isCompleted })
             })
 
             if (!res.ok) {
@@ -414,7 +423,6 @@ export default function ProjectDetailsPage() {
             }
         } catch (error) {
             console.error("Failed to update task status", error)
-            // Revert on error
             setProject(project)
         }
     }
@@ -430,7 +438,7 @@ export default function ProjectDetailsPage() {
             const taskId = active.id as string
             const newStatus = over.id as string
 
-            if (['todo', 'in-progress', 'done'].includes(newStatus)) {
+            if (['todo', 'in_progress', 'done'].includes(newStatus)) {
                 await updateTaskStatus(taskId, newStatus)
                 return
             }
@@ -881,9 +889,9 @@ export default function ProjectDetailsPage() {
 
                                         {/* 進行中 Column */}
                                         <KanbanColumn
-                                            id="in-progress"
+                                            id="in_progress"
                                             title="進行中"
-                                            tasks={project.tasks.filter(t => t.status === 'in-progress')}
+                                            tasks={project.tasks.filter(t => t.status === 'in_progress')}
                                             openEditTaskModal={openEditTaskModal}
                                             setDeleteConfirm={setDeleteConfirm}
                                             toggleTaskCompletion={toggleTaskCompletion}
@@ -894,7 +902,7 @@ export default function ProjectDetailsPage() {
                                         <KanbanColumn
                                             id="done"
                                             title="完了"
-                                            tasks={project.tasks.filter(t => t.status === 'done' || (t.status !== 'in-progress' && t.status !== 'todo' && t.completed))}
+                                            tasks={project.tasks.filter(t => t.status === 'done')}
                                             openEditTaskModal={openEditTaskModal}
                                             setDeleteConfirm={setDeleteConfirm}
                                             toggleTaskCompletion={toggleTaskCompletion}
