@@ -9,6 +9,7 @@ import { MilestoneTemplatesPanel } from '@/components/MilestoneTemplatesPanel'
 import { WorkflowTemplatesPanel } from '@/components/WorkflowTemplates'
 import { WorkflowTemplate } from '@/lib/workflowTemplates'
 import { MilestoneTemplate } from '@/lib/milestoneTemplates'
+import { isHoliday } from '@/lib/holidays'
 
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
@@ -89,11 +90,7 @@ type Project = {
     comments: Comment[]
 }
 
-const isHoliday = (date: string) => {
-    const d = new Date(date)
-    const day = d.getDay()
-    return day === 0 || day === 6
-}
+
 
 export default function ProjectDetailsPage() {
     const params = useParams()
@@ -659,10 +656,10 @@ export default function ProjectDetailsPage() {
             while (remainingDays > 0) {
                 tempDate.setDate(tempDate.getDate() + 1)
                 const day = tempDate.getDay()
-                const isJpHoliday = isHoliday(tempDate.toISOString().split('T')[0])
+                const isJpHoliday = isHoliday(tempDate)
 
                 // If it's a workday, decrement remaining days
-                if (day !== 0 && day !== 6 && !isJpHoliday) {
+                if (day !== 0 && day !== 6 && !isJpHoliday.isHoliday) {
                     remainingDays--
                 }
                 // If it's weekend/holiday, we just advance the date (loop continues) without reducing remainingDays
@@ -1193,13 +1190,13 @@ export default function ProjectDetailsPage() {
                                                             const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
                                                             const isToday = date.toDateString() === new Date().toDateString()
                                                             const isWeekend = date.getDay() === 0 || date.getDay() === 6
-                                                            const holiday = isHoliday(date.toISOString().split('T')[0])
+                                                            const holiday = isHoliday(date)
                                                             const isFirstOfMonth = date.getDate() === 1
                                                             const prevDate = i > 0 ? new Date(minDate.getTime() + (i - 1) * 24 * 60 * 60 * 1000) : null
                                                             const isMonthChange = prevDate && date.getMonth() !== prevDate.getMonth()
 
                                                             return (
-                                                                <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={!!holiday} width={dayWidth} idPrefix="top-">
+                                                                <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={holiday.isHoliday} width={dayWidth} idPrefix="top-">
                                                                     {isFirstOfMonth && (
                                                                         <div className="absolute -top-1 left-0 right-0 text-center pointer-events-none">
                                                                             <span className="text-[10px] font-bold text-white/80 bg-[#252525] px-1 rounded">
@@ -1208,16 +1205,16 @@ export default function ProjectDetailsPage() {
                                                                         </div>
                                                                     )}
                                                                     <span className={`font-medium ${isToday ? 'text-indigo-300' :
-                                                                        holiday ? 'text-red-300' :
+                                                                        holiday.isHoliday ? 'text-red-300' :
                                                                             'text-white/60'
                                                                         }`}>
                                                                         {date.getDate()}
                                                                     </span>
                                                                     <span className={`text-[10px] ${isToday ? 'text-indigo-400' :
-                                                                        holiday ? 'text-red-400' :
+                                                                        holiday.isHoliday ? 'text-red-400' :
                                                                             isWeekend ? 'text-red-400/60' : 'text-white/30'
                                                                         }`}>
-                                                                        {holiday ? '祝' : ['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
+                                                                        {holiday.isHoliday ? '祝' : ['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
                                                                     </span>
                                                                 </DroppableCell>
                                                             )
@@ -1233,7 +1230,7 @@ export default function ProjectDetailsPage() {
                                                             const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
                                                             const isToday = date.toDateString() === new Date().toDateString()
                                                             const isWeekend = date.getDay() === 0 || date.getDay() === 6
-                                                            const holiday = isHoliday(date.toISOString().split('T')[0])
+                                                            const holiday = isHoliday(date)
                                                             const prevDate = i > 0 ? new Date(minDate.getTime() + (i - 1) * 24 * 60 * 60 * 1000) : null
                                                             const isMonthChange = prevDate && date.getMonth() !== prevDate.getMonth()
 
@@ -1386,11 +1383,11 @@ export default function ProjectDetailsPage() {
                                                         const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000)
                                                         const isToday = date.toDateString() === new Date().toDateString()
                                                         const isWeekend = date.getDay() === 0 || date.getDay() === 6
-                                                        const holiday = isHoliday(date.toISOString().split('T')[0])
+                                                        const holiday = isHoliday(date)
                                                         const isFirstOfMonth = date.getDate() === 1
 
                                                         return (
-                                                            <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={!!holiday} width={dayWidth} idPrefix="bottom-">
+                                                            <DroppableCell key={i} date={date.toISOString().split('T')[0]} isHoliday={holiday.isHoliday} width={dayWidth} idPrefix="bottom-">
                                                                 {isFirstOfMonth && (
                                                                     <div className="absolute -top-1 left-0 right-0 text-center pointer-events-none">
                                                                         <span className="text-[10px] font-bold text-white/80 bg-[#252525] px-1 rounded">
@@ -1399,16 +1396,16 @@ export default function ProjectDetailsPage() {
                                                                     </div>
                                                                 )}
                                                                 <span className={`font-medium ${isToday ? 'text-indigo-300' :
-                                                                    holiday ? 'text-red-300' :
+                                                                    holiday.isHoliday ? 'text-red-300' :
                                                                         'text-white/60'
                                                                     }`}>
                                                                     {date.getDate()}
                                                                 </span>
                                                                 <span className={`text-[10px] ${isToday ? 'text-indigo-400' :
-                                                                    holiday ? 'text-red-400' :
+                                                                    holiday.isHoliday ? 'text-red-400' :
                                                                         isWeekend ? 'text-red-400/60' : 'text-white/30'
                                                                     }`}>
-                                                                    {holiday ? '祝' : ['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
+                                                                    {holiday.isHoliday ? '祝' : ['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
                                                                 </span>
                                                             </DroppableCell>
                                                         )
