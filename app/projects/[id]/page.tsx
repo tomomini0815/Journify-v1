@@ -1910,51 +1910,154 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
                         >
                             <Pencil className="w-3.5 h-3.5 text-white/60" />
                         </button>
-                        {task.endDate && (
-                            <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
-                            </div>
-                        )}
-                        {task.attachments && task.attachments.length > 0 && (
-                            <div className="flex items-center gap-1 text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
-                                <Paperclip className="w-3 h-3" />
-                                <span>{task.attachments.length}</span>
-                            </div>
-                        )}
-                        {task.url && (
-                            <a
-                                href={task.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded hover:bg-indigo-400/20 transition-colors"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <LinkIcon className="w-3 h-3" />
-                            </a>
-                        )}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setDeleteConfirm({ type: 'task', id: task.id, title: task.text })
+                            }}
+                            className="p-1.5 hover:bg-red-500/10 text-white/60 hover:text-red-400 rounded-lg transition-colors"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                     </div>
+                </div>
+            </div>
 
-                    {/* Description preview on hover */}
-                    {task.description && (
-                        <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
-                            <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none"
-                                dangerouslySetInnerHTML={{ __html: task.description }}
-                                onClick={(e) => {
-                                    const target = e.target as HTMLElement
-                                    if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
-                                        e.stopPropagation() // Prevent card drag/click
-                                        const checkboxes = Array.from(e.currentTarget.querySelectorAll('input[type="checkbox"]'))
-                                        const index = checkboxes.indexOf(target as HTMLInputElement)
-                                        if (index !== -1) {
-                                            handleSubtaskToggle(task.id, index, (target as HTMLInputElement).checked)
-                                        }
-                                    }
-                                }}
-                            />
+            <div className="flex flex-wrap gap-3 text-xs text-white/40">
+                {task.startDate && (
+                    <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>開始: {new Date(task.startDate).toLocaleDateString()}</span>
+                    </div>
+                )}
+                {task.endDate && (
+                    <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
+                    </div>
+                )}
+                {task.attachments && task.attachments.length > 0 && (
+                    <div className="flex items-center gap-1 text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
+                        <Paperclip className="w-3 h-3" />
+                        <span>{task.attachments.length}</span>
+                    </div>
+                )}
+                {task.url && (
+                    <a
+                        href={task.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded hover:bg-indigo-400/20 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <LinkIcon className="w-3 h-3" />
+                    </a>
+                )}
+            </div>
+
+            {/* Description preview on hover */}
+            {task.description && (
+                <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
+                    <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ __html: task.description }}
+                        onClick={(e) => {
+                            const target = e.target as HTMLElement
+                            if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                                e.stopPropagation() // Prevent card drag/click
+                                const checkboxes = Array.from(e.currentTarget.querySelectorAll('input[type="checkbox"]'))
+                                const index = checkboxes.indexOf(target as HTMLInputElement)
+                                if (index !== -1) {
+                                    handleSubtaskToggle(task.id, index, (target as HTMLInputElement).checked)
+                                }
+                            }
+                        }}
+                    />
+                </div>
+            )}
+
+            {/* Approval Status */}
+            {task.approvalStatus === 'approved' && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded w-fit">
+                    <Check className="w-3 h-3" />
+                    <span>承認済み</span>
+                </div>
+            )}
+            {task.approvalStatus === 'rejected' && (
+                <div className="mt-2 group/rejection relative">
+                    <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded w-fit cursor-help">
+                        <X className="w-3 h-3" />
+                        <span>却下</span>
+                    </div>
+                    {task.rejectionReason && (
+                        <div className="absolute top-full left-0 mt-1 w-48 p-2 bg-black/90 border border-white/10 rounded-lg text-xs text-white z-50 invisible group-hover/rejection:visible">
+                            <p className="font-bold mb-0.5 text-red-300">理由:</p>
+                            {task.rejectionReason}
                         </div>
                     )}
                 </div>
+            )}
+        </div>
+    )
+}
+task.status === 'in_progress' ? '進行中' : '未着手'}
+                    </div >
+    <div className="flex gap-1 transition-opacity opacity-0 group-hover:opacity-100">
+        <button
+            onClick={(e) => {
+                e.stopPropagation()
+                openEditTaskModal(task)
+            }}
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+        >
+            <Pencil className="w-3.5 h-3.5 text-white/60" />
+        </button>
+        {task.endDate && (
+            <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
+            </div>
+        )}
+        {task.attachments && task.attachments.length > 0 && (
+            <div className="flex items-center gap-1 text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
+                <Paperclip className="w-3 h-3" />
+                <span>{task.attachments.length}</span>
+            </div>
+        )}
+        {task.url && (
+            <a
+                href={task.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded hover:bg-indigo-400/20 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <LinkIcon className="w-3 h-3" />
+            </a>
+        )}
+    </div>
+
+{/* Description preview on hover */ }
+{
+    task.description && (
+        <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
+            <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: task.description }}
+                onClick={(e) => {
+                    const target = e.target as HTMLElement
+                    if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                        e.stopPropagation() // Prevent card drag/click
+                        const checkboxes = Array.from(e.currentTarget.querySelectorAll('input[type="checkbox"]'))
+                        const index = checkboxes.indexOf(target as HTMLInputElement)
+                        if (index !== -1) {
+                            handleSubtaskToggle(task.id, index, (target as HTMLInputElement).checked)
+                        }
+                    }
+                }}
+            />
+        </div>
+    )
+}
+                </div >
                 )
 }
 
