@@ -681,7 +681,7 @@ function TaskCard({
                                 <Calendar className="w-4 h-4" />
                             </button>
                             {showCalendarMenu && (
-                                <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden">
+                                <div className="absolute left-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden">
                                     <a
                                         href={generateCalendarLink(task, 'google')}
                                         target="_blank"
