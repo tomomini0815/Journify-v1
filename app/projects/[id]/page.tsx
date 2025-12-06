@@ -1270,7 +1270,7 @@ export default function ProjectDetailsPage() {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
                             >
                                 <h2 className="text-xl font-bold mb-6">
                                     {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
@@ -1324,7 +1324,7 @@ export default function ProjectDetailsPage() {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
                             >
                                 <h2 className="text-xl font-bold mb-6">
                                     {editingItem ? 'タスクを編集' : '新規タスク'}
@@ -1593,6 +1593,7 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
             }}
             {...listeners}
             {...attributes}
+            onClick={() => openEditTaskModal(task)}
             className={`bg-white/5 border rounded-xl p-4 group transition-all hover:bg-white/10 cursor-grab active:cursor-grabbing relative ${isDragging ? 'opacity-50 z-50 ring-2 ring-indigo-500' : ''
                 }`}
         >
