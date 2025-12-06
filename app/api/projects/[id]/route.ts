@@ -27,6 +27,9 @@ export async function GET(
                 tasks: {
                     orderBy: { createdAt: 'asc' },
                     include: { attachments: true }
+                },
+                comments: {
+                    orderBy: { createdAt: 'desc' }
                 }
             }
         })
