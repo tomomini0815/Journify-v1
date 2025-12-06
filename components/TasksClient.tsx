@@ -435,6 +435,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
                                 onEdit={openEditModal}
+                                generateCalendarLink={generateCalendarLink}
                             />
                             <KanbanColumn
                                 title="進行中"
@@ -443,6 +444,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
                                 onEdit={openEditModal}
+                                generateCalendarLink={generateCalendarLink}
                             />
                             <KanbanColumn
                                 title="完了"
@@ -451,6 +453,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
                                 onEdit={openEditModal}
+                                generateCalendarLink={generateCalendarLink}
                             />
                         </div>
                     </div>
@@ -553,6 +556,7 @@ function KanbanColumn({
     onDelete,
     onStatusChange,
     onEdit,
+    generateCalendarLink,
     isMobile = false
 }: {
     title: string
@@ -561,6 +565,7 @@ function KanbanColumn({
     onDelete: (id: string) => void
     onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
     onEdit: (task: Task) => void
+    generateCalendarLink: (task: Task, provider: 'google' | 'outlook' | 'yahoo') => string
     isMobile?: boolean
 }) {
     const statusColors = {
