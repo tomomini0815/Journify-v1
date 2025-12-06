@@ -670,53 +670,59 @@ function TaskCard({
                     </div>
                 </div>
                 <div className="flex gap-2 relative">
-                    {/* Calendar Dropdown */}
-                    <div className="relative">
+                    {/* Calendar Dropdown - Only for todo tasks */}
+                    {task.status === 'todo' && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowCalendarMenu(!showCalendarMenu)}
+                                className="p-2 text-white/40 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                title="カレンダーに追加"
+                            >
+                                <Calendar className="w-4 h-4" />
+                            </button>
+                            {showCalendarMenu && (
+                                <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden">
+                                    <a
+                                        href={generateCalendarLink(task, 'google')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                        onClick={() => setShowCalendarMenu(false)}
+                                    >
+                                        Google Calendar
+                                    </a>
+                                    <a
+                                        href={generateCalendarLink(task, 'outlook')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                        onClick={() => setShowCalendarMenu(false)}
+                                    >
+                                        Outlook
+                                    </a>
+                                    <a
+                                        href={generateCalendarLink(task, 'yahoo')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                        onClick={() => setShowCalendarMenu(false)}
+                                    >
+                                        Yahoo Calendar
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {/* Edit button - Only for todo tasks */}
+                    {task.status === 'todo' && (
                         <button
-                            onClick={() => setShowCalendarMenu(!showCalendarMenu)}
-                            className="p-2 text-white/40 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
-                            title="カレンダーに追加"
+                            onClick={() => onEdit(task)}
+                            className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
                         >
-                            <Calendar className="w-4 h-4" />
+                            <Pencil className="w-4 h-4" />
                         </button>
-                        {showCalendarMenu && (
-                            <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden">
-                                <a
-                                    href={generateCalendarLink(task, 'google')}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                    onClick={() => setShowCalendarMenu(false)}
-                                >
-                                    Google Calendar
-                                </a>
-                                <a
-                                    href={generateCalendarLink(task, 'outlook')}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                    onClick={() => setShowCalendarMenu(false)}
-                                >
-                                    Outlook
-                                </a>
-                                <a
-                                    href={generateCalendarLink(task, 'yahoo')}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                    onClick={() => setShowCalendarMenu(false)}
-                                >
-                                    Yahoo Calendar
-                                </a>
-                            </div>
-                        )}
-                    </div>
-                    <button
-                        onClick={() => onEdit(task)}
-                        className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                    >
-                        <Pencil className="w-4 h-4" />
-                    </button>
+                    )}
+                    {/* Delete button - Always visible */}
                     <button
                         onClick={() => onDelete(task.id)}
                         className="p-2 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
