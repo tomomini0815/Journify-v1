@@ -240,8 +240,8 @@ export default function SharedProjectPage() {
                             <button
                                 onClick={() => setActiveTab('list')}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${activeTab === 'list'
-                                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
-                                        : 'text-white/60 hover:bg-white/5'
+                                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
+                                    : 'text-white/60 hover:bg-white/5'
                                     }`}
                             >
                                 <List className="w-4 h-4" />
@@ -250,8 +250,8 @@ export default function SharedProjectPage() {
                             <button
                                 onClick={() => setActiveTab('timeline')}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${activeTab === 'timeline'
-                                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
-                                        : 'text-white/60 hover:bg-white/5'
+                                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
+                                    : 'text-white/60 hover:bg-white/5'
                                     }`}
                             >
                                 <BarChart3 className="w-4 h-4" />
@@ -260,8 +260,8 @@ export default function SharedProjectPage() {
                             <button
                                 onClick={() => setActiveTab('comments')}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${activeTab === 'comments'
-                                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
-                                        : 'text-white/60 hover:bg-white/5'
+                                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
+                                    : 'text-white/60 hover:bg-white/5'
                                     }`}
                             >
                                 <MessageSquare className="w-4 h-4" />
@@ -350,7 +350,7 @@ export default function SharedProjectPage() {
                                                                 <XCircle className="w-4 h-4" />
                                                                 <span>却下</span>
                                                             </div>
-                                                            <p className="text-red-300/80 text-xs pl-6">{task.rejectionReason}</p>
+                                                            <p className="text-red-300/80 text-xs pl-6 break-words max-w-full">{task.rejectionReason}</p>
                                                             <button
                                                                 onClick={() => setRejectingTaskId(task.id)}
                                                                 className="text-white/40 text-xs pl-6 hover:text-white mt-1 underline"
@@ -508,9 +508,9 @@ export default function SharedProjectPage() {
                                                 return (
                                                     <div
                                                         key={i}
-                                                        className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs py-2 ${isHol ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                                                isWeekend ? 'bg-blue-500/5 text-blue-300 border-white/5' :
-                                                                    'border-white/5 text-white/60'
+                                                        className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs py-2 ${isHol.isHoliday ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                            isWeekend ? 'bg-blue-500/5 text-blue-300 border-white/5' :
+                                                                'border-white/5 text-white/60'
                                                             }`}
                                                         style={{ width: `${dayWidth}px` }}
                                                     >
@@ -544,9 +544,9 @@ export default function SharedProjectPage() {
                                                         return (
                                                             <div
                                                                 key={i}
-                                                                className={`flex-shrink-0 border-r ${isHol ? 'bg-red-500/5 border-red-500/20' :
-                                                                        isWeekend ? 'bg-blue-500/5 border-white/5' :
-                                                                            'border-white/5'
+                                                                className={`flex-shrink-0 border-r ${isHol.isHoliday ? 'bg-red-500/5 border-red-500/20' :
+                                                                    isWeekend ? 'bg-blue-500/5 border-white/5' :
+                                                                        'border-white/5'
                                                                     }`}
                                                                 style={{ width: `${dayWidth}px` }}
                                                             />
@@ -596,9 +596,9 @@ export default function SharedProjectPage() {
                                                         return (
                                                             <div
                                                                 key={i}
-                                                                className={`flex-shrink-0 border-r h-full ${isHol ? 'bg-red-500/5 border-red-500/20' :
-                                                                        isWeekend ? 'bg-blue-500/5 border-white/5' :
-                                                                            'border-white/5'
+                                                                className={`flex-shrink-0 border-r h-full ${isHol.isHoliday ? 'bg-red-500/5 border-red-500/20' :
+                                                                    isWeekend ? 'bg-blue-500/5 border-white/5' :
+                                                                        'border-white/5'
                                                                     }`}
                                                                 style={{ width: `${dayWidth}px` }}
                                                             />
@@ -660,8 +660,8 @@ export default function SharedProjectPage() {
                                             <div className="flex items-start justify-between gap-4 mb-2">
                                                 <h4 className="font-bold text-white text-sm">{hoveredTask.text}</h4>
                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full ${hoveredTask.status === 'done' ? 'bg-emerald-500/20 text-emerald-300' :
-                                                        hoveredTask.status === 'in-progress' ? 'bg-yellow-500/20 text-yellow-300' :
-                                                            'bg-blue-500/20 text-blue-300'
+                                                    hoveredTask.status === 'in-progress' ? 'bg-yellow-500/20 text-yellow-300' :
+                                                        'bg-blue-500/20 text-blue-300'
                                                     }`}>
                                                     {hoveredTask.status === 'done' ? '完了' :
                                                         hoveredTask.status === 'in-progress' ? '進行中' : '未着手'}
