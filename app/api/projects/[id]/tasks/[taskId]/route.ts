@@ -53,7 +53,7 @@ export async function PATCH(
                 priority,
                 status,
                 color
-            }
+            } as any // Type assertion to handle url field until Prisma client is regenerated
         })
         console.log("Task updated successfully")
 
