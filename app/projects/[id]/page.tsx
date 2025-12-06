@@ -1292,261 +1292,266 @@ export default function ProjectDetailsPage() {
                 {/* Milestone Modal */}
                 {
                     showMilestoneModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto overscroll-contain"
-                            >
-                                <h2 className="text-xl font-bold mb-6">
-                                    {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
-                                </h2>
-                                <form onSubmit={createMilestone} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={newMilestone.title}
-                                            onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
-                                        <input
-                                            type="date"
-                                            required
-                                            value={newMilestone.date}
-                                            onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                        />
-                                    </div>
-                                    <div className="flex justify-end gap-3 mt-6">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowMilestoneModal(false)}
-                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
-                                        >
-                                            キャンセル
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
-                                        >
-                                            {editingItem ? '更新' : '作成'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
-                        </div>
-                    )
-                }
-
-                {/* Task Modal */}
-                {
-                    showTaskModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto overscroll-contain"
-                            >
-                                <h2 className="text-xl font-bold mb-6">
-                                    {editingItem ? 'タスクを編集' : '新規タスク'}
-                                </h2>
-                                <form onSubmit={createTask} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={newTask.text}
-                                            onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">URL</label>
-                                        <div className="bg-white/5 border border-white/10 rounded-xl flex items-center px-3">
-                                            <LinkIcon className="w-4 h-4 text-white/40 mr-2" />
+                        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
+                            <div className="flex min-h-full items-center justify-center p-4">
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md relative"
+                                >
+                                    <h2 className="text-xl font-bold mb-6">
+                                        {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
+                                    </h2>
+                                    <form onSubmit={createMilestone} className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
                                             <input
-                                                type="url"
-                                                value={newTask.url || ""}
-                                                onChange={(e) => setNewTask({ ...newTask, url: e.target.value })}
-                                                placeholder="https://example.com"
-                                                className="w-full bg-transparent border-none h-12 text-white focus:outline-none focus:ring-0"
+                                                type="text"
+                                                required
+                                                value={newMilestone.title}
+                                                onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
                                             />
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">詳細説明</label>
-                                        <TaskDescriptionEditor
-                                            content={newTask.description}
-                                            onChange={(content) => setNewTask({ ...newTask, description: content })}
-                                        />
-                                    </div>
-
-                                    {editingItem && editingItem.type === 'task' && (
                                         <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">添付ファイル</label>
-                                            <div className="space-y-3">
-                                                {taskAttachments.length > 0 && (
-                                                    <div className="grid grid-cols-1 gap-2">
-                                                        {taskAttachments.map((file) => (
-                                                            <div key={file.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg group">
-                                                                <div className="flex items-center gap-3 overflow-hidden">
-                                                                    <div className="w-8 h-8 rounded bg-indigo-500/20 flex items-center justify-center flex-shrink-0 text-indigo-400">
-                                                                        <FileIcon className="w-4 h-4" />
-                                                                    </div>
-                                                                    <div className="min-w-0">
-                                                                        <div className="text-sm font-medium text-white truncate">{file.name}</div>
-                                                                        <div className="text-xs text-white/40">{(file.size / 1024).toFixed(1)} KB</div>
-                                                                    </div>
-                                                                </div>
-                                                                <a
-                                                                    href={file.url}
-                                                                    download
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                                                                >
-                                                                    <Download className="w-4 h-4" />
-                                                                </a>
-                                                            </div>
-                                                        ))}
+                                            <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
+                                            <input
+                                                type="date"
+                                                required
+                                                value={newMilestone.date}
+                                                onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                            />
+                                        </div>
+                                        <div className="flex justify-end gap-3 mt-6">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMilestoneModal(false)}
+                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                            >
+                                                キャンセル
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                            >
+                                                {editingItem ? '更新' : '作成'}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
+                            )
+                }
+
+
+                            {/* Task Modal */}
+                            {
+                                showTaskModal && (
+                                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
+                                        <div className="flex min-h-full items-center justify-center p-4">
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md relative"
+                                            >
+
+                                                <h2 className="text-xl font-bold mb-6">
+                                                    {editingItem ? 'タスクを編集' : '新規タスク'}
+                                                </h2>
+                                                <form onSubmit={createTask} className="space-y-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
+                                                        <input
+                                                            type="text"
+                                                            required
+                                                            value={newTask.text}
+                                                            onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                                        />
                                                     </div>
-                                                )}
-                                                <div className="flex gap-2">
-                                                    <FileUploader
-                                                        taskId={editingItem.id}
-                                                        onUploadComplete={(attachment) => {
-                                                            setTaskAttachments([...taskAttachments, attachment])
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">ステータス</label>
-                                            <select
-                                                value={newTask.status}
-                                                onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
-                                            >
-                                                <option value="todo">未着手</option>
-                                                <option value="in_progress">進行中</option>
-                                                <option value="done">完了</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">優先度</label>
-                                            <select
-                                                value={newTask.priority}
-                                                onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
-                                            >
-                                                <option value="high">高</option>
-                                                <option value="medium">中</option>
-                                                <option value="low">低</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">カラー</label>
-                                        <div className="flex gap-2">
-                                            {['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'].map((color) => (
-                                                <button
-                                                    key={color}
-                                                    type="button"
-                                                    onClick={() => setNewTask({ ...newTask, color })}
-                                                    className={`w-8 h-8 rounded-lg transition-all ${newTask.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1a1a] scale-110' : 'hover:scale-105'}`}
-                                                    style={{ backgroundColor: color }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
-                                            <input
-                                                type="date"
-                                                value={newTask.startDate}
-                                                onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">終了日</label>
-                                            <input
-                                                type="date"
-                                                value={newTask.endDate}
-                                                onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-end gap-3 mt-6">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowTaskModal(false)}
-                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
-                                        >
-                                            キャンセル
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
-                                        >
-                                            {editingItem ? '更新' : '作成'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
-                        </div>
-                    )
-                }
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-white/60 mb-2">URL</label>
+                                                        <div className="bg-white/5 border border-white/10 rounded-xl flex items-center px-3">
+                                                            <LinkIcon className="w-4 h-4 text-white/40 mr-2" />
+                                                            <input
+                                                                type="url"
+                                                                value={newTask.url || ""}
+                                                                onChange={(e) => setNewTask({ ...newTask, url: e.target.value })}
+                                                                placeholder="https://example.com"
+                                                                className="w-full bg-transparent border-none h-12 text-white focus:outline-none focus:ring-0"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-white/60 mb-2">詳細説明</label>
+                                                        <TaskDescriptionEditor
+                                                            content={newTask.description}
+                                                            onChange={(content) => setNewTask({ ...newTask, description: content })}
+                                                        />
+                                                    </div>
 
-                {/* Delete Confirmation Modal */}
-                {
-                    deleteConfirm && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
-                            >
-                                <h2 className="text-xl font-bold mb-4">削除の確認</h2>
-                                <p className="text-white/60 mb-6">
-                                    {deleteConfirm.type === 'task' ? 'タスク' : 'マイルストーン'}「{deleteConfirm.title}」を削除してもよろしいですか？
-                                </p>
-                                <div className="flex justify-end gap-3">
-                                    <button
-                                        onClick={() => setDeleteConfirm(null)}
-                                        className="px-4 py-2 text-white/60 hover:text-white transition-colors"
-                                    >
-                                        キャンセル
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (deleteConfirm.type === 'task') {
-                                                handleDeleteTask(deleteConfirm.id)
-                                            } else {
-                                                handleDeleteMilestone(deleteConfirm.id)
-                                            }
-                                        }}
-                                        className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors"
-                                    >
-                                        削除
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )
-                }
-            </div >
+                                                    {editingItem && editingItem.type === 'task' && (
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-white/60 mb-2">添付ファイル</label>
+                                                            <div className="space-y-3">
+                                                                {taskAttachments.length > 0 && (
+                                                                    <div className="grid grid-cols-1 gap-2">
+                                                                        {taskAttachments.map((file) => (
+                                                                            <div key={file.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg group">
+                                                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                                                    <div className="w-8 h-8 rounded bg-indigo-500/20 flex items-center justify-center flex-shrink-0 text-indigo-400">
+                                                                                        <FileIcon className="w-4 h-4" />
+                                                                                    </div>
+                                                                                    <div className="min-w-0">
+                                                                                        <div className="text-sm font-medium text-white truncate">{file.name}</div>
+                                                                                        <div className="text-xs text-white/40">{(file.size / 1024).toFixed(1)} KB</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <a
+                                                                                    href={file.url}
+                                                                                    download
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                                                >
+                                                                                    <Download className="w-4 h-4" />
+                                                                                </a>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex gap-2">
+                                                                    <FileUploader
+                                                                        taskId={editingItem.id}
+                                                                        onUploadComplete={(attachment) => {
+                                                                            setTaskAttachments([...taskAttachments, attachment])
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-white/60 mb-2">ステータス</label>
+                                                            <select
+                                                                value={newTask.status}
+                                                                onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+                                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
+                                                            >
+                                                                <option value="todo">未着手</option>
+                                                                <option value="in_progress">進行中</option>
+                                                                <option value="done">完了</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-white/60 mb-2">優先度</label>
+                                                            <select
+                                                                value={newTask.priority}
+                                                                onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
+                                                            >
+                                                                <option value="high">高</option>
+                                                                <option value="medium">中</option>
+                                                                <option value="low">低</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-white/60 mb-2">カラー</label>
+                                                        <div className="flex gap-2">
+                                                            {['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'].map((color) => (
+                                                                <button
+                                                                    key={color}
+                                                                    type="button"
+                                                                    onClick={() => setNewTask({ ...newTask, color })}
+                                                                    className={`w-8 h-8 rounded-lg transition-all ${newTask.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1a1a] scale-110' : 'hover:scale-105'}`}
+                                                                    style={{ backgroundColor: color }}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
+                                                            <input
+                                                                type="date"
+                                                                value={newTask.startDate}
+                                                                onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
+                                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-white/60 mb-2">終了日</label>
+                                                            <input
+                                                                type="date"
+                                                                value={newTask.endDate}
+                                                                onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
+                                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-end gap-3 mt-6">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowTaskModal(false)}
+                                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                                        >
+                                                            キャンセル
+                                                        </button>
+                                                        <button
+                                                            type="submit"
+                                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                                        >
+                                                            {editingItem ? '更新' : '作成'}
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </motion.div>
+                                        </div>
+                                    </div>
+                                )
+                            }
+
+                            {/* Delete Confirmation Modal */}
+                            {
+                                deleteConfirm && (
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                                        >
+                                            <h2 className="text-xl font-bold mb-4">削除の確認</h2>
+                                            <p className="text-white/60 mb-6">
+                                                {deleteConfirm.type === 'task' ? 'タスク' : 'マイルストーン'}「{deleteConfirm.title}」を削除してもよろしいですか？
+                                            </p>
+                                            <div className="flex justify-end gap-3">
+                                                <button
+                                                    onClick={() => setDeleteConfirm(null)}
+                                                    className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                                >
+                                                    キャンセル
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (deleteConfirm.type === 'task') {
+                                                            handleDeleteTask(deleteConfirm.id)
+                                                        } else {
+                                                            handleDeleteMilestone(deleteConfirm.id)
+                                                        }
+                                                    }}
+                                                    className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors"
+                                                >
+                                                    削除
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    </div>
+                                )
+                            }
+                        </div >
         </DashboardLayout >
     )
 }
@@ -1628,8 +1633,8 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
                 <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                     <div
                         className={`px-2 py-1 rounded text-xs font-medium ${task.status === 'done' ? 'bg-emerald-500/20 text-emerald-300' :
-                                task.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300' :
-                                    'bg-white/10 text-white/60'
+                            task.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300' :
+                                'bg-white/10 text-white/60'
                             }`}
                     >
                         {task.status === 'done' ? '完了' :
