@@ -516,7 +516,7 @@ export default function SharedProjectPage() {
                                                     >
                                                         <div className="font-medium">{date.getMonth() + 1}/{date.getDate()}</div>
                                                         <div className="text-[10px] opacity-75">
-                                                            {['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
+                                                            {isHol.isHoliday ? '祝' : ['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
                                                         </div>
                                                     </div>
                                                 )
