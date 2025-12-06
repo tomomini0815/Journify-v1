@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft } from "lucide-react"
+import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
 
 type Task = {
@@ -39,6 +39,8 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const [error, setError] = useState("")
     const [activeTab, setActiveTab] = useState<'kanban' | 'calendar'>('kanban')
     const [mobileKanbanTab, setMobileKanbanTab] = useState<'todo' | 'in-progress' | 'done'>('todo')
+    const [editingTask, setEditingTask] = useState<Task | null>(null)
+    const [showEditModal, setShowEditModal] = useState(false)
 
     const addTask = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -92,6 +94,58 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
             // Revert on error
             setTasks(tasks)
         }
+    }
+
+    const updateTask = async (taskId: string, updates: Partial<Task>) => {
+        // Optimistic update
+        const updatedTasks = tasks.map(t =>
+            t.id === taskId ? { ...t, ...updates } : t
+        )
+        setTasks(updatedTasks)
+
+        try {
+            const body: any = {}
+            if (updates.text !== undefined) body.text = updates.text
+            if (updates.status !== undefined) {
+                body.status = updates.status
+                body.completed = updates.status === 'done'
+            }
+            if (updates.scheduledDate !== undefined) {
+                body.scheduledDate = updates.scheduledDate ? updates.scheduledDate.toISOString() : null
+            }
+
+            await fetch(`/api/tasks/${taskId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            })
+        } catch (error) {
+            console.error("Failed to update task", error)
+            // Revert on error
+            setTasks(tasks)
+        }
+    }
+
+    const openEditModal = (task: Task) => {
+        setEditingTask(task)
+        setShowEditModal(true)
+    }
+
+    const closeEditModal = () => {
+        setEditingTask(null)
+        setShowEditModal(false)
+    }
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!editingTask) return
+
+        await updateTask(editingTask.id, {
+            text: editingTask.text,
+            scheduledDate: editingTask.scheduledDate,
+            status: editingTask.status
+        })
+        closeEditModal()
     }
 
     const deleteTask = async (id: string) => {
@@ -246,6 +300,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 tasks={todoTasks}
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
+                                onEdit={openEditModal}
                             />
                             <KanbanColumn
                                 title="進行中"
@@ -253,6 +308,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 tasks={inProgressTasks}
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
+                                onEdit={openEditModal}
                             />
                             <KanbanColumn
                                 title="完了"
@@ -260,9 +316,94 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 tasks={doneTasks}
                                 onDelete={deleteTask}
                                 onStatusChange={updateTaskStatus}
+                                onEdit={openEditModal}
                             />
                         </div>
                     </div>
+
+                    {/* Edit Task Modal */}
+                    {showEditModal && editingTask && (
+                        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
+                            <div className="flex min-h-full items-center justify-center p-4">
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md relative"
+                                >
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h2 className="text-xl font-bold text-white">タスクを編集</h2>
+                                        <button
+                                            onClick={closeEditModal}
+                                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                        >
+                                            <X className="w-5 h-5 text-white/60" />
+                                        </button>
+                                    </div>
+
+                                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">
+                                                タスク内容
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={editingTask.text}
+                                                onChange={(e) => setEditingTask({ ...editingTask, text: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">
+                                                予定日時
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                value={editingTask.scheduledDate ? new Date(editingTask.scheduledDate.getTime() - editingTask.scheduledDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                                                onChange={(e) => setEditingTask({
+                                                    ...editingTask,
+                                                    scheduledDate: e.target.value ? new Date(e.target.value) : undefined
+                                                })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors [color-scheme:dark]"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">
+                                                ステータス
+                                            </label>
+                                            <select
+                                                value={editingTask.status}
+                                                onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value as 'todo' | 'in-progress' | 'done' })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                            >
+                                                <option value="todo">未着手</option>
+                                                <option value="in-progress">進行中</option>
+                                                <option value="done">完了</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="flex justify-end gap-3 mt-6">
+                                            <button
+                                                type="button"
+                                                onClick={closeEditModal}
+                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                            >
+                                                キャンセル
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-medium transition-colors"
+                                            >
+                                                更新
+                                            </button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <TaskCalendar tasks={tasks} onDateSelect={handleDateSelect} />
@@ -277,6 +418,7 @@ function KanbanColumn({
     tasks,
     onDelete,
     onStatusChange,
+    onEdit,
     isMobile = false
 }: {
     title: string
@@ -284,39 +426,43 @@ function KanbanColumn({
     tasks: Task[]
     onDelete: (id: string) => void
     onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
+    onEdit: (task: Task) => void
     isMobile?: boolean
 }) {
     const statusColors = {
-        'todo': 'from-blue-500/20 to-blue-600/20 border-blue-500/50',
-        'in-progress': 'from-yellow-500/20 to-yellow-600/20 border-yellow-500/50',
-        'done': 'from-emerald-500/20 to-emerald-600/20 border-emerald-500/50'
+        'todo': 'border-blue-500/50',
+        'in-progress': 'border-yellow-500/50',
+        'done': 'border-emerald-500/50'
     }
 
     return (
         <div className="flex flex-col h-full">
-            <div className={`hidden md:block bg-gradient-to-br ${statusColors[status]} border rounded-2xl p-4 mb-4`}>
-                <h3 className="font-bold text-white text-lg">{title}</h3>
-                <p className="text-white/60 text-sm">{tasks.length}個のタスク</p>
-            </div>
+            <div className={`bg-[#1a1a1a] ${statusColors[status]} border-2 rounded-2xl p-6 h-full flex flex-col`}>
+                <div className="mb-4">
+                    <h3 className="font-bold text-white text-lg">{title}</h3>
+                    <p className="text-white/60 text-sm">{tasks.length}個のタスク</p>
+                </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto">
-                <AnimatePresence mode="popLayout">
-                    {tasks.map((task) => (
-                        <TaskCard
-                            key={task.id}
-                            task={task}
-                            onDelete={onDelete}
-                            onStatusChange={onStatusChange}
-                            isMobile={isMobile}
-                        />
-                    ))}
-                </AnimatePresence>
+                <div className="flex-1 space-y-3 overflow-y-auto">
+                    <AnimatePresence mode="popLayout">
+                        {tasks.map((task) => (
+                            <TaskCard
+                                key={task.id}
+                                task={task}
+                                onDelete={onDelete}
+                                onStatusChange={onStatusChange}
+                                onEdit={onEdit}
+                                isMobile={isMobile}
+                            />
+                        ))}
+                    </AnimatePresence>
 
-                {tasks.length === 0 && (
-                    <div className="text-center py-12 text-white/40">
-                        <p>タスクがありません</p>
-                    </div>
-                )}
+                    {tasks.length === 0 && (
+                        <div className="text-center py-12 text-white/40">
+                            <p>タスクがありません</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )
@@ -326,11 +472,13 @@ function TaskCard({
     task,
     onDelete,
     onStatusChange,
+    onEdit,
     isMobile
 }: {
     task: Task
     onDelete: (id: string) => void
     onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
+    onEdit: (task: Task) => void
     isMobile?: boolean
 }) {
     return (
@@ -378,12 +526,20 @@ function TaskCard({
                         )}
                     </div>
                 </div>
-                <button
-                    onClick={() => onDelete(task.id)}
-                    className="p-2 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                >
-                    <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => onEdit(task)}
+                        className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                    >
+                        <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => onDelete(task.id)}
+                        className="p-2 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
             </div>
         </motion.div>
     )
