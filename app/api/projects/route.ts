@@ -49,6 +49,18 @@ export async function POST(req: Request) {
             )
         }
 
+        // Ensure user exists in Prisma (Self-healing for dev envs)
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
+        if (!dbUser) {
+            await prisma.user.create({
+                data: {
+                    id: user.id,
+                    email: user.email!, // Supabase user always has email
+                    name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+                }
+            })
+        }
+
         const project = await prisma.project.create({
             data: {
                 title,

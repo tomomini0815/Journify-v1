@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit"
 import TaskList from "@tiptap/extension-task-list"
 import TaskItem from "@tiptap/extension-task-item"
 import { List, ListChecks } from "lucide-react"
+import { useEffect } from "react"
 
 interface TaskDescriptionEditorProps {
     content?: string
@@ -31,6 +32,13 @@ export function TaskDescriptionEditor({ content = "", onChange }: TaskDescriptio
             onChange?.(editor.getHTML())
         },
     })
+
+    // Sync content when prop changes (e.g. from external updates)
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            editor.commands.setContent(content)
+        }
+    }, [content, editor])
 
     if (!editor) {
         return null

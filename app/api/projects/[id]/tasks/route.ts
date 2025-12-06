@@ -20,7 +20,7 @@ export async function POST(
 
         const { id: projectId } = await params
         const body = await req.json()
-        const { text, startDate, endDate, description, priority, status, color, workflowId, workflowName } = body
+        const { text, startDate, endDate, description, url, priority, status, color, workflowId, workflowName } = body
 
         // Verify project belongs to user
         const project = await prisma.project.findFirst({
@@ -40,6 +40,7 @@ export async function POST(
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
                 description,
+                url,
                 priority,
                 status,
                 color,

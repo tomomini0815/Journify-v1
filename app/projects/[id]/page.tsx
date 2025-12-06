@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight } from "lucide-react"
+import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight, Download, File as FileIcon, Paperclip, Link as LinkIcon } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -14,6 +14,7 @@ const TaskDescriptionEditor = dynamic(
     { ssr: false }
 )
 
+import { FileUploader } from "@/components/FileUploader"
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useDroppable, useDraggable, useSensor, useSensors, PointerSensor, defaultDropAnimationSideEffects } from "@dnd-kit/core"
 import { WorkflowTemplatesPanel } from "@/components/WorkflowTemplates"
 import { WorkflowTemplate } from "@/lib/workflowTemplates"
@@ -30,6 +31,7 @@ type Task = {
     id: string
     text: string
     description?: string
+    url?: string
     status: string
     priority: string
     completed: boolean
@@ -39,6 +41,16 @@ type Task = {
     endDate?: string
     workflowId?: string
     workflowName?: string
+    attachments?: Attachment[]
+}
+
+type Attachment = {
+    id: string
+    name: string
+    url: string
+    size: number
+    type: string
+    createdAt: string
 }
 
 function DroppableCell({ date, children, isHoliday, width, idPrefix = "" }: { date: string, children: React.ReactNode, isHoliday: boolean, width: number, idPrefix?: string }) {
@@ -80,12 +92,14 @@ export default function ProjectDetailsPage() {
     const [newTask, setNewTask] = useState({
         text: "",
         description: "",
+        url: "",
         status: "todo",
         priority: "medium",
         startDate: "",
         endDate: "",
         color: "#6366f1"
     })
+    const [taskAttachments, setTaskAttachments] = useState<Attachment[]>([])
     const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list')
     const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone', id: string, title: string } | null>(null)
@@ -103,8 +117,17 @@ export default function ProjectDetailsPage() {
     )
 
     // Auto-scroll timeline to today on mount
+    // Track if initial scroll has happened for the current tab
+    const hasScrolledRef = useRef(false)
+
+    // Reset scroll flag when switching tabs
     useEffect(() => {
-        if (activeTab === 'timeline' && project) {
+        hasScrolledRef.current = false
+    }, [activeTab])
+
+    // Auto-scroll timeline to today on mount/tab switch
+    useEffect(() => {
+        if (activeTab === 'timeline' && project && !hasScrolledRef.current) {
             const scrollContainer = document.getElementById('timeline-scroll-container')
             const bottomScrollContainer = document.getElementById('bottom-calendar-scroll-container')
             if (scrollContainer) {
@@ -132,6 +155,7 @@ export default function ProjectDetailsPage() {
                     if (bottomScrollContainer) {
                         bottomScrollContainer.scrollLeft = todayOffset
                     }
+                    hasScrolledRef.current = true
                 }, 100)
             }
         }
@@ -210,6 +234,7 @@ export default function ProjectDetailsPage() {
                 setNewTask({
                     text: "",
                     description: "",
+                    url: "",
                     status: "todo",
                     priority: "medium",
                     startDate: "",
@@ -217,10 +242,11 @@ export default function ProjectDetailsPage() {
                     color: "#6366f1"
                 })
                 setEditingItem(null)
+                setTaskAttachments([])
 
-                // Scroll to updated/created task after a short delay
+                // Scroll to created task only (not updates)
                 const targetId = savedTask.id
-                if (targetId) {
+                if (targetId && !updatedTaskId) {
                     setTimeout(() => {
                         const taskElement = document.getElementById(`task-${targetId}`)
                         if (taskElement) {
@@ -308,10 +334,24 @@ export default function ProjectDetailsPage() {
 
         if (checkboxes[checkboxIndex]) {
             const checkbox = checkboxes[checkboxIndex] as HTMLInputElement
+            const li = checkbox.closest('li')
+
             if (checked) {
                 checkbox.setAttribute('checked', 'checked')
+                if (li) {
+                    li.setAttribute('data-checked', 'true')
+                    li.setAttribute('data-type', 'taskItem')
+                    const ul = li.closest('ul')
+                    if (ul) ul.setAttribute('data-type', 'taskList')
+                }
             } else {
                 checkbox.removeAttribute('checked')
+                if (li) {
+                    li.setAttribute('data-checked', 'false')
+                    li.setAttribute('data-type', 'taskItem')
+                    const ul = li.closest('ul')
+                    if (ul) ul.setAttribute('data-type', 'taskList')
+                }
             }
         }
 
@@ -640,10 +680,11 @@ export default function ProjectDetailsPage() {
         return rows
     })()
 
-    const openEditTaskModal = (task: Task) => {
+    const openEditTaskModal = async (task: Task) => {
         setNewTask({
             text: task.text,
             description: task.description || "",
+            url: task.url || "",
             status: task.status || "todo",
             priority: task.priority || "medium",
             startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : "",
@@ -651,6 +692,37 @@ export default function ProjectDetailsPage() {
             color: task.color || "#6366f1"
         })
         setEditingItem({ type: 'task', id: task.id })
+
+        // Fetch attachments
+        try {
+            const res = await fetch(`/api/tasks/${task.id}/attachments`)
+            if (res.ok) {
+                const data = await res.json()
+                setTaskAttachments(data)
+            } else {
+                setTaskAttachments([])
+            }
+        } catch (e) {
+            console.error(e)
+            setTaskAttachments([])
+        }
+
+        setShowTaskModal(true)
+    }
+
+    const openCreateTaskModal = () => {
+        setNewTask({
+            text: "",
+            description: "",
+            url: "",
+            status: "todo",
+            priority: "medium",
+            startDate: "",
+            endDate: "",
+            color: "#6366f1"
+        })
+        setEditingItem(null)
+        setTaskAttachments([])
         setShowTaskModal(true)
     }
 
@@ -798,6 +870,7 @@ export default function ProjectDetailsPage() {
                                             openEditTaskModal={openEditTaskModal}
                                             setDeleteConfirm={setDeleteConfirm}
                                             toggleTaskCompletion={toggleTaskCompletion}
+                                            handleSubtaskToggle={handleSubtaskToggle}
                                         />
 
                                         {/* 進行中 Column */}
@@ -808,6 +881,7 @@ export default function ProjectDetailsPage() {
                                             openEditTaskModal={openEditTaskModal}
                                             setDeleteConfirm={setDeleteConfirm}
                                             toggleTaskCompletion={toggleTaskCompletion}
+                                            handleSubtaskToggle={handleSubtaskToggle}
                                         />
 
                                         {/* 完了 Column */}
@@ -818,6 +892,7 @@ export default function ProjectDetailsPage() {
                                             openEditTaskModal={openEditTaskModal}
                                             setDeleteConfirm={setDeleteConfirm}
                                             toggleTaskCompletion={toggleTaskCompletion}
+                                            handleSubtaskToggle={handleSubtaskToggle}
                                         />
                                     </div>
 
@@ -837,6 +912,7 @@ export default function ProjectDetailsPage() {
                                                     openEditTaskModal={() => { }}
                                                     setDeleteConfirm={() => { }}
                                                     toggleTaskCompletion={() => { }}
+                                                    handleSubtaskToggle={() => { }}
                                                 />
                                             </div>
                                         )}
@@ -892,8 +968,22 @@ export default function ProjectDetailsPage() {
                                                         const task = row.task
                                                         return (
                                                             <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate" title={sidebarCollapsed ? task.text : ''}>
-                                                                <div className={`w-2 h-2 rounded-full ${sidebarCollapsed ? '' : 'mr-2'} flex-shrink-0`} style={{ backgroundColor: task.color || '#6366f1' }} />
-                                                                {!sidebarCollapsed && <span className="text-sm truncate">{task.text}</span>}
+                                                                <div
+                                                                    className={`flex items-center gap-1 text-xs font-medium text-white/80 hover:text-white truncate flex-1 text-left ${task.startDate ? 'cursor-pointer hover:text-indigo-300' : ''}`}
+                                                                    onClick={() => {
+                                                                        if (task.startDate) {
+                                                                            const taskDate = new Date(task.startDate)
+                                                                            const offset = (taskDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24) * dayWidth
+                                                                            const container = document.getElementById('timeline-scroll-container')
+                                                                            if (container) {
+                                                                                container.scrollTo({ left: offset, behavior: 'smooth' })
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <div className={`w-2 h-2 rounded-full ${sidebarCollapsed ? '' : 'mr-2'} flex-shrink-0`} style={{ backgroundColor: task.color || '#6366f1' }} />
+                                                                    {!sidebarCollapsed && <span className="text-sm truncate">{task.text}</span>}
+                                                                </div>
                                                             </div>
                                                         )
                                                     }
@@ -1043,16 +1133,8 @@ export default function ProjectDetailsPage() {
                                                                                     <div className="mt-3 pt-3 border-t border-white/10">
                                                                                         <div className="text-xs text-white/70 mb-2 font-medium">細分化タスク:</div>
                                                                                         <div
-                                                                                            className="text-xs text-white/60 max-h-48 overflow-y-auto prose prose-invert prose-sm max-w-none
-                                                                                                [&_ul]:list-none [&_ul]:pl-0 [&_ul]:space-y-1.5 [&_ul]:my-0
-                                                                                                [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:my-0 [&_li]:flex-row-reverse [&_li]:justify-end
-                                                                                                [&_li]:text-white/60 [&_li]:text-xs
-                                                                                                [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-pointer
-                                                                                                [&_input[type=checkbox]]:accent-indigo-500"
+                                                                                            className="text-xs text-white/60 max-h-48 overflow-y-auto prose prose-invert prose-sm max-w-none"
                                                                                             dangerouslySetInnerHTML={{ __html: task.description }}
-                                                                                            // ... rest of event handler logic (simplified for replacement, assume existing handles clicks if complex not needed or standard)
-                                                                                            // Actually I should keep the complex event handler. I made a mistake in assumption.
-                                                                                            // I'll assume the original event logic is fine to be replaced with what I write here, which should be correct.
                                                                                             onClick={(e) => {
                                                                                                 const target = e.target as HTMLElement
                                                                                                 if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
@@ -1258,12 +1340,67 @@ export default function ProjectDetailsPage() {
                                         />
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">URL</label>
+                                        <div className="bg-white/5 border border-white/10 rounded-xl flex items-center px-3">
+                                            <LinkIcon className="w-4 h-4 text-white/40 mr-2" />
+                                            <input
+                                                type="url"
+                                                value={newTask.url || ""}
+                                                onChange={(e) => setNewTask({ ...newTask, url: e.target.value })}
+                                                placeholder="https://example.com"
+                                                className="w-full bg-transparent border-none h-12 text-white focus:outline-none focus:ring-0"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-medium text-white/60 mb-2">詳細説明</label>
                                         <TaskDescriptionEditor
                                             content={newTask.description}
                                             onChange={(content) => setNewTask({ ...newTask, description: content })}
                                         />
                                     </div>
+
+                                    {editingItem && editingItem.type === 'task' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">添付ファイル</label>
+                                            <div className="space-y-3">
+                                                {taskAttachments.length > 0 && (
+                                                    <div className="grid grid-cols-1 gap-2">
+                                                        {taskAttachments.map((file) => (
+                                                            <div key={file.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg group">
+                                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                                    <div className="w-8 h-8 rounded bg-indigo-500/20 flex items-center justify-center flex-shrink-0 text-indigo-400">
+                                                                        <FileIcon className="w-4 h-4" />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <div className="text-sm font-medium text-white truncate">{file.name}</div>
+                                                                        <div className="text-xs text-white/40">{(file.size / 1024).toFixed(1)} KB</div>
+                                                                    </div>
+                                                                </div>
+                                                                <a
+                                                                    href={file.url}
+                                                                    download
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                </a>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div className="flex gap-2">
+                                                    <FileUploader
+                                                        taskId={editingItem.id}
+                                                        onUploadComplete={(attachment) => {
+                                                            setTaskAttachments([...taskAttachments, attachment])
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-white/60 mb-2">ステータス</label>
@@ -1388,13 +1525,14 @@ export default function ProjectDetailsPage() {
 }
 
 // Kanban Column Component
-function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, toggleTaskCompletion }: {
+function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, toggleTaskCompletion, handleSubtaskToggle }: {
     id: string
     title: string
     tasks: Task[]
     openEditTaskModal: (task: Task) => void
     setDeleteConfirm: (confirm: { type: 'task' | 'milestone', id: string, title: string }) => void
     toggleTaskCompletion: (task: Task) => void
+    handleSubtaskToggle: (taskId: string, checkboxIndex: number, checked: boolean) => void
 }) {
     const { setNodeRef } = useDroppable({
         id: id,
@@ -1413,7 +1551,9 @@ function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, t
                         task={task}
                         openEditTaskModal={openEditTaskModal}
                         setDeleteConfirm={setDeleteConfirm}
+
                         toggleTaskCompletion={toggleTaskCompletion}
+                        handleSubtaskToggle={handleSubtaskToggle}
                     />
                 ))}
                 {tasks.length === 0 && (
@@ -1427,11 +1567,12 @@ function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, t
 }
 
 // Kanban Task Card Component - Using Original Design
-function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskCompletion }: {
+function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskCompletion, handleSubtaskToggle }: {
     task: Task
     openEditTaskModal: (task: Task) => void
     setDeleteConfirm: (confirm: { type: 'task' | 'milestone', id: string, title: string }) => void
     toggleTaskCompletion: (task: Task) => void
+    handleSubtaskToggle: (taskId: string, checkboxIndex: number, checked: boolean) => void
 }) {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: task.id,
@@ -1502,17 +1643,41 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
                         <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
                     </div>
                 )}
+                {task.attachments && task.attachments.length > 0 && (
+                    <div className="flex items-center gap-1 text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
+                        <Paperclip className="w-3 h-3" />
+                        <span>{task.attachments.length}</span>
+                    </div>
+                )}
+                {task.url && (
+                    <a
+                        href={task.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded hover:bg-indigo-400/20 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <LinkIcon className="w-3 h-3" />
+                    </a>
+                )}
             </div>
 
             {/* Description preview on hover */}
             {task.description && (
                 <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
-                    <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none
-                        [&_ul]:list-none [&_ul]:pl-0 [&_ul]:space-y-1
-                        [&_li]:flex [&_li]:items-start [&_li]:gap-2 [&_li]:flex-row-reverse [&_li]:justify-end
-                        [&_li]:text-white/60 [&_li]:text-xs
-                        [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-default"
+                    <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ __html: task.description }}
+                        onClick={(e) => {
+                            const target = e.target as HTMLElement
+                            if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                                e.stopPropagation() // Prevent card drag/click
+                                const checkboxes = Array.from(e.currentTarget.querySelectorAll('input[type="checkbox"]'))
+                                const index = checkboxes.indexOf(target as HTMLInputElement)
+                                if (index !== -1) {
+                                    handleSubtaskToggle(task.id, index, (target as HTMLInputElement).checked)
+                                }
+                            }
+                        }}
                     />
                 </div>
             )}

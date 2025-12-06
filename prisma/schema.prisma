@@ -140,6 +140,7 @@ model Task {
   id            String    @id @default(uuid())
   text          String
   description   String?
+  url           String?   // External link URL
   status        String    @default("todo") // todo, in_progress, done
   priority      String    @default("medium") // high, medium, low
   completed     Boolean   @default(false)
@@ -153,6 +154,7 @@ model Task {
   milestone     Milestone? @relation(fields: [milestoneId], references: [id])
   workflowId    String?    // To group tasks created from a template
   workflowName  String?    // Name of the template used
+  attachments   Attachment[]
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt     DateTime  @default(now())
@@ -161,4 +163,18 @@ model Task {
   @@index([projectId])
   @@index([milestoneId])
   @@index([workflowId])
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  size      Int
+  type      String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
 }
