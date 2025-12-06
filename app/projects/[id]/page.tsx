@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight, Download, File as FileIcon, Paperclip, Link as LinkIcon } from "lucide-react"
+import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight, Download, File as FileIcon, Paperclip, Link as LinkIcon, Share2, Copy, Check } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -106,6 +106,9 @@ export default function ProjectDetailsPage() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [activeDragItem, setActiveDragItem] = useState<{ type: 'task', task: Task } | { type: 'milestone-template', template: MilestoneTemplate } | null>(null)
     const [collapsedWorkflows, setCollapsedWorkflows] = useState<Set<string>>(new Set())
+    const [showShareModal, setShowShareModal] = useState(false)
+    const [shareUrl, setShareUrl] = useState<string | null>(null)
+    const [copied, setCopied] = useState(false)
 
     // Configure DnD sensors to prevent blocking scroll
     const sensors = useSensors(
@@ -395,6 +398,63 @@ export default function ProjectDetailsPage() {
             console.error("Failed to update subtask", error)
             // Revert on error
             setProject(project)
+        }
+    }
+
+    const generateShareLink = async () => {
+        if (!project) return
+
+        try {
+            const res = await fetch(`/api/projects/${params.id}/share`, {
+                method: "POST"
+            })
+
+            if (res.ok) {
+                const data = await res.json()
+                setShareUrl(data.shareUrl)
+                setShowShareModal(true)
+                // Update project state with share info
+                setProject({
+                    ...project,
+                    shareToken: data.shareToken,
+                    isPublic: true,
+                    sharedAt: new Date().toISOString()
+                } as any)
+            }
+        } catch (error) {
+            console.error("Failed to generate share link", error)
+        }
+    }
+
+    const removeShareLink = async () => {
+        if (!project) return
+
+        try {
+            const res = await fetch(`/api/projects/${params.id}/share`, {
+                method: "DELETE"
+            })
+
+            if (res.ok) {
+                setShareUrl(null)
+                setShowShareModal(false)
+                // Update project state
+                setProject({
+                    ...project,
+                    shareToken: null,
+                    isPublic: false,
+                    sharedAt: null
+                } as any)
+            }
+        } catch (error) {
+            console.error("Failed to remove share link", error)
+        }
+    }
+
+    const copyShareLink = () => {
+        if (shareUrl) {
+            navigator.clipboard.writeText(shareUrl)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
         }
     }
 
@@ -804,6 +864,21 @@ export default function ProjectDetailsPage() {
                             <p className="text-white/60">{project.description}</p>
                         </div>
                         <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    if ((project as any).isPublic && (project as any).shareToken) {
+                                        const url = `${window.location.origin}/shared/${(project as any).shareToken}`
+                                        setShareUrl(url)
+                                        setShowShareModal(true)
+                                    } else {
+                                        generateShareLink()
+                                    }
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-xl transition-colors text-emerald-300"
+                            >
+                                <Share2 className="w-4 h-4" />
+                                <span className="hidden sm:inline">共有</span>
+                            </button>
                             <Link href={`/projects/${params.id}/edit`}>
                                 <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
                                     <MoreVertical className="w-5 h-5" />
@@ -1559,6 +1634,70 @@ export default function ProjectDetailsPage() {
                         </div>
                     )
                 }
+
+                {/* Share Modal */}
+                {showShareModal && shareUrl && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-6 max-w-md w-full"
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Share2 className="w-5 h-5 text-emerald-400" />
+                                    プロジェクトを共有
+                                </h3>
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <Trash2 className="w-5 h-5 text-white/60" />
+                                </button>
+                            </div>
+
+                            <p className="text-white/60 text-sm mb-4">
+                                このリンクを共有すると、誰でもプロジェクトを閲覧できます（編集不可）
+                            </p>
+
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4">
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={shareUrl}
+                                        readOnly
+                                        className="flex-1 bg-transparent text-white text-sm outline-none"
+                                    />
+                                    <button
+                                        onClick={copyShareLink}
+                                        className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg transition-colors"
+                                    >
+                                        {copied ? (
+                                            <Check className="w-4 h-4 text-emerald-400" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-emerald-400" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white"
+                                >
+                                    閉じる
+                                </button>
+                                <button
+                                    onClick={removeShareLink}
+                                    className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 rounded-xl transition-colors text-rose-300"
+                                >
+                                    共有を解除
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
             </div >
         </DashboardLayout >
     )
@@ -1725,3 +1864,4 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
         </div>
     )
 }
+
