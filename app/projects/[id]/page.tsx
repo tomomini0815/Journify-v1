@@ -1050,9 +1050,6 @@ export default function ProjectDetailsPage() {
                                                                                                 [&_input[type=checkbox]]:mt-0.5 [&_input[type=checkbox]]:cursor-pointer
                                                                                                 [&_input[type=checkbox]]:accent-indigo-500"
                                                                                             dangerouslySetInnerHTML={{ __html: task.description }}
-                                                                                            // ... rest of event handler logic (simplified for replacement, assume existing handles clicks if complex not needed or standard)
-                                                                                            // Actually I should keep the complex event handler. I made a mistake in assumption.
-                                                                                            // I'll assume the original event logic is fine to be replaced with what I write here, which should be correct.
                                                                                             onClick={(e) => {
                                                                                                 const target = e.target as HTMLElement
                                                                                                 if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
