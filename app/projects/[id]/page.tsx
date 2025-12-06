@@ -812,6 +812,7 @@ export default function ProjectDetailsPage() {
                                     setNewTask({
                                         text: "",
                                         description: "",
+                                        url: "",
                                         status: "todo",
                                         priority: "medium",
                                         startDate: "",
