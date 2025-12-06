@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 import prisma from '@/lib/prisma'
 
 // PUT /api/workflow-templates/[id] - Update a template
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id) {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        const { id } = await params
         const body = await request.json()
         const { name, description, tasks } = body
 
@@ -26,10 +28,10 @@ export async function PUT(
 
         // Verify ownership
         const existing = await prisma.workflowTemplate.findUnique({
-            where: { id: params.id }
+            where: { id }
         })
 
-        if (!existing || existing.userId !== session.user.id) {
+        if (!existing || existing.userId !== user.id) {
             return NextResponse.json(
                 { error: 'Template not found' },
                 { status: 404 }
@@ -37,7 +39,7 @@ export async function PUT(
         }
 
         const template = await prisma.workflowTemplate.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 name,
                 description,
@@ -58,20 +60,24 @@ export async function PUT(
 // DELETE /api/workflow-templates/[id] - Delete a template
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id) {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        const { id } = await params
+
         // Verify ownership
         const existing = await prisma.workflowTemplate.findUnique({
-            where: { id: params.id }
+            where: { id }
         })
 
-        if (!existing || existing.userId !== session.user.id) {
+        if (!existing || existing.userId !== user.id) {
             return NextResponse.json(
                 { error: 'Template not found' },
                 { status: 404 }
@@ -79,7 +85,7 @@ export async function DELETE(
         }
 
         await prisma.workflowTemplate.delete({
-            where: { id: params.id }
+            where: { id }
         })
 
         return NextResponse.json({ success: true })

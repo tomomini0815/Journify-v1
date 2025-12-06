@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Edit, Trash2, Calendar } from 'lucide-react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import WorkflowTemplateEditor from '@/components/WorkflowTemplateEditor'
 import { WorkflowTemplate, WorkflowTask } from '@/lib/workflowTemplates'
 
