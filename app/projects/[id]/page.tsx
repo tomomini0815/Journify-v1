@@ -333,6 +333,40 @@ const toggleTaskCompletion = async (task: Task) => {
     }
 }
 
+const handlePostReply = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newReply.trim() || !project) return
+
+    setIsSubmittingReply(true)
+    try {
+        // Use share token if available, otherwise we might need a direct endpoint.
+        // Assuming share token exists for shared projects.
+        const shareToken = (project as any).shareToken
+        if (!shareToken) {
+            alert("このプロジェクトは共有されていないため、コメント機能は制限されています。")
+            setIsSubmittingReply(false)
+            return
+        }
+
+        const res = await fetch(`/api/shared/${shareToken}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: newReply, authorName: '管理者' })
+        })
+
+        if (res.ok) {
+            const comment = await res.json()
+            const updatedComments = [comment, ...(project.comments || [])]
+            setProject({ ...project, comments: updatedComments })
+            setNewReply("")
+        }
+    } catch (error) {
+        console.error("Failed to post reply", error)
+    } finally {
+        setIsSubmittingReply(false)
+    }
+}
+
 const handleDeleteTask = async (taskId: string) => {
     try {
         const res = await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
@@ -881,6 +915,18 @@ return (
                             <Share2 className="w-4 h-4" />
                             <span className="hidden sm:inline">共有</span>
                         </button>
+                        <button
+                            onClick={() => setShowComments(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/50 rounded-xl transition-colors text-indigo-300 relative"
+                        >
+                            <MessageSquare className="w-4 h-4" />
+                            <span className="hidden sm:inline">コメント</span>
+                            {project.comments && project.comments.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
+                                    {project.comments.length}
+                                </span>
+                            )}
+                        </button>
                         <Link href={`/projects/${params.id}/edit`}>
                             <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
                                 <MoreVertical className="w-5 h-5" />
@@ -1371,6 +1417,73 @@ return (
                         </div>
                     )}
                 </div>
+                {/* Comments Side Panel */}
+                {showComments && (
+                    <div className="fixed inset-y-0 right-0 w-80 md:w-96 bg-[#1a1a1a] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col">
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#252525]">
+                            <h3 className="font-bold text-white flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-emerald-400" />
+                                共有コメント
+                            </h3>
+                            <button onClick={() => setShowComments(false)} className="text-white/40 hover:text-white transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {project?.comments && project.comments.length > 0 ? (
+                                project.comments.map(comment => (
+                                    <div key={comment.id} className={`p-3 rounded-xl border ${comment.authorName === '管理者'
+                                            ? 'bg-indigo-500/10 border-indigo-500/20 ml-4'
+                                            : 'bg-white/5 border-white/10 mr-4'
+                                        }`}>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className={`text-xs font-bold ${comment.authorName === '管理者' ? 'text-indigo-300' : 'text-emerald-300'
+                                                }`}>
+                                                {comment.authorName}
+                                            </span>
+                                            <span className="text-[10px] text-white/40">
+                                                {new Date(comment.createdAt).toLocaleString('ja-JP')}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-white/80 whitespace-pre-wrap">{comment.content}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-white/20 pb-20">
+                                    <MessageSquare className="w-12 h-12 mb-2 opacity-20" />
+                                    <p className="text-sm">コメントはまだありません</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 border-t border-white/10 bg-[#252525]">
+                            <form onSubmit={handlePostReply}>
+                                <textarea
+                                    value={newReply}
+                                    onChange={(e) => setNewReply(e.target.value)}
+                                    placeholder="返信を入力..."
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50 mb-2 h-20 resize-none placeholder:text-white/20"
+                                    required
+                                />
+                                <div className="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmittingReply || !newReply.trim()}
+                                        className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium text-white transition-colors flex items-center gap-2"
+                                    >
+                                        {isSubmittingReply ? '送信中...' : (
+                                            <>
+                                                <Send className="w-3 h-3" />
+                                                送信
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div >
 
             {/* Milestone Modal */}
