@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Calendar, Clock, CheckSquare, List, BarChart3 } from "lucide-react"
+import { Calendar, Clock, CheckSquare, List, BarChart3, Flag, MessageSquare, Send } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { isHoliday } from "@/lib/holidays"
@@ -27,6 +27,13 @@ type Task = {
     endDate?: string
 }
 
+type Comment = {
+    id: string
+    content: string
+    authorName: string
+    createdAt: string
+}
+
 type Project = {
     id: string
     title: string
@@ -43,9 +50,13 @@ type Project = {
 export default function SharedProjectPage() {
     const params = useParams()
     const [project, setProject] = useState<Project | null>(null)
+    const [comments, setComments] = useState<Comment[]>([])
+    const [newComment, setNewComment] = useState("")
+    const [authorName, setAuthorName] = useState("")
     const [isLoading, setIsLoading] = useState(true)
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list')
+    const [activeTab, setActiveTab] = useState<'list' | 'timeline' | 'comments'>('list')
 
     useEffect(() => {
         const fetchSharedProject = async () => {
@@ -64,6 +75,13 @@ export default function SharedProjectPage() {
 
                 const data = await res.json()
                 setProject(data)
+
+                // Fetch comments
+                const commentsRes = await fetch(`/api/shared/${params.shareToken}/comments`)
+                if (commentsRes.ok) {
+                    const commentsData = await commentsRes.json()
+                    setComments(commentsData)
+                }
             } catch (error) {
                 console.error("Failed to fetch shared project:", error)
                 setError("プロジェクトの読み込みに失敗しました。")
@@ -74,6 +92,35 @@ export default function SharedProjectPage() {
 
         fetchSharedProject()
     }, [params.shareToken])
+
+    const handleSubmitComment = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!newComment.trim() || !authorName.trim()) return
+
+        setIsSubmittingComment(true)
+        try {
+            const res = await fetch(`/api/shared/${params.shareToken}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    content: newComment,
+                    authorName: authorName
+                }),
+            })
+
+            if (res.ok) {
+                const comment = await res.json()
+                setComments([comment, ...comments])
+                setNewComment("")
+            }
+        } catch (error) {
+            console.error("Failed to submit comment:", error)
+        } finally {
+            setIsSubmittingComment(false)
+        }
+    }
 
     if (isLoading) {
         return (
@@ -125,7 +172,7 @@ export default function SharedProjectPage() {
                 </div>
 
                 {/* Main Content */}
-                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden">
+                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden min-h-[600px] flex flex-col">
                     {/* Tabs */}
                     <div className="p-6 border-b border-white/10 flex justify-between items-center">
                         <div className="flex gap-2">
@@ -148,6 +195,16 @@ export default function SharedProjectPage() {
                             >
                                 <BarChart3 className="w-4 h-4" />
                                 <span>タイムライン</span>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('comments')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${activeTab === 'comments'
+                                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
+                                        : 'text-white/60 hover:bg-white/5'
+                                    }`}
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                <span>コメント</span>
                             </button>
                         </div>
                     </div>
@@ -255,48 +312,106 @@ export default function SharedProjectPage() {
 
                     {/* Timeline View */}
                     {activeTab === 'timeline' && (
-                        <div className="overflow-x-auto">
-                            <div className="min-w-max p-6">
-                                {/* Timeline Header */}
-                                <div className="flex mb-4">
-                                    <div className="w-48 flex-shrink-0"></div>
-                                    <div className="flex">
-                                        {Array.from({ length: totalDays }, (_, i) => {
-                                            const date = new Date(startDate)
-                                            date.setDate(date.getDate() + i)
-                                            const isWeekend = date.getDay() === 0 || date.getDay() === 6
-                                            const isHol = isHoliday(date)
+                        <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 300px)' }}>
+                            {/* Sidebar */}
+                            <div className="w-64 flex-shrink-0 border-r border-white/10 overflow-y-auto bg-[#0d0d0d]">
+                                <div className="p-4">
+                                    <h3 className="text-sm font-bold text-white/60 mb-3">タスク & マイルストーン</h3>
 
-                                            return (
-                                                <div
-                                                    key={i}
-                                                    className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs ${isHol ? 'bg-red-500/5 border-red-500/30 text-red-300' :
-                                                            isWeekend ? 'bg-blue-500/5 border-blue-500/30 text-blue-300' :
-                                                                'border-white/5 text-white/60'
-                                                        }`}
-                                                    style={{ width: `${dayWidth}px` }}
-                                                >
-                                                    <div>{date.getMonth() + 1}/{date.getDate()}</div>
-                                                    <div className="text-[10px]">
-                                                        {['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* Milestones Row */}
-                                {project.milestones.length > 0 && (
-                                    <div className="mb-4">
-                                        <div className="flex items-center mb-2">
-                                            <div className="w-48 flex-shrink-0 pr-4">
-                                                <h3 className="font-bold text-white flex items-center gap-2">
-                                                    <Clock className="w-4 h-4 text-purple-400" />
-                                                    マイルストーン
-                                                </h3>
+                                    {/* Milestones Section */}
+                                    {project.milestones.length > 0 && (
+                                        <div className="mb-4">
+                                            <div className="text-xs font-semibold text-amber-400 mb-2 flex items-center gap-2">
+                                                <Flag className="w-3 h-3" />
+                                                マイルストーン
                                             </div>
-                                            <div className="relative flex" style={{ width: `${totalDays * dayWidth}px`, height: '40px' }}>
+                                            {project.milestones.map(milestone => (
+                                                <div key={milestone.id} className="h-10 border-b border-white/5 flex items-center px-2 hover:bg-white/5 transition-colors bg-amber-500/5">
+                                                    <Flag className="w-3 h-3 text-amber-400 mr-2 flex-shrink-0" />
+                                                    <span className="text-sm truncate text-amber-200 flex-1">{milestone.title}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Tasks Section */}
+                                    {project.tasks.filter(t => t.startDate && t.endDate).length > 0 && (
+                                        <div>
+                                            <div className="text-xs font-semibold text-indigo-400 mb-2 flex items-center gap-2">
+                                                <CheckSquare className="w-3 h-3" />
+                                                タスク
+                                            </div>
+                                            {project.tasks.filter(t => t.startDate && t.endDate).map(task => (
+                                                <div key={task.id} className="h-10 border-b border-white/5 flex items-center px-2 hover:bg-white/5 transition-colors">
+                                                    <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: task.color || '#6366f1' }} />
+                                                    <span className="text-sm truncate text-white/80">{task.text}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Timeline Content */}
+                            <div className="flex-1 overflow-x-auto overflow-y-auto" id="timeline-scroll-container">
+                                <div className="min-w-max p-6">
+                                    {/* Timeline Header */}
+                                    <div className="flex mb-4 sticky top-0 bg-[#1a1a1a] z-10 pb-2">
+                                        <div className="flex">
+                                            {Array.from({ length: totalDays }, (_, i) => {
+                                                const date = new Date(startDate)
+                                                date.setDate(date.getDate() + i)
+                                                const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                                                const isHol = isHoliday(date)
+
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs py-2 ${isHol ? 'bg-red-500/5 border-red-500/30 text-red-300' :
+                                                                isWeekend ? 'bg-blue-500/5 border-blue-500/30 text-blue-300' :
+                                                                    'border-white/5 text-white/60'
+                                                            }`}
+                                                        style={{ width: `${dayWidth}px` }}
+                                                    >
+                                                        <div>{date.getMonth() + 1}/{date.getDate()}</div>
+                                                        <div className="text-[10px]">
+                                                            {['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Milestones Row */}
+                                    {project.milestones.length > 0 && (
+                                        <div className="mb-6">
+                                            <div className="flex items-center mb-2">
+                                                <div className="text-sm font-bold text-amber-400 flex items-center gap-2 mb-2">
+                                                    <Flag className="w-4 h-4" />
+                                                    マイルストーン
+                                                </div>
+                                            </div>
+                                            <div className="relative" style={{ height: '60px' }}>
+                                                <div className="absolute inset-0 flex">
+                                                    {Array.from({ length: totalDays }, (_, i) => {
+                                                        const date = new Date(startDate)
+                                                        date.setDate(date.getDate() + i)
+                                                        const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                                                        const isHol = isHoliday(date)
+
+                                                        return (
+                                                            <div
+                                                                key={i}
+                                                                className={`flex-shrink-0 border-r ${isHol ? 'bg-red-500/5 border-red-500/30' :
+                                                                        isWeekend ? 'bg-blue-500/5 border-blue-500/30' :
+                                                                            'border-white/5'
+                                                                    }`}
+                                                                style={{ width: `${dayWidth}px` }}
+                                                            />
+                                                        )
+                                                    })}
+                                                </div>
                                                 {project.milestones.map(milestone => {
                                                     const milestoneDate = new Date(milestone.date)
                                                     const offset = getDaysBetween(startDate, milestoneDate)
@@ -306,50 +421,147 @@ export default function SharedProjectPage() {
                                                     return (
                                                         <div
                                                             key={milestone.id}
-                                                            className="absolute top-0 flex flex-col items-center"
-                                                            style={{ left: `${offset * dayWidth}px` }}
+                                                            className="absolute top-4 flex flex-col items-center"
+                                                            style={{ left: `${offset * dayWidth + dayWidth / 2}px`, transform: 'translateX(-50%)' }}
                                                         >
-                                                            <div className={`w-3 h-3 rounded-full ${milestone.completed ? 'bg-emerald-500' : 'bg-purple-500'} border-2 border-white`}></div>
-                                                            <div className="text-xs text-white/80 mt-1 whitespace-nowrap">{milestone.title}</div>
+                                                            <div className={`w-4 h-4 rounded-full ${milestone.completed ? 'bg-emerald-500' : 'bg-amber-500'} border-2 border-white shadow-lg`}></div>
+                                                            <div className="text-xs text-white/90 mt-2 whitespace-nowrap bg-black/50 px-2 py-1 rounded">{milestone.title}</div>
                                                         </div>
                                                     )
                                                 })}
                                             </div>
                                         </div>
+                                    )}
+
+                                    {/* Tasks Section */}
+                                    {project.tasks.filter(t => t.startDate && t.endDate).length > 0 && (
+                                        <div>
+                                            <div className="text-sm font-bold text-indigo-400 flex items-center gap-2 mb-3">
+                                                <CheckSquare className="w-4 h-4" />
+                                                タスク
+                                            </div>
+                                            <div className="space-y-1">
+                                                {project.tasks.filter(t => t.startDate && t.endDate).map(task => {
+                                                    const taskStart = new Date(task.startDate!)
+                                                    const taskEnd = new Date(task.endDate!)
+                                                    const offset = getDaysBetween(startDate, taskStart)
+                                                    const duration = getDaysBetween(taskStart, taskEnd)
+
+                                                    if (offset + duration < 0 || offset > totalDays) return null
+
+                                                    return (
+                                                        <div key={task.id} className="relative" style={{ height: '40px' }}>
+                                                            <div className="absolute inset-0 flex">
+                                                                {Array.from({ length: totalDays }, (_, i) => {
+                                                                    const date = new Date(startDate)
+                                                                    date.setDate(date.getDate() + i)
+                                                                    const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                                                                    const isHol = isHoliday(date)
+
+                                                                    return (
+                                                                        <div
+                                                                            key={i}
+                                                                            className={`flex-shrink-0 border-r ${isHol ? 'bg-red-500/5 border-red-500/30' :
+                                                                                    isWeekend ? 'bg-blue-500/5 border-blue-500/30' :
+                                                                                        'border-white/5'
+                                                                                }`}
+                                                                            style={{ width: `${dayWidth}px` }}
+                                                                        />
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                            <div
+                                                                className="absolute top-2 h-7 rounded-lg flex items-center px-3 text-sm text-white font-medium shadow-lg"
+                                                                style={{
+                                                                    left: `${Math.max(0, offset) * dayWidth}px`,
+                                                                    width: `${duration * dayWidth}px`,
+                                                                    backgroundColor: task.color || '#6366f1'
+                                                                }}
+                                                                title={task.text}
+                                                            >
+                                                                <span className="truncate">{task.text}</span>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Comments View */}
+                    {activeTab === 'comments' && (
+                        <div className="flex flex-col h-full">
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                                {comments.map(comment => (
+                                    <div key={comment.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="font-bold text-emerald-400">{comment.authorName}</span>
+                                            <span className="text-xs text-white/40">
+                                                {new Date(comment.createdAt).toLocaleString('ja-JP')}
+                                            </span>
+                                        </div>
+                                        <p className="text-white/80 whitespace-pre-wrap">{comment.content}</p>
+                                    </div>
+                                ))}
+                                {comments.length === 0 && (
+                                    <div className="text-center py-12 text-white/20">
+                                        コメントはまだありません。
+                                        <br />
+                                        最初のコメントを投稿しましょう！
                                     </div>
                                 )}
+                            </div>
 
-                                {/* Tasks Rows */}
-                                <div className="space-y-2">
-                                    {project.tasks.filter(t => t.startDate && t.endDate).map(task => {
-                                        const taskStart = new Date(task.startDate!)
-                                        const taskEnd = new Date(task.endDate!)
-                                        const offset = getDaysBetween(startDate, taskStart)
-                                        const duration = getDaysBetween(taskStart, taskEnd)
-
-                                        if (offset + duration < 0 || offset > totalDays) return null
-
-                                        return (
-                                            <div key={task.id} className="flex items-center">
-                                                <div className="w-48 flex-shrink-0 pr-4">
-                                                    <div className="text-sm text-white truncate">{task.text}</div>
-                                                </div>
-                                                <div className="relative flex" style={{ width: `${totalDays * dayWidth}px`, height: '32px' }}>
-                                                    <div
-                                                        className="absolute top-1 h-6 rounded-lg flex items-center px-2 text-xs text-white"
-                                                        style={{
-                                                            left: `${Math.max(0, offset) * dayWidth}px`,
-                                                            width: `${duration * dayWidth}px`,
-                                                            backgroundColor: task.color || '#6366f1'
-                                                        }}
-                                                    >
-                                                        <span className="truncate">{task.text}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
+                            <div className="p-4 border-t border-white/10 bg-[#1a1a1a]">
+                                <form onSubmit={handleSubmitComment} className="space-y-4 max-w-2xl mx-auto">
+                                    <div>
+                                        <label htmlFor="authorName" className="block text-sm font-medium text-white/60 mb-1">
+                                            お名前
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="authorName"
+                                            value={authorName}
+                                            onChange={(e) => setAuthorName(e.target.value)}
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500/50"
+                                            placeholder="名前を入力"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="comment" className="block text-sm font-medium text-white/60 mb-1">
+                                            コメント
+                                        </label>
+                                        <textarea
+                                            id="comment"
+                                            value={newComment}
+                                            onChange={(e) => setNewComment(e.target.value)}
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500/50 h-24 resize-none"
+                                            placeholder="コメントを入力..."
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmittingComment}
+                                            className="flex items-center gap-2 px-6 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors text-white font-medium"
+                                        >
+                                            {isSubmittingComment ? (
+                                                '送信中...'
+                                            ) : (
+                                                <>
+                                                    <Send className="w-4 h-4" />
+                                                    送信
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}
