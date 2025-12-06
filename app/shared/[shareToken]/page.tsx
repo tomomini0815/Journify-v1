@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Calendar, Clock, CheckSquare, List, BarChart3, Flag, MessageSquare, Send } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Calendar, Clock, CheckSquare, List, BarChart3, Flag, MessageSquare, Send, CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { isHoliday } from "@/lib/holidays"
@@ -25,6 +25,8 @@ type Task = {
     createdAt: string
     startDate?: string
     endDate?: string
+    approvalStatus: string // "none", "pending", "approved", "rejected"
+    rejectionReason?: string
 }
 
 type Comment = {
@@ -57,6 +59,16 @@ export default function SharedProjectPage() {
     const [isSubmittingComment, setIsSubmittingComment] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<'list' | 'timeline' | 'comments'>('list')
+
+    // Approval state
+    const [rejectingTaskId, setRejectingTaskId] = useState<string | null>(null)
+    const [rejectionReason, setRejectionReason] = useState("")
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+
+    // Timeline functionality
+    const timelineContainerRef = useRef<HTMLDivElement>(null)
+    const [hoveredTask, setHoveredTask] = useState<Task | null>(null)
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
     useEffect(() => {
         const fetchSharedProject = async () => {
@@ -122,6 +134,55 @@ export default function SharedProjectPage() {
         }
     }
 
+    const handleUpdateApproval = async (taskId: string, status: string, reason?: string) => {
+        setIsUpdatingStatus(true)
+        try {
+            const res = await fetch(`/api/shared/${params.shareToken}/tasks/${taskId}/approval`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    approvalStatus: status,
+                    rejectionReason: reason
+                }),
+            })
+
+            if (res.ok) {
+                // Update local stale
+                if (project) {
+                    const updatedTasks = project.tasks.map(t =>
+                        t.id === taskId
+                            ? { ...t, approvalStatus: status, rejectionReason: reason }
+                            : t
+                    )
+                    setProject({ ...project, tasks: updatedTasks })
+                }
+                setRejectingTaskId(null)
+                setRejectionReason("")
+            }
+        } catch (error) {
+            console.error("Failed to update approval status:", error)
+        } finally {
+            setIsUpdatingStatus(false)
+        }
+    }
+
+    const scrollToTask = (startDate: string) => {
+        if (!project || !timelineContainerRef.current) return
+
+        const start = project.startDate ? new Date(project.startDate) : new Date()
+        const target = new Date(startDate)
+        const diffDays = Math.ceil((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+        const dayWidth = 50
+        const scrollAmount = diffDays * dayWidth
+
+        timelineContainerRef.current.scrollTo({
+            left: Math.max(0, scrollAmount - 100), // padding
+            behavior: 'smooth'
+        })
+    }
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 flex items-center justify-center">
@@ -172,7 +233,7 @@ export default function SharedProjectPage() {
                 </div>
 
                 {/* Main Content */}
-                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden min-h-[600px] flex flex-col">
+                <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden min-h-[600px] flex flex-col relative">
                     {/* Tabs */}
                     <div className="p-6 border-b border-white/10 flex justify-between items-center">
                         <div className="flex gap-2">
@@ -259,7 +320,7 @@ export default function SharedProjectPage() {
                                     </div>
                                 </div>
 
-                                {/* Done Column */}
+                                {/* Done Column with Approval Workflow */}
                                 <div className="bg-[#1a1a1a] border-2 border-emerald-500/50 rounded-2xl p-6">
                                     <h3 className="font-bold text-white mb-4 flex items-center justify-between">
                                         <span>完了</span>
@@ -270,10 +331,86 @@ export default function SharedProjectPage() {
                                             <div key={task.id} className="bg-white/5 border rounded-xl p-4">
                                                 <h4 className="font-medium text-white text-sm mb-2">{task.text}</h4>
                                                 {task.description && (
-                                                    <div className="text-xs text-white/60 prose prose-invert prose-sm max-w-none"
+                                                    <div className="text-xs text-white/60 prose prose-invert prose-sm max-w-none mb-3"
                                                         dangerouslySetInnerHTML={{ __html: task.description }}
                                                     />
                                                 )}
+
+                                                {/* Approval section */}
+                                                <div className="mt-3 pt-3 border-t border-white/10">
+                                                    {task.approvalStatus === 'approved' && (
+                                                        <div className="flex items-center gap-2 text-emerald-400 text-sm bg-emerald-500/10 p-2 rounded-lg">
+                                                            <CheckCircle className="w-4 h-4" />
+                                                            <span>承認済み</span>
+                                                        </div>
+                                                    )}
+                                                    {task.approvalStatus === 'rejected' && (
+                                                        <div className="text-sm bg-red-500/10 p-2 rounded-lg">
+                                                            <div className="flex items-center gap-2 text-red-400 mb-1">
+                                                                <XCircle className="w-4 h-4" />
+                                                                <span>却下</span>
+                                                            </div>
+                                                            <p className="text-red-300/80 text-xs pl-6">{task.rejectionReason}</p>
+                                                            <button
+                                                                onClick={() => setRejectingTaskId(task.id)}
+                                                                className="text-white/40 text-xs pl-6 hover:text-white mt-1 underline"
+                                                            >
+                                                                理由を編集
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {(task.approvalStatus === 'none' || task.approvalStatus === 'pending') && rejectionReason === "" && rejectingTaskId !== task.id && (
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleUpdateApproval(task.id, 'approved')}
+                                                                disabled={isUpdatingStatus}
+                                                                className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 rounded-lg text-xs transition-colors"
+                                                            >
+                                                                <CheckCircle className="w-3 h-3" />
+                                                                承認
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setRejectingTaskId(task.id)}
+                                                                disabled={isUpdatingStatus}
+                                                                className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg text-xs transition-colors"
+                                                            >
+                                                                <XCircle className="w-3 h-3" />
+                                                                却下
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Rejection Form */}
+                                                    {rejectingTaskId === task.id && (
+                                                        <div className="mt-2">
+                                                            <textarea
+                                                                value={rejectionReason}
+                                                                onChange={(e) => setRejectionReason(e.target.value)}
+                                                                placeholder="却下の理由を入力..."
+                                                                className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500/50 mb-2 h-20 resize-none"
+                                                                autoFocus
+                                                            />
+                                                            <div className="flex justify-end gap-2">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setRejectingTaskId(null)
+                                                                        setRejectionReason("")
+                                                                    }}
+                                                                    className="px-3 py-1.5 text-xs text-white/60 hover:text-white transition-colors"
+                                                                >
+                                                                    キャンセル
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleUpdateApproval(task.id, 'rejected', rejectionReason)}
+                                                                    disabled={!rejectionReason.trim() || isUpdatingStatus}
+                                                                    className="px-3 py-1.5 bg-red-500 hover:bg-red-600 rounded-lg text-xs text-white transition-colors disabled:opacity-50"
+                                                                >
+                                                                    却下する
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                         {doneTasks.length === 0 && (
@@ -326,9 +463,9 @@ export default function SharedProjectPage() {
                                                 マイルストーン
                                             </div>
                                             {project.milestones.map(milestone => (
-                                                <div key={milestone.id} className="h-10 border-b border-white/5 flex items-center px-2 hover:bg-white/5 transition-colors bg-amber-500/5">
+                                                <div key={milestone.id} className="h-10 border-b border-white/5 flex items-center px-2 hover:bg-white/5 transition-colors bg-amber-500/5 text-amber-200">
                                                     <Flag className="w-3 h-3 text-amber-400 mr-2 flex-shrink-0" />
-                                                    <span className="text-sm truncate text-amber-200 flex-1">{milestone.title}</span>
+                                                    <span className="text-sm truncate flex-1">{milestone.title}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -342,10 +479,14 @@ export default function SharedProjectPage() {
                                                 タスク
                                             </div>
                                             {project.tasks.filter(t => t.startDate && t.endDate).map(task => (
-                                                <div key={task.id} className="h-10 border-b border-white/5 flex items-center px-2 hover:bg-white/5 transition-colors">
+                                                <button
+                                                    key={task.id}
+                                                    onClick={() => task.startDate && scrollToTask(task.startDate)}
+                                                    className="w-full text-left h-10 border-b border-white/5 flex items-center px-2 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors group"
+                                                >
                                                     <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: task.color || '#6366f1' }} />
-                                                    <span className="text-sm truncate text-white/80">{task.text}</span>
-                                                </div>
+                                                    <span className="text-sm truncate text-white/80 group-hover:text-indigo-300 transition-colors">{task.text}</span>
+                                                </button>
                                             ))}
                                         </div>
                                     )}
@@ -353,10 +494,10 @@ export default function SharedProjectPage() {
                             </div>
 
                             {/* Timeline Content */}
-                            <div className="flex-1 overflow-x-auto overflow-y-auto" id="timeline-scroll-container">
-                                <div className="min-w-max p-6">
+                            <div className="flex-1 overflow-x-auto overflow-y-auto" id="timeline-scroll-container" ref={timelineContainerRef}>
+                                <div className="min-w-max p-6 pb-20">
                                     {/* Timeline Header */}
-                                    <div className="flex mb-4 sticky top-0 bg-[#1a1a1a] z-10 pb-2">
+                                    <div className="flex mb-4 sticky top-0 bg-[#1a1a1a] z-10 pb-2 border-b border-white/10">
                                         <div className="flex">
                                             {Array.from({ length: totalDays }, (_, i) => {
                                                 const date = new Date(startDate)
@@ -367,14 +508,14 @@ export default function SharedProjectPage() {
                                                 return (
                                                     <div
                                                         key={i}
-                                                        className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs py-2 ${isHol ? 'bg-red-500/5 border-red-500/30 text-red-300' :
-                                                                isWeekend ? 'bg-blue-500/5 border-blue-500/30 text-blue-300' :
+                                                        className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs py-2 ${isHol ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                                isWeekend ? 'bg-blue-500/5 text-blue-300 border-white/5' :
                                                                     'border-white/5 text-white/60'
                                                             }`}
                                                         style={{ width: `${dayWidth}px` }}
                                                     >
-                                                        <div>{date.getMonth() + 1}/{date.getDate()}</div>
-                                                        <div className="text-[10px]">
+                                                        <div className="font-medium">{date.getMonth() + 1}/{date.getDate()}</div>
+                                                        <div className="text-[10px] opacity-75">
                                                             {['日', '月', '火', '水', '木', '金', '土'][date.getDay()]}
                                                         </div>
                                                     </div>
@@ -403,8 +544,8 @@ export default function SharedProjectPage() {
                                                         return (
                                                             <div
                                                                 key={i}
-                                                                className={`flex-shrink-0 border-r ${isHol ? 'bg-red-500/5 border-red-500/30' :
-                                                                        isWeekend ? 'bg-blue-500/5 border-blue-500/30' :
+                                                                className={`flex-shrink-0 border-r ${isHol ? 'bg-red-500/5 border-red-500/20' :
+                                                                        isWeekend ? 'bg-blue-500/5 border-white/5' :
                                                                             'border-white/5'
                                                                     }`}
                                                                 style={{ width: `${dayWidth}px` }}
@@ -421,11 +562,14 @@ export default function SharedProjectPage() {
                                                     return (
                                                         <div
                                                             key={milestone.id}
-                                                            className="absolute top-4 flex flex-col items-center"
+                                                            className="absolute top-4 flex flex-col items-center group z-10"
                                                             style={{ left: `${offset * dayWidth + dayWidth / 2}px`, transform: 'translateX(-50%)' }}
                                                         >
-                                                            <div className={`w-4 h-4 rounded-full ${milestone.completed ? 'bg-emerald-500' : 'bg-amber-500'} border-2 border-white shadow-lg`}></div>
-                                                            <div className="text-xs text-white/90 mt-2 whitespace-nowrap bg-black/50 px-2 py-1 rounded">{milestone.title}</div>
+                                                            <div className={`w-4 h-4 rounded-full ${milestone.completed ? 'bg-emerald-500' : 'bg-amber-500'} border-2 border-white shadow-lg cursor-help`}></div>
+                                                            <div className="absolute top-6 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10 z-20">
+                                                                {milestone.title} ({new Date(milestone.date).toLocaleDateString()})
+                                                            </div>
+                                                            <div className="text-xs text-white/90 mt-2 whitespace-nowrap bg-black/50 px-2 py-1 rounded md:block hidden">{milestone.title}</div>
                                                         </div>
                                                     )
                                                 })}
@@ -440,7 +584,28 @@ export default function SharedProjectPage() {
                                                 <CheckSquare className="w-4 h-4" />
                                                 タスク
                                             </div>
-                                            <div className="space-y-1">
+                                            <div className="space-y-1 relative">
+                                                {/* Background grid */}
+                                                <div className="absolute inset-0 flex h-full pointer-events-none">
+                                                    {Array.from({ length: totalDays }, (_, i) => {
+                                                        const date = new Date(startDate)
+                                                        date.setDate(date.getDate() + i)
+                                                        const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                                                        const isHol = isHoliday(date)
+
+                                                        return (
+                                                            <div
+                                                                key={i}
+                                                                className={`flex-shrink-0 border-r h-full ${isHol ? 'bg-red-500/5 border-red-500/20' :
+                                                                        isWeekend ? 'bg-blue-500/5 border-white/5' :
+                                                                            'border-white/5'
+                                                                    }`}
+                                                                style={{ width: `${dayWidth}px` }}
+                                                            />
+                                                        )
+                                                    })}
+                                                </div>
+
                                                 {project.tasks.filter(t => t.startDate && t.endDate).map(task => {
                                                     const taskStart = new Date(task.startDate!)
                                                     const taskEnd = new Date(task.endDate!)
@@ -450,34 +615,22 @@ export default function SharedProjectPage() {
                                                     if (offset + duration < 0 || offset > totalDays) return null
 
                                                     return (
-                                                        <div key={task.id} className="relative" style={{ height: '40px' }}>
-                                                            <div className="absolute inset-0 flex">
-                                                                {Array.from({ length: totalDays }, (_, i) => {
-                                                                    const date = new Date(startDate)
-                                                                    date.setDate(date.getDate() + i)
-                                                                    const isWeekend = date.getDay() === 0 || date.getDay() === 6
-                                                                    const isHol = isHoliday(date)
-
-                                                                    return (
-                                                                        <div
-                                                                            key={i}
-                                                                            className={`flex-shrink-0 border-r ${isHol ? 'bg-red-500/5 border-red-500/30' :
-                                                                                    isWeekend ? 'bg-blue-500/5 border-blue-500/30' :
-                                                                                        'border-white/5'
-                                                                                }`}
-                                                                            style={{ width: `${dayWidth}px` }}
-                                                                        />
-                                                                    )
-                                                                })}
-                                                            </div>
+                                                        <div key={task.id} className="relative z-10" style={{ height: '40px' }}>
                                                             <div
-                                                                className="absolute top-2 h-7 rounded-lg flex items-center px-3 text-sm text-white font-medium shadow-lg"
+                                                                className="absolute top-2 h-7 rounded-lg flex items-center px-3 text-sm text-white font-medium shadow-lg hover:brightness-110 cursor-help transition-all"
                                                                 style={{
                                                                     left: `${Math.max(0, offset) * dayWidth}px`,
                                                                     width: `${duration * dayWidth}px`,
                                                                     backgroundColor: task.color || '#6366f1'
                                                                 }}
-                                                                title={task.text}
+                                                                onMouseEnter={(e) => {
+                                                                    setHoveredTask(task)
+                                                                    setMousePos({ x: e.clientX, y: e.clientY })
+                                                                }}
+                                                                onMouseMove={(e) => {
+                                                                    setMousePos({ x: e.clientX, y: e.clientY })
+                                                                }}
+                                                                onMouseLeave={() => setHoveredTask(null)}
                                                             >
                                                                 <span className="truncate">{task.text}</span>
                                                             </div>
@@ -489,6 +642,50 @@ export default function SharedProjectPage() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Hover Tooltip */}
+                            <AnimatePresence>
+                                {hoveredTask && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0 }}
+                                        className="fixed z-50 pointer-events-none"
+                                        style={{
+                                            left: mousePos.x + 10,
+                                            top: mousePos.y + 10
+                                        }}
+                                    >
+                                        <div className="bg-[#1a1a1a] border border-white/20 rounded-xl p-4 shadow-2xl max-w-xs backdrop-blur-md">
+                                            <div className="flex items-start justify-between gap-4 mb-2">
+                                                <h4 className="font-bold text-white text-sm">{hoveredTask.text}</h4>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${hoveredTask.status === 'done' ? 'bg-emerald-500/20 text-emerald-300' :
+                                                        hoveredTask.status === 'in-progress' ? 'bg-yellow-500/20 text-yellow-300' :
+                                                            'bg-blue-500/20 text-blue-300'
+                                                    }`}>
+                                                    {hoveredTask.status === 'done' ? '完了' :
+                                                        hoveredTask.status === 'in-progress' ? '進行中' : '未着手'}
+                                                </span>
+                                            </div>
+                                            <div className="space-y-1 text-xs text-white/60">
+                                                <p>期間: {new Date(hoveredTask.startDate!).toLocaleDateString()} - {new Date(hoveredTask.endDate!).toLocaleDateString()}</p>
+                                                {hoveredTask.priority && (
+                                                    <p>優先度: {
+                                                        hoveredTask.priority === 'high' ? '高' :
+                                                            hoveredTask.priority === 'medium' ? '中' : '低'
+                                                    }</p>
+                                                )}
+                                                {hoveredTask.approvalStatus === 'approved' && (
+                                                    <p className="text-emerald-400">承認済み</p>
+                                                )}
+                                                {hoveredTask.approvalStatus === 'rejected' && (
+                                                    <p className="text-red-400">却下: {hoveredTask.rejectionReason}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     )}
 

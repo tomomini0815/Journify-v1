@@ -41,6 +41,9 @@ model Project {
   status      String      @default("active") // active, completed, archived
   startDate   DateTime?
   endDate     DateTime?
+  approvalStatus String @default("none") // none, pending, approved, rejected
+  rejectionReason String?
+
   shareToken  String?     @unique // Unique token for sharing
   isPublic    Boolean     @default(false) // Public sharing status
   sharedAt    DateTime?   // When the project was shared
