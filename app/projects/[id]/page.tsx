@@ -1,8 +1,20 @@
 "use client"
 
+import Link from "next/link"
+import { useParams, useRouter } from "next/navigation"
+import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, useDroppable, DragEndEvent, DragStartEvent, useDraggable, defaultDropAnimation } from "@dnd-kit/core"
+import { TaskDescriptionEditor } from '@/components/TaskDescriptionEditor'
+import { FileUploader } from '@/components/FileUploader'
+import { MilestoneTemplatesPanel } from '@/components/MilestoneTemplatesPanel'
+import { WorkflowTemplatesPanel } from '@/components/WorkflowTemplates'
+import { WorkflowTemplate } from '@/lib/workflowTemplates'
+import { MilestoneTemplate } from '@/lib/milestoneTemplates'
+
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight, Download, File as FileIcon, Paperclip, Link as LinkIcon, Share2, Copy, Check, MessageSquare, Send, X, AlertCircle } from "lucide-react"
+import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight, Download, File as FileIcon, Paperclip, Link as LinkIcon, Share2, Copy, Check, MessageSquare, Send, X, AlertCircle, FileText } from "lucide-react"
+import DocumentsView from './components/DocumentsView'
+import { DashboardLayout } from '@/components/DashboardLayout'
 
 // ... imports remain the same
 
@@ -75,6 +87,12 @@ type Project = {
     milestones: Milestone[]
     tasks: Task[]
     comments: Comment[]
+}
+
+const isHoliday = (date: string) => {
+    const d = new Date(date)
+    const day = d.getDay()
+    return day === 0 || day === 6
 }
 
 export default function ProjectDetailsPage() {
@@ -256,7 +274,8 @@ export default function ProjectDetailsPage() {
                     priority: "medium",
                     startDate: "",
                     endDate: "",
-                    color: "#6366f1"
+                    color: "#6366f1",
+                    approvalStatus: "none"
                 })
                 setEditingItem(null)
                 setTaskAttachments([])
@@ -808,7 +827,8 @@ export default function ProjectDetailsPage() {
             priority: task.priority || "medium",
             startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : "",
             endDate: task.endDate ? new Date(task.endDate).toISOString().split('T')[0] : "",
-            color: task.color || "#6366f1"
+            color: task.color || "#6366f1",
+            approvalStatus: task.approvalStatus || "none"
         })
         setEditingItem({ type: 'task', id: task.id })
 
@@ -838,7 +858,8 @@ export default function ProjectDetailsPage() {
             priority: "medium",
             startDate: "",
             endDate: "",
-            color: "#6366f1"
+            color: "#6366f1",
+            approvalStatus: "none"
         })
         setEditingItem(null)
         setTaskAttachments([])
@@ -999,9 +1020,21 @@ export default function ProjectDetailsPage() {
                                 <Calendar className="w-4 h-4" />
                                 タイムライン
                             </button>
+                            <button
+                                onClick={() => setActiveTab('docs')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'docs'
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                <FileText className="w-4 h-4" />
+                                資料・ファイル
+                            </button>
                         </div>
 
-                        {activeTab === 'list' ? (
+                        {activeTab === 'docs' ? (
+                            <DocumentsView projectId={params.id as string} />
+                        ) : activeTab === 'list' ? (
                             <div className="p-4">
                                 <DndContext
                                     sensors={sensors}
@@ -1043,15 +1076,7 @@ export default function ProjectDetailsPage() {
                                         />
                                     </div>
 
-                                    <DragOverlay dropAnimation={{
-                                        sideEffects: defaultDropAnimationSideEffects({
-                                            styles: {
-                                                active: {
-                                                    opacity: '0.5',
-                                                },
-                                            },
-                                        }),
-                                    }}>
+                                    <DragOverlay dropAnimation={defaultDropAnimation}>
                                         {activeDragItem?.type === 'task' && (
                                             <div className="w-[300px]">
                                                 <KanbanTaskCard
@@ -1392,15 +1417,7 @@ export default function ProjectDetailsPage() {
                                     </div>
 
                                     {/* Drag Overlay for visual feedback */}
-                                    <DragOverlay dropAnimation={{
-                                        sideEffects: defaultDropAnimationSideEffects({
-                                            styles: {
-                                                active: {
-                                                    opacity: '0.5',
-                                                },
-                                            },
-                                        }),
-                                    }}>
+                                    <DragOverlay dropAnimation={defaultDropAnimation}>
                                         {activeDragItem?.type === 'milestone-template' && (
                                             <div className="flex-shrink-0 w-[180px] bg-white/5 border border-amber-400/50 rounded-xl p-3 shadow-2xl">
                                                 <div className="flex items-center gap-2 mb-2">
@@ -1999,65 +2016,5 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
         </div>
     )
 }
-task.status === 'in_progress' ? '進行中' : '未着手'}
-                    </div >
-    <div className="flex gap-1 transition-opacity opacity-0 group-hover:opacity-100">
-        <button
-            onClick={(e) => {
-                e.stopPropagation()
-                openEditTaskModal(task)
-            }}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-        >
-            <Pencil className="w-3.5 h-3.5 text-white/60" />
-        </button>
-        {task.endDate && (
-            <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
-            </div>
-        )}
-        {task.attachments && task.attachments.length > 0 && (
-            <div className="flex items-center gap-1 text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
-                <Paperclip className="w-3 h-3" />
-                <span>{task.attachments.length}</span>
-            </div>
-        )}
-        {task.url && (
-            <a
-                href={task.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded hover:bg-indigo-400/20 transition-colors"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <LinkIcon className="w-3 h-3" />
-            </a>
-        )}
-    </div>
 
-{/* Description preview on hover */ }
-{
-    task.description && (
-        <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
-            <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: task.description }}
-                onClick={(e) => {
-                    const target = e.target as HTMLElement
-                    if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
-                        e.stopPropagation() // Prevent card drag/click
-                        const checkboxes = Array.from(e.currentTarget.querySelectorAll('input[type="checkbox"]'))
-                        const index = checkboxes.indexOf(target as HTMLInputElement)
-                        if (index !== -1) {
-                            handleSubtaskToggle(task.id, index, (target as HTMLInputElement).checked)
-                        }
-                    }
-                }}
-            />
-        </div>
-    )
-}
-                </div >
-                )
-}
 

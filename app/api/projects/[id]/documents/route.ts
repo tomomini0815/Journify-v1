@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import prisma from "@/lib/prisma"
 
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params
         const documents = await prisma.projectDocument.findMany({
             where: {
-                projectId: params.id
+                projectId: id
             },
             orderBy: {
                 createdAt: 'desc'
@@ -27,9 +28,10 @@ export async function GET(
 
 export async function POST(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params
         const body = await request.json()
         const { name, type, url, size } = body
 
@@ -46,15 +48,16 @@ export async function POST(
                 type,
                 url,
                 size,
-                projectId: params.id
+                projectId: id
             }
         })
 
         return NextResponse.json(document)
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to create document:', error)
+        console.error('Error stack:', error.stack)
         return NextResponse.json(
-            { error: 'Failed to create document' },
+            { error: 'Failed to create document', details: error.message },
             { status: 500 }
         )
     }

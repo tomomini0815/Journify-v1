@@ -15,6 +15,8 @@ export async function GET(
 
     try {
         const { id } = await params
+        console.log(`[API] Fetching project ${id} for user ${user.id}`)
+
         const project = await prisma.project.findUnique({
             where: {
                 id,
@@ -35,6 +37,7 @@ export async function GET(
         })
 
         if (!project) {
+            console.log(`[API] Project ${id} not found`)
             return NextResponse.json(
                 { error: "Project not found" },
                 { status: 404 }
@@ -42,10 +45,11 @@ export async function GET(
         }
 
         return NextResponse.json(project)
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to fetch project:", error)
+        console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)))
         return NextResponse.json(
-            { error: "Failed to fetch project" },
+            { error: "Failed to fetch project", details: error.message },
             { status: 500 }
         )
     }

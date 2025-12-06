@@ -3,58 +3,56 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id
-  email     String   @unique
-  name      String?
-  bio       String?
-  avatarUrl String?
-  preferences Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  journals        JournalEntry[]
-  goals           Goal[]
-  lifeBalance     LifeBalanceEntry[]
-  happiness       HappinessEntry[]
+  id               String             @id
+  email            String             @unique
+  name             String?
+  bio              String?
+  avatarUrl        String?
+  preferences      Json?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  goals            Goal[]
+  happiness        HappinessEntry[]
+  journals         JournalEntry[]
+  lifeBalance      LifeBalanceEntry[]
+  projects         Project[]
+  tasks            Task[]
+  settings         UserSettings?
   visionBoardItems VisionBoardItem[]
-  tasks           Task[]
-  projects        Project[]
-  settings        UserSettings?
 }
 
 model UserSettings {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  enableProjects Boolean  @default(false)
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String  @id @default(uuid())
+  userId         String  @unique
+  enableProjects Boolean @default(false)
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Project {
-  id          String      @id @default(uuid())
-  title       String
-  description String?
-  status      String      @default("active") // active, completed, archived
-  startDate   DateTime?
-  endDate     DateTime?
-  approvalStatus String @default("none") // none, pending, approved, rejected
+  id              String            @id @default(uuid())
+  title           String
+  description     String?
+  status          String            @default("active")
+  startDate       DateTime?
+  endDate         DateTime?
+  userId          String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  isPublic        Boolean           @default(false)
+  shareToken      String?           @unique
+  sharedAt        DateTime?
+  approvalStatus  String            @default("none")
   rejectionReason String?
-
-  shareToken  String?     @unique // Unique token for sharing
-  isPublic    Boolean     @default(false) // Public sharing status
-  sharedAt    DateTime?   // When the project was shared
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  milestones  Milestone[]
-  tasks       Task[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  comments    Comment[]
-  documents   ProjectDocument[]
+  comments        Comment[]
+  milestones      Milestone[]
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents       ProjectDocument[]
+  tasks           Task[]
 
   @@index([userId])
   @@index([shareToken])
@@ -63,46 +61,45 @@ model Project {
 model ProjectDocument {
   id        String   @id @default(uuid())
   name      String
-  type      String   // MIME type
-  url       String   // URL or Data URI
+  type      String
+  url       String
   size      Int
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
 }
 
 model Milestone {
-  id          String    @id @default(uuid())
-  title       String
-  date        DateTime
-  completed   Boolean   @default(false)
-  projectId   String
-  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks       Task[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  title     String
+  date      DateTime
+  completed Boolean  @default(false)
+  projectId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]
 
   @@index([projectId])
 }
 
 model JournalEntry {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  content   String
-  tags      String[]
-  mood      Int?     // 1-5: 気分評価
-  energy    Int?     // 1-5: エネルギーレベル
-  stress    Int?     // 1-5: ストレスレベル
-  sleep     Int?     // 1-5: 睡眠の質
-  activities Json?   // { exercise: true, socializing: false, ... }
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  content    String
+  tags       String[]
+  mood       Int?
+  energy     Int?
+  stress     Int?
+  sleep      Int?
+  activities Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
@@ -111,17 +108,17 @@ model JournalEntry {
 }
 
 model Goal {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   description String?
-  progress    Int      @default(0)
-  priority    String   @default("medium")
-  timeframe   String   @default("short") // "short", "mid", "long"
+  progress    Int       @default(0)
   targetDate  DateTime?
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  priority    String    @default("medium")
+  timeframe   String    @default("short")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, progress])
   @@index([userId, timeframe])
@@ -133,9 +130,9 @@ model LifeBalanceEntry {
   score     Int
   date      DateTime @default(now())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model HappinessEntry {
@@ -143,45 +140,47 @@ model HappinessEntry {
   score     Int
   date      DateTime @default(now())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VisionBoardItem {
   id        String   @id @default(uuid())
-  type      String   // "image", "dream", "affirmation", "letter"
-  content   String   // URL for image, text for others
-  metadata  Json?    // For extra data like position, size, or letter open date
+  type      String
+  content   String
+  metadata  Json?
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Task {
-  id            String    @id @default(uuid())
+  id            String       @id @default(uuid())
   text          String
-  description   String?
-  url           String?   // External link URL
-  status        String    @default("todo") // todo, in_progress, done
-  priority      String    @default("medium") // high, medium, low
-  completed     Boolean   @default(false)
-  color         String?   @default("#6366f1") // Task color (hex code)
+  completed     Boolean      @default(false)
   scheduledDate DateTime?
-  startDate     DateTime?
-  endDate       DateTime?
-  projectId     String?
-  project       Project?  @relation(fields: [projectId], references: [id])
-  milestoneId   String?
-  milestone     Milestone? @relation(fields: [milestoneId], references: [id])
-  workflowId    String?    // To group tasks created from a template
-  workflowName  String?    // Name of the template used
-  attachments   Attachment[]
   userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  milestoneId   String?
+  projectId     String?
+  endDate       DateTime?
+  startDate     DateTime?
+  color         String?      @default("#6366f1")
+  description   String?
+  priority      String       @default("medium")
+  status        String       @default("todo")
+  workflowId    String?
+  workflowName  String?
+  url           String?
+  approvalStatus String    @default("none") // none, pending, approved, rejected
+  rejectionReason String?
+  attachments   Attachment[]
+  milestone     Milestone?   @relation(fields: [milestoneId], references: [id])
+  project       Project?     @relation(fields: [projectId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([milestoneId])
@@ -195,20 +194,20 @@ model Attachment {
   size      Int
   type      String
   taskId    String
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
 }
 
 model Comment {
-  id          String   @id @default(uuid())
-  content     String
-  authorName  String
-  createdAt   DateTime @default(now())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  content    String
+  authorName String
+  createdAt  DateTime @default(now())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
 }

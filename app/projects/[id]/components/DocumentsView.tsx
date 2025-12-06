@@ -40,8 +40,8 @@ export default function DocumentsView({ projectId }: { projectId: string }) {
         if (!files || files.length === 0) return
 
         const file = files[0]
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit for DB storage
-            alert("ファイルサイズが大きすぎます (最大 2MB)")
+        if (file.size > 4 * 1024 * 1024) { // 4MB limit
+            alert("ファイルサイズが大きすぎます (最大 4MB)")
             return
         }
 
@@ -66,10 +66,13 @@ export default function DocumentsView({ projectId }: { projectId: string }) {
 
                 if (res.ok) {
                     await fetchDocuments()
+                } else {
+                    const data = await res.json()
+                    throw new Error(data.error || 'Upload failed')
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Upload failed", error)
-                alert("アップロードに失敗しました")
+                alert(`アップロードに失敗しました: ${error.message}`)
             } finally {
                 setIsUploading(false)
             }
@@ -151,7 +154,7 @@ export default function DocumentsView({ projectId }: { projectId: string }) {
                         <p className="text-white font-medium mb-1">
                             {isUploading ? 'アップロード中...' : 'クリックまたはドラッグ＆ドロップでアップロード'}
                         </p>
-                        <p className="text-white/40 text-sm">PDF, 画像など (最大 2MB)</p>
+                        <p className="text-white/40 text-sm">PDF, 画像など (最大 4MB)</p>
                     </div>
                 </div>
             </div>
@@ -227,9 +230,16 @@ export default function DocumentsView({ projectId }: { projectId: string }) {
                             </div>
                         </div>
                         {/* Viewer */}
-                        <div className="flex-1 bg-black/50 relative overflow-hidden">
+                        <div className="flex-1 bg-black/50 relative overflow-hidden flex flex-col">
                             {selectedDoc.type === 'application/pdf' ? (
-                                <iframe src={selectedDoc.url} className="w-full h-full border-none" />
+                                <object data={selectedDoc.url} type="application/pdf" className="w-full h-full border-none">
+                                    <div className="flex flex-col items-center justify-center h-full text-white/40">
+                                        <p className="mb-4">プレビューを表示できませんでした</p>
+                                        <a href={selectedDoc.url} download={selectedDoc.name} className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
+                                            ダウンロードして表示
+                                        </a>
+                                    </div>
+                                </object>
                             ) : selectedDoc.type.includes('image') ? (
                                 <img src={selectedDoc.url} alt={selectedDoc.name} className="w-full h-full object-contain" />
                             ) : (
