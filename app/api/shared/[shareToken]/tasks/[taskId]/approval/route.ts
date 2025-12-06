@@ -29,11 +29,7 @@ export async function POST(
         const task = await prisma.task.findFirst({
             where: {
                 id: taskId,
-                workflow: {
-                    milestone: {
-                        projectId: project.id
-                    }
-                }
+                projectId: project.id
             }
         })
 
