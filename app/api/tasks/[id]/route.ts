@@ -26,11 +26,21 @@ export async function PATCH(
             return NextResponse.json({ error: "Not found" }, { status: 404 })
         }
 
+        const { text, description, url, status, priority, completed, color, startDate, endDate, scheduledDate } = body
+
         const task = await prisma.task.update({
             where: { id },
             data: {
-                ...body,
-                scheduledDate: body.scheduledDate ? new Date(body.scheduledDate) : undefined,
+                text,
+                description,
+                url,
+                status,
+                priority,
+                completed,
+                color,
+                startDate: startDate ? new Date(startDate) : undefined,
+                endDate: endDate ? new Date(endDate) : undefined,
+                scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
             },
         })
 
