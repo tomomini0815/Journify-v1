@@ -1799,71 +1799,51 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
                         >
                             <Pencil className="w-3.5 h-3.5 text-white/60" />
                         </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                setDeleteConfirm({ type: 'task', id: task.id, title: task.text })
-                            }}
-                            className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
-                        >
-                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                        </button>
+                        {task.endDate && (
+                            <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
+                            </div>
+                        )}
+                        {task.attachments && task.attachments.length > 0 && (
+                            <div className="flex items-center gap-1 text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
+                                <Paperclip className="w-3 h-3" />
+                                <span>{task.attachments.length}</span>
+                            </div>
+                        )}
+                        {task.url && (
+                            <a
+                                href={task.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded hover:bg-indigo-400/20 transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <LinkIcon className="w-3 h-3" />
+                            </a>
+                        )}
                     </div>
-                </div>
-            </div>
 
-            <div className="flex flex-wrap gap-3 text-xs text-white/40">
-                {task.startDate && (
-                    <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>開始: {new Date(task.startDate).toLocaleDateString()}</span>
-                    </div>
-                )}
-                {task.endDate && (
-                    <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
-                    </div>
-                )}
-                {task.attachments && task.attachments.length > 0 && (
-                    <div className="flex items-center gap-1 text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
-                        <Paperclip className="w-3 h-3" />
-                        <span>{task.attachments.length}</span>
-                    </div>
-                )}
-                {task.url && (
-                    <a
-                        href={task.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded hover:bg-indigo-400/20 transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <LinkIcon className="w-3 h-3" />
-                    </a>
-                )}
-            </div>
-
-            {/* Description preview on hover */}
-            {task.description && (
-                <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
-                    <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: task.description }}
-                        onClick={(e) => {
-                            const target = e.target as HTMLElement
-                            if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
-                                e.stopPropagation() // Prevent card drag/click
-                                const checkboxes = Array.from(e.currentTarget.querySelectorAll('input[type="checkbox"]'))
-                                const index = checkboxes.indexOf(target as HTMLInputElement)
-                                if (index !== -1) {
-                                    handleSubtaskToggle(task.id, index, (target as HTMLInputElement).checked)
-                                }
-                            }
-                        }}
-                    />
+                    {/* Description preview on hover */}
+                    {task.description && (
+                        <div className="mt-2 max-h-0 overflow-hidden group-hover:max-h-40 transition-all duration-300">
+                            <div className="text-xs text-white/60 bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto prose prose-invert prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{ __html: task.description }}
+                                onClick={(e) => {
+                                    const target = e.target as HTMLElement
+                                    if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                                        e.stopPropagation() // Prevent card drag/click
+                                        const checkboxes = Array.from(e.currentTarget.querySelectorAll('input[type="checkbox"]'))
+                                        const index = checkboxes.indexOf(target as HTMLInputElement)
+                                        if (index !== -1) {
+                                            handleSubtaskToggle(task.id, index, (target as HTMLInputElement).checked)
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
-    )
+                )
 }
 
