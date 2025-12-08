@@ -1853,10 +1853,11 @@ function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, t
                 <span className="text-xs text-white/40 bg-white/10 px-2 py-1 rounded-full">{tasks.length}</span>
             </div>
             <div className="p-4 space-y-3 overflow-y-auto flex-1">
-                {tasks.map((task) => (
+                {tasks.map((task, index) => (
                     <KanbanTaskCard
                         key={task.id}
                         task={task}
+                        isLast={index === tasks.length - 1}
                         openEditTaskModal={openEditTaskModal}
                         setDeleteConfirm={setDeleteConfirm}
 
@@ -1875,8 +1876,9 @@ function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, t
 }
 
 // Kanban Task Card Component - Using Original Design
-function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskCompletion, handleSubtaskToggle }: {
+function KanbanTaskCard({ task, isLast, openEditTaskModal, setDeleteConfirm, toggleTaskCompletion, handleSubtaskToggle }: {
     task: Task
+    isLast?: boolean
     openEditTaskModal: (task: Task) => void
     setDeleteConfirm: (confirm: { type: 'task' | 'milestone', id: string, title: string }) => void
     toggleTaskCompletion: (task: Task) => void
@@ -2000,12 +2002,12 @@ function KanbanTaskCard({ task, openEditTaskModal, setDeleteConfirm, toggleTaskC
             )}
             {task.approvalStatus === 'rejected' && (
                 <div className="mt-2 group/rejection relative">
-                    <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded w-fit cursor-help">
+                    <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded w-fit">
                         <X className="w-3 h-3" />
                         <span>却下</span>
                     </div>
                     {task.rejectionReason && (
-                        <div className="absolute top-full left-0 mt-1 w-48 p-2 bg-black/90 border border-white/10 rounded-lg text-xs text-white z-50 invisible group-hover/rejection:visible">
+                        <div className={`absolute ${isLast ? 'bottom-full mb-1' : 'top-full mt-1'} left-0 w-48 p-2 bg-black/90 border border-white/10 rounded-lg text-xs text-white z-50 invisible group-hover/rejection:visible`}>
                             <p className="font-bold mb-0.5 text-red-300">理由:</p>
                             {task.rejectionReason}
                         </div>

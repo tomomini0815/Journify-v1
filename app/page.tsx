@@ -14,6 +14,11 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [touchedImages, setTouchedImages] = useState<Set<string>>(new Set())
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
@@ -164,69 +169,74 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-black/60" />
       </div>
 
+
       {/* Twinkling Stars for space section */}
-      <motion.div
-        className="fixed inset-0 -z-5 pointer-events-none"
-        style={{
-          opacity: useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 0.8, 1])
-        }}
-      >
-        {[...Array(150)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute bg-white rounded-full"
-            style={{
-              width: Math.random() * 2 + 0.5 + 'px',
-              height: Math.random() * 2 + 0.5 + 'px',
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              opacity: Math.random() * 0.8 + 0.2,
-            }}
-            animate={{
-              opacity: [Math.random() * 0.3, Math.random() * 0.9, Math.random() * 0.3],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: Math.random() * 4 + 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: Math.random() * 2,
-            }}
-          />
-        ))}
-      </motion.div>
+      {mounted && (
+        <motion.div
+          className="fixed inset-0 -z-5 pointer-events-none"
+          style={{
+            opacity: useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 0.8, 1])
+          }}
+        >
+          {[...Array(150)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute bg-white rounded-full"
+              style={{
+                width: Math.random() * 2 + 0.5 + 'px',
+                height: Math.random() * 2 + 0.5 + 'px',
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                opacity: Math.random() * 0.8 + 0.2,
+              }}
+              animate={{
+                opacity: [Math.random() * 0.3, Math.random() * 0.9, Math.random() * 0.3],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{
+                duration: Math.random() * 4 + 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </motion.div>
+      )}
 
       {/* Shooting Stars for space section */}
-      <motion.div
-        className="fixed inset-0 -z-5 pointer-events-none overflow-hidden"
-        style={{
-          opacity: useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 1, 1])
-        }}
-      >
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={`shooting-${i}`}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{
-              left: `${Math.random() * 30}%`,
-              top: `${Math.random() * 50}%`,
-              boxShadow: '0 0 4px 2px rgba(255, 255, 255, 0.8)',
-            }}
-            animate={{
-              x: [0, 300],
-              y: [0, 150],
-              opacity: [0, 1, 1, 0],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              repeatDelay: Math.random() * 8 + 4,
-              delay: Math.random() * 5,
-              ease: "easeOut",
-            }}
-          />
-        ))}
-      </motion.div>
+      {mounted && (
+        <motion.div
+          className="fixed inset-0 -z-5 pointer-events-none overflow-hidden"
+          style={{
+            opacity: useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 1, 1])
+          }}
+        >
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={`shooting-${i}`}
+              className="absolute w-1 h-1 bg-white rounded-full"
+              style={{
+                left: `${Math.random() * 30}%`,
+                top: `${Math.random() * 50}%`,
+                boxShadow: '0 0 4px 2px rgba(255, 255, 255, 0.8)',
+              }}
+              animate={{
+                x: [0, 300],
+                y: [0, 150],
+                opacity: [0, 1, 1, 0],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                repeatDelay: Math.random() * 8 + 4,
+                delay: Math.random() * 5,
+                ease: "easeOut",
+              }}
+            />
+          ))}
+        </motion.div>
+      )}
 
       <div ref={containerRef} className="relative text-[#e1e1e1] selection:bg-white selection:text-black overflow-x-hidden">
 

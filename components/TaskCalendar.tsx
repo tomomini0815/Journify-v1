@@ -196,6 +196,14 @@ export function TaskCalendar({ tasks, onDateSelect }: TaskCalendarProps) {
                     <div className="w-3 h-3 rounded-full bg-white/40" />
                     <span>未完了</span>
                 </div>
+                <div className="flex items-center gap-2">
+                    <span>🌕</span>
+                    <span>満月</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span>🌑</span>
+                    <span>新月</span>
+                </div>
             </div>
         </div>
     )

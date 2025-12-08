@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
+import { revalidatePath, revalidateTag } from "next/cache"
 
 export async function GET() {
     const supabase = await createClient()
@@ -72,6 +73,12 @@ export async function POST(request: Request) {
                 userId: user.id,
             },
         })
+
+
+        // Revalidate dashboard cache to show new journal immediately
+        revalidateTag('dashboard', 'max')
+        revalidateTag('journal', 'max')
+        revalidatePath('/dashboard')
 
         return NextResponse.json(journal)
     } catch (error) {

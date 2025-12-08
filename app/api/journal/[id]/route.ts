@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
+import { revalidatePath, revalidateTag } from "next/cache"
 
 export async function GET(
     request: Request,
@@ -71,6 +72,11 @@ export async function PATCH(
             },
         })
 
+        // Revalidate dashboard cache to show updated journal immediately
+        revalidateTag('dashboard', 'max')
+        revalidateTag('journal', 'max')
+        revalidatePath('/dashboard')
+
         return NextResponse.json(journal)
     } catch (error) {
         console.error("PATCH /api/journal/[id] error:", error)
@@ -106,6 +112,11 @@ export async function DELETE(
         await prisma.journalEntry.delete({
             where: { id: id },
         })
+
+        // Revalidate dashboard cache to remove deleted journal immediately
+        revalidateTag('dashboard', 'max')
+        revalidateTag('journal', 'max')
+        revalidatePath('/dashboard')
 
         return NextResponse.json({ success: true })
     } catch (error) {
