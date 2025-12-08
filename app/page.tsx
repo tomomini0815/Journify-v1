@@ -393,10 +393,10 @@ export default function LandingPage() {
                 <div className="group bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-3xl hover:border-violet-500/50 transition-colors cursor-none text-left">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-violet-500/20 rounded-xl text-violet-400">
-                        <BarChart3 className="w-8 h-8" />
+                      <div className="p-2.5 bg-violet-500/20 rounded-xl text-violet-400">
+                        <BarChart3 className="w-6 h-6" />
                       </div>
-                      <h4 className="text-lg md:text-xl font-medium group-hover:text-violet-400 transition-colors">Smart Analysis</h4>
+                      <h4 className="text-base md:text-lg font-medium group-hover:text-violet-400 transition-colors">Smart Analysis</h4>
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -429,10 +429,10 @@ export default function LandingPage() {
                 <div className="group bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-3xl hover:border-violet-500/50 transition-colors cursor-none text-left">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-emerald-500/20 rounded-xl text-emerald-400">
-                        <CheckCircle2 className="w-8 h-8" />
+                      <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400">
+                        <CheckCircle2 className="w-6 h-6" />
                       </div>
-                      <h4 className="text-lg md:text-xl font-medium group-hover:text-emerald-400 transition-colors">Goal Tracking</h4>
+                      <h4 className="text-base md:text-lg font-medium group-hover:text-emerald-400 transition-colors">Goal Tracking</h4>
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -465,10 +465,10 @@ export default function LandingPage() {
                 <div className="group bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-3xl hover:border-violet-500/50 transition-colors cursor-none text-left">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400">
-                        <Calendar className="w-8 h-8" />
+                      <div className="p-2.5 bg-blue-500/20 rounded-xl text-blue-400">
+                        <Calendar className="w-6 h-6" />
                       </div>
-                      <h4 className="text-lg md:text-xl font-medium group-hover:text-blue-400 transition-colors">Calendar Sync</h4>
+                      <h4 className="text-base md:text-lg font-medium group-hover:text-blue-400 transition-colors">Calendar Sync</h4>
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -510,10 +510,10 @@ export default function LandingPage() {
                 <MagneticButton className="w-full">
                   <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-violet-500/50 transition-all cursor-none h-full">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="p-4 bg-violet-500/20 rounded-2xl text-violet-400">
-                        <BarChart3 className="w-10 h-10" />
+                      <div className="p-3 bg-violet-500/20 rounded-2xl text-violet-400">
+                        <BarChart3 className="w-8 h-8" />
                       </div>
-                      <h3 className="text-xl md:text-2xl font-bold group-hover:text-violet-400 transition-colors">
+                      <h3 className="text-lg md:text-xl font-bold group-hover:text-violet-400 transition-colors">
                         ジャーナル
                       </h3>
                     </div>
@@ -550,10 +550,10 @@ export default function LandingPage() {
                 <MagneticButton className="w-full">
                   <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-emerald-500/50 transition-all cursor-none h-full">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="p-4 bg-emerald-500/20 rounded-2xl text-emerald-400">
-                        <CheckCircle2 className="w-10 h-10" />
+                      <div className="p-3 bg-emerald-500/20 rounded-2xl text-emerald-400">
+                        <CheckCircle2 className="w-8 h-8" />
                       </div>
-                      <h3 className="text-xl md:text-2xl font-bold group-hover:text-emerald-400 transition-colors">
+                      <h3 className="text-lg md:text-xl font-bold group-hover:text-emerald-400 transition-colors">
                         目標管理
                       </h3>
                     </div>
@@ -590,10 +590,10 @@ export default function LandingPage() {
                 <MagneticButton className="w-full">
                   <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-blue-500/50 transition-all cursor-none h-full">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="p-4 bg-blue-500/20 rounded-2xl text-blue-400">
-                        <CheckCircle2 className="w-10 h-10" />
+                      <div className="p-3 bg-blue-500/20 rounded-2xl text-blue-400">
+                        <CheckCircle2 className="w-8 h-8" />
                       </div>
-                      <h3 className="text-xl md:text-2xl font-bold group-hover:text-blue-400 transition-colors">
+                      <h3 className="text-lg md:text-xl font-bold group-hover:text-blue-400 transition-colors">
                         タスク管理
                       </h3>
                     </div>
