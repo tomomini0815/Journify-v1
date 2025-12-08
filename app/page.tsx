@@ -630,10 +630,10 @@ export default function LandingPage() {
                 <MagneticButton className="w-full">
                   <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-amber-500/50 transition-all cursor-none h-full">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="p-4 bg-amber-500/20 rounded-2xl text-amber-400">
-                        <Calendar className="w-10 h-10" />
+                      <div className="p-3 bg-amber-500/20 rounded-2xl text-amber-400">
+                        <Calendar className="w-8 h-8" />
                       </div>
-                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-amber-400 transition-colors">
+                      <h3 className="text-lg md:text-xl font-bold group-hover:text-amber-400 transition-colors">
                         プロジェクト管理
                       </h3>
                     </div>
@@ -670,10 +670,10 @@ export default function LandingPage() {
                 <MagneticButton className="w-full">
                   <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-indigo-500/50 transition-all cursor-none">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="p-4 bg-indigo-500/20 rounded-2xl text-indigo-400">
-                        <BarChart3 className="w-10 h-10" />
+                      <div className="p-3 bg-indigo-500/20 rounded-2xl text-indigo-400">
+                        <BarChart3 className="w-8 h-8" />
                       </div>
-                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-indigo-400 transition-colors">
+                      <h3 className="text-lg md:text-xl font-bold group-hover:text-indigo-400 transition-colors">
                         ダッシュボード & 分析
                       </h3>
                     </div>
