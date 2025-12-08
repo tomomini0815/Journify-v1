@@ -128,7 +128,7 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-2xl md:text-4xl font-bold mb-2">目標</h1>
+                    <h1 className="text-[28px] font-bold mb-2">目標</h1>
                     <p className="text-white/60">進捗を追跡し、夢を実現する</p>
                 </motion.div>
 

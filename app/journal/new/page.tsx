@@ -171,7 +171,7 @@ export default function NewJournalPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-3xl font-bold">新しいジャーナル</h1>
+                    <h1 className="text-[28px] font-bold">新しいジャーナル</h1>
                     <p className="text-white/60 mt-1">あなたの思考と感情を記録する</p>
                 </motion.div>
 

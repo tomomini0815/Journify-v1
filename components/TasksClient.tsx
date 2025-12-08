@@ -418,7 +418,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 {/* ... (Header) */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">日々のタスク</h1>
+                        <h1 className="text-[28px] font-bold text-white mb-2">日々のタスク</h1>
                         <p className="text-white/60">小さな達成の積み重ねが、大きな成長につながります。</p>
                     </div>
                 </div>

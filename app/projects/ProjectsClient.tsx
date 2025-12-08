@@ -66,7 +66,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">プロジェクト</h1>
+                        <h1 className="text-[28px] font-bold text-white mb-2">プロジェクト</h1>
                         <p className="text-white/60">大きな目標を管理可能なプロジェクトに分割しましょう。</p>
                     </div>
                     <button

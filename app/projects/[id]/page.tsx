@@ -913,7 +913,7 @@ export default function ProjectDetailsPage() {
                     </Link>
                     <div className="flex items-start justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold text-white mb-2">{project.title}</h1>
+                            <h1 className="text-[28px] font-bold text-white mb-2">{project.title}</h1>
                             <p className="text-white/60">{project.description}</p>
                         </div>
                         <div className="flex gap-2">

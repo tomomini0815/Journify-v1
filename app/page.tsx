@@ -9,6 +9,10 @@ import CustomCursor from "@/components/CustomCursor"
 import MagneticButton from "@/components/MagneticButton"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
+const useParallax = (value: MotionValue<number>, distance: number) => {
+  return useTransform(value, [0, 1], [-distance, distance])
+}
+
 export default function LandingPage() {
   const containerRef = useRef(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -87,9 +91,28 @@ export default function LandingPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const useParallax = (value: MotionValue<number>, distance: number) => {
-    return useTransform(value, [0, 1], [-distance, distance])
-  }
+  // Pre-calculate parallax and background transforms to follow Rules of Hooks
+  const bgSunriseOpacity = useTransform(scrollYProgress, [0, 0.05, 0.2], [0.5, 0.5, 0])
+  const bgDaytimeOpacity = useTransform(scrollYProgress, [0.15, 0.3, 0.55], [0, 0.7, 0.5])
+  const bgSunsetOpacity = useTransform(scrollYProgress, [0.5, 0.65, 0.85], [0, 0.7, 0.3])
+  const bgSpaceOpacity = useTransform(scrollYProgress, [0.8, 0.95, 1], [0, 0.7, 0.7])
+  const starsOpacity = useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 0.8, 1])
+  const shootingStarsOpacity = useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 1, 1])
+
+  const partyX = useParallax(mouseX, -20)
+  const partyY = useParallax(mouseY, -20)
+  const jetX = useParallax(mouseX, 30)
+  const jetY = useParallax(mouseY, 10)
+  const dealX = useParallax(mouseX, 15)
+  const dealY = useParallax(mouseY, -15)
+  const beachX = useParallax(mouseX, -25)
+  const beachY = useParallax(mouseY, 25)
+  const familyX = useParallax(mouseX, -40)
+  const familyY = useParallax(mouseY, 10)
+  const horizonX = useParallax(mouseX, 40)
+  const horizonY = useParallax(mouseY, -30)
+  const homeX = useParallax(mouseX, 0)
+  const homeY = useParallax(mouseY, 50)
 
   return (
     <>
@@ -125,7 +148,7 @@ export default function LandingPage() {
         <motion.div
           className="absolute inset-0"
           style={{
-            opacity: useTransform(scrollYProgress, [0, 0.05, 0.2], [0.5, 0.5, 0]),
+            opacity: bgSunriseOpacity,
             backgroundImage: 'url("https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=1920&q=80")',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -136,7 +159,7 @@ export default function LandingPage() {
         <motion.div
           className="absolute inset-0"
           style={{
-            opacity: useTransform(scrollYProgress, [0.15, 0.3, 0.55], [0, 0.7, 0.5]),
+            opacity: bgDaytimeOpacity,
             backgroundImage: 'url("https://images.unsplash.com/photo-1601297183305-6df142704ea2?w=1920&q=80")',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -147,7 +170,7 @@ export default function LandingPage() {
         <motion.div
           className="absolute inset-0"
           style={{
-            opacity: useTransform(scrollYProgress, [0.5, 0.65, 0.85], [0, 0.7, 0.3]),
+            opacity: bgSunsetOpacity,
             backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80")',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -158,7 +181,7 @@ export default function LandingPage() {
         <motion.div
           className="absolute inset-0"
           style={{
-            opacity: useTransform(scrollYProgress, [0.8, 0.95, 1], [0, 0.7, 0.7]),
+            opacity: bgSpaceOpacity,
             backgroundImage: 'url("https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1920&q=80")',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -175,7 +198,7 @@ export default function LandingPage() {
         <motion.div
           className="fixed inset-0 -z-5 pointer-events-none"
           style={{
-            opacity: useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 0.8, 1])
+            opacity: starsOpacity
           }}
         >
           {[...Array(150)].map((_, i) => (
@@ -209,7 +232,7 @@ export default function LandingPage() {
         <motion.div
           className="fixed inset-0 -z-5 pointer-events-none overflow-hidden"
           style={{
-            opacity: useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 1, 1])
+            opacity: shootingStarsOpacity
           }}
         >
           {[...Array(8)].map((_, i) => (
@@ -262,7 +285,7 @@ export default function LandingPage() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] md:w-[60vw] md:h-[60vw] bg-gradient-to-br from-amber-900/20 to-purple-900/20 rounded-full blur-[120px]" />
 
             <motion.div
-              style={{ x: useParallax(mouseX, -20), y: useParallax(mouseY, -20) }}
+              style={{ x: partyX, y: partyY }}
               className="absolute top-[10%] left-[5%] w-[35vw] h-[25vw] md:w-[20vw] md:h-[15vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-party')}
             >
@@ -270,7 +293,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              style={{ x: useParallax(mouseX, 30), y: useParallax(mouseY, 10) }}
+              style={{ x: jetX, y: jetY }}
               className="absolute top-[12%] right-[5%] w-[38vw] h-[24vw] md:w-[22vw] md:h-[14vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-jet')}
             >
@@ -278,7 +301,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              style={{ x: useParallax(mouseX, 15), y: useParallax(mouseY, -15) }}
+              style={{ x: dealX, y: dealY }}
               className="absolute bottom-[15%] left-[5%] w-[30vw] h-[30vw] md:w-[18vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-deal')}
             >
@@ -286,7 +309,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              style={{ x: useParallax(mouseX, -25), y: useParallax(mouseY, 25) }}
+              style={{ x: beachX, y: beachY }}
               className="absolute bottom-[20%] right-[5%] w-[40vw] h-[28vw] md:w-[25vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-beach')}
             >
@@ -294,7 +317,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              style={{ x: useParallax(mouseX, -40), y: useParallax(mouseY, 10) }}
+              style={{ x: familyX, y: familyY }}
               className="absolute top-[40%] left-[-10%] md:left-[-5%] w-[25vw] h-[35vw] md:w-[15vw] md:h-[20vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-family')}
             >
@@ -302,7 +325,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              style={{ x: useParallax(mouseX, 40), y: useParallax(mouseY, -30) }}
+              style={{ x: horizonX, y: horizonY }}
               className="absolute top-[35%] right-[-5%] md:right-[-2%] w-[28vw] h-[38vw] md:w-[16vw] md:h-[22vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-horizon')}
             >
@@ -310,7 +333,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              style={{ x: useParallax(mouseX, 0), y: useParallax(mouseY, 50) }}
+              style={{ x: homeX, y: homeY }}
               className="absolute bottom-[5%] left-[30%] w-[40vw] h-[25vw] md:w-[20vw] md:h-[12vw] opacity-40 hover:opacity-100 transition-opacity duration-500 hover:z-20"
               onTouchStart={() => isMobile && handleImageTouch('hero-home')}
             >

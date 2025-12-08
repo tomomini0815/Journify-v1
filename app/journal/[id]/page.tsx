@@ -90,7 +90,7 @@ export default function JournalDetailPage() {
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 mb-6">
                     <div className="flex items-start justify-between mb-6">
                         <div>
-                            <h1 className="text-3xl font-bold mb-4">{journal.title}</h1>
+                            <h1 className="text-[28px] font-bold mb-4">{journal.title}</h1>
                             <div className="flex flex-wrap gap-4 text-sm text-white/60">
                                 <div className="flex items-center">
                                     <Calendar className="w-4 h-4 mr-2" />

@@ -40,7 +40,7 @@ export function DashboardGreeting() {
             transition={{ duration: 0.5 }}
             className="mb-8"
         >
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">{greeting.title}</h1>
+            <h1 className="text-[28px] font-bold mb-2">{greeting.title}</h1>
             <p className="text-white/60">{greeting.message}</p>
         </motion.div>
     )

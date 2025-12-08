@@ -234,7 +234,7 @@ export default function VisionBoardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-8"
             >
-                <h1 className="text-2xl md:text-4xl font-bold mb-2">ビジョンボード ✨</h1>
+                <h1 className="text-[28px] font-bold mb-2">ビジョンボード ✨</h1>
                 <p className="text-white/60">あなたの夢と目標を視覚化しましょう</p>
             </motion.div>
 

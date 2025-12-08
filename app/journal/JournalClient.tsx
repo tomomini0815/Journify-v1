@@ -125,7 +125,7 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-4xl font-bold mb-2">ジャーナル</h1>
+                    <h1 className="text-[28px] font-bold mb-2">ジャーナル</h1>
                     <p className="text-white/60">あなたの思考を記録し、成長の軌跡を追う</p>
                 </motion.div>
             </div>

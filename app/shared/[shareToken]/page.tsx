@@ -228,7 +228,7 @@ export default function SharedProjectPage() {
                         <CheckSquare className="w-4 h-4" />
                         <span className="text-sm">共有プロジェクト（読み取り専用）</span>
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">{project.title}</h1>
+                    <h1 className="text-[28px] font-bold text-white mb-2">{project.title}</h1>
                     <p className="text-white/60">{project.description}</p>
                 </div>
 

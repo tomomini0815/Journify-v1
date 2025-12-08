@@ -88,7 +88,7 @@ export default function WorkflowTemplatesPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">ワークフローテンプレート</h1>
+                        <h1 className="text-[28px] font-bold text-white mb-2">ワークフローテンプレート</h1>
                         <p className="text-white/60">カスタムテンプレートを作成・管理</p>
                     </div>
                     <button

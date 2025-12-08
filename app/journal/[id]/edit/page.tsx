@@ -208,7 +208,7 @@ export default function EditJournalPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-3xl font-bold">ジャーナルを編集</h1>
+                    <h1 className="text-[28px] font-bold">ジャーナルを編集</h1>
                     <p className="text-white/60 mt-1">過去の記録を更新する</p>
                 </motion.div>
 

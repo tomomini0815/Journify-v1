@@ -108,7 +108,7 @@ export default function EditProjectPage() {
                         <ArrowLeft className="w-4 h-4" />
                         プロジェクト詳細に戻る
                     </Link>
-                    <h1 className="text-3xl font-bold text-white">プロジェクト設定</h1>
+                    <h1 className="text-[28px] font-bold text-white">プロジェクト設定</h1>
                     <p className="text-white/60 mt-1">プロジェクトの情報を編集または削除します</p>
                 </div>
 

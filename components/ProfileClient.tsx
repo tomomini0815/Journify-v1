@@ -84,7 +84,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-8"
             >
-                <h1 className="text-2xl md:text-4xl font-bold mb-2">プロフィール</h1>
+                <h1 className="text-[28px] font-bold mb-2">プロフィール</h1>
                 <p className="text-white/60">アカウント情報と設定を管理</p>
             </motion.div>
 
