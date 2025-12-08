@@ -60,8 +60,10 @@ export default function LandingPage() {
     return () => window.removeEventListener("mousemove", handleMouseMove)
   }, [mouseX, mouseY])
 
+  const sCurveRef = useRef(null)
+
   const { scrollYProgress } = useScroll({
-    target: containerRef,
+    target: sCurveRef,
     offset: ["start start", "end end"]
   })
 
@@ -366,7 +368,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="relative min-h-[400vh] py-20 md:py-40 overflow-hidden">
+        <section ref={sCurveRef} className="relative min-h-[400vh] py-20 md:py-40 overflow-hidden">
 
           <div className="h-[60vh] md:h-[80vh] flex items-center justify-center relative">
             <motion.div
@@ -394,7 +396,7 @@ export default function LandingPage() {
                       <div className="p-3 bg-violet-500/20 rounded-xl text-violet-400">
                         <BarChart3 className="w-8 h-8" />
                       </div>
-                      <h4 className="text-2xl md:text-4xl font-medium group-hover:text-violet-400 transition-colors">Smart Analysis</h4>
+                      <h4 className="text-xl md:text-3xl font-medium group-hover:text-violet-400 transition-colors">Smart Analysis</h4>
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -430,7 +432,7 @@ export default function LandingPage() {
                       <div className="p-3 bg-emerald-500/20 rounded-xl text-emerald-400">
                         <CheckCircle2 className="w-8 h-8" />
                       </div>
-                      <h4 className="text-2xl md:text-4xl font-medium group-hover:text-emerald-400 transition-colors">Goal Tracking</h4>
+                      <h4 className="text-xl md:text-3xl font-medium group-hover:text-emerald-400 transition-colors">Goal Tracking</h4>
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -466,7 +468,7 @@ export default function LandingPage() {
                       <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400">
                         <Calendar className="w-8 h-8" />
                       </div>
-                      <h4 className="text-2xl md:text-4xl font-medium group-hover:text-blue-400 transition-colors">Calendar Sync</h4>
+                      <h4 className="text-xl md:text-3xl font-medium group-hover:text-blue-400 transition-colors">Calendar Sync</h4>
                     </div>
                     <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -488,7 +490,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="text-center mb-20"
             >
-              <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white">
+              <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">
                 主な機能
               </h2>
               <p className="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto">
@@ -511,7 +513,7 @@ export default function LandingPage() {
                       <div className="p-4 bg-violet-500/20 rounded-2xl text-violet-400">
                         <BarChart3 className="w-10 h-10" />
                       </div>
-                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-violet-400 transition-colors">
+                      <h3 className="text-2xl md:text-3xl font-bold group-hover:text-violet-400 transition-colors">
                         ジャーナル
                       </h3>
                     </div>
@@ -551,7 +553,7 @@ export default function LandingPage() {
                       <div className="p-4 bg-emerald-500/20 rounded-2xl text-emerald-400">
                         <CheckCircle2 className="w-10 h-10" />
                       </div>
-                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-emerald-400 transition-colors">
+                      <h3 className="text-2xl md:text-3xl font-bold group-hover:text-emerald-400 transition-colors">
                         目標管理
                       </h3>
                     </div>
@@ -591,7 +593,7 @@ export default function LandingPage() {
                       <div className="p-4 bg-blue-500/20 rounded-2xl text-blue-400">
                         <CheckCircle2 className="w-10 h-10" />
                       </div>
-                      <h3 className="text-3xl md:text-4xl font-bold group-hover:text-blue-400 transition-colors">
+                      <h3 className="text-2xl md:text-3xl font-bold group-hover:text-blue-400 transition-colors">
                         タスク管理
                       </h3>
                     </div>
@@ -745,7 +747,7 @@ export default function LandingPage() {
             JOURNIFY
           </h2>
           <div className="flex flex-col md:flex-row items-center justify-between mt-8 md:mt-10 text-xs md:text-sm text-white/40">
-            <p>&copy; 2025 Journify Inc.</p>
+            <p>&copy; 2025 Journify.</p>
             <div className="flex gap-6 md:gap-8 mt-4 md:mt-0">
               <MagneticButton><Link href="#" className="hover:text-white transition-colors cursor-none">Twitter</Link></MagneticButton>
               <MagneticButton><Link href="#" className="hover:text-white transition-colors cursor-none">Instagram</Link></MagneticButton>

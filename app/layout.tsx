@@ -28,6 +28,7 @@ export default function RootLayout({
     <html lang="ja-JP" translate="no">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <SmoothScroll>{children}</SmoothScroll>
       </body>
