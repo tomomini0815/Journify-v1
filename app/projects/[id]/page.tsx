@@ -1863,7 +1863,7 @@ function KanbanColumn({ id, title, tasks, openEditTaskModal, setDeleteConfirm, t
     title: string
     tasks: Task[]
     openEditTaskModal: (task: Task) => void
-    setDeleteConfirm: (confirm: { type: 'task' | 'milestone', id: string, title: string }) => void
+    setDeleteConfirm: (confirm: { type: 'task' | 'milestone' | 'workflow', id: string, title: string }) => void
     toggleTaskCompletion: (task: Task) => void
     handleSubtaskToggle: (taskId: string, checkboxIndex: number, checked: boolean) => void
 }) {
