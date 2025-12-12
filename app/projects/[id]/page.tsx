@@ -739,7 +739,7 @@ export default function ProjectDetailsPage() {
     }
 
     const handleDeleteWorkflow = async (workflowId: string) => {
-        if (!confirm('このワークフローテンプレートに含まれるすべてのタスクを削除しますか？')) return
+        // Confirmation handled by modal now
 
         try {
             // Optimistic update
@@ -1125,7 +1125,10 @@ export default function ProjectDetailsPage() {
                                                                 </button>
                                                                 {!sidebarCollapsed && (
                                                                     <button
-                                                                        onClick={() => handleDeleteWorkflow(row.id)}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation()
+                                                                            setDeleteConfirm({ type: 'workflow', id: row.id, title: row.name })
+                                                                        }}
                                                                         className="p-1 text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                                                                         title="テンプレート一式を削除"
                                                                     >
@@ -1138,7 +1141,7 @@ export default function ProjectDetailsPage() {
                                                     if (row.type === 'task') {
                                                         const task = row.task
                                                         return (
-                                                            <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors truncate" title={sidebarCollapsed ? task.text : ''}>
+                                                            <div key={task.id} className="h-12 border-b border-white/5 flex items-center px-4 hover:bg-white/5 transition-colors group" title={sidebarCollapsed ? task.text : ''}>
                                                                 <div
                                                                     className={`flex items-center gap-1 text-xs font-medium text-white/80 hover:text-white truncate flex-1 text-left ${task.startDate ? 'cursor-pointer hover:text-indigo-300' : ''}`}
                                                                     onClick={() => {
@@ -1155,6 +1158,18 @@ export default function ProjectDetailsPage() {
                                                                     <div className={`w-2 h-2 rounded-full ${sidebarCollapsed ? '' : 'mr-2'} flex-shrink-0`} style={{ backgroundColor: task.color || '#6366f1' }} />
                                                                     {!sidebarCollapsed && <span className="text-sm truncate">{task.text}</span>}
                                                                 </div>
+                                                                {!sidebarCollapsed && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation()
+                                                                            setDeleteConfirm({ type: 'task', id: task.id, title: task.text })
+                                                                        }}
+                                                                        className="p-1 text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 ml-1"
+                                                                        title="タスクを削除"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         )
                                                     }
@@ -1737,7 +1752,14 @@ export default function ProjectDetailsPage() {
                             >
                                 <h2 className="text-xl font-bold mb-4">削除の確認</h2>
                                 <p className="text-white/60 mb-6">
-                                    {deleteConfirm.type === 'task' ? 'タスク' : 'マイルストーン'}「{deleteConfirm.title}」を削除してもよろしいですか？
+                                    {deleteConfirm.type === 'task' ? 'タスク' :
+                                        deleteConfirm.type === 'milestone' ? 'マイルストーン' :
+                                            'ワークフロー'}「{deleteConfirm.title}」を削除してもよろしいですか？
+                                    {deleteConfirm.type === 'workflow' && (
+                                        <span className="block mt-2 text-red-400 text-sm">
+                                            ※このテンプレートに含まれるすべてのタスクが削除されます。
+                                        </span>
+                                    )}
                                 </p>
                                 <div className="flex justify-end gap-3">
                                     <button
@@ -1750,8 +1772,11 @@ export default function ProjectDetailsPage() {
                                         onClick={() => {
                                             if (deleteConfirm.type === 'task') {
                                                 handleDeleteTask(deleteConfirm.id)
-                                            } else {
+                                            } else if (deleteConfirm.type === 'milestone') {
                                                 handleDeleteMilestone(deleteConfirm.id)
+                                            } else if (deleteConfirm.type === 'workflow') {
+                                                handleDeleteWorkflow(deleteConfirm.id)
+                                                setDeleteConfirm(null)
                                             }
                                         }}
                                         className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors"
@@ -1880,7 +1905,7 @@ function KanbanTaskCard({ task, isLast, openEditTaskModal, setDeleteConfirm, tog
     task: Task
     isLast?: boolean
     openEditTaskModal: (task: Task) => void
-    setDeleteConfirm: (confirm: { type: 'task' | 'milestone', id: string, title: string }) => void
+    setDeleteConfirm: (confirm: { type: 'task' | 'milestone' | 'workflow', id: string, title: string }) => void
     toggleTaskCompletion: (task: Task) => void
     handleSubtaskToggle: (taskId: string, checkboxIndex: number, checked: boolean) => void
 }) {
