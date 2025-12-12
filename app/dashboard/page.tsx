@@ -358,6 +358,34 @@ export default async function DashboardPage() {
                     <GoalProgressSection userId={user.id} />
                 </Suspense>
             </div>
+
+            {/* Story Navigation Banner */}
+            <div className="mb-8">
+                <Link href="/story" className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500/20 to-indigo-500/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-amber-500/10">
+                    <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-8 transition-colors group-hover:bg-[#1a1a1a]/60">
+                        {/* Background effects */}
+                        <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-amber-500/20 blur-3xl transition-all group-hover:bg-amber-500/30" />
+                        <div className="absolute -right-16 -bottom-16 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl transition-all group-hover:bg-indigo-500/30" />
+
+                        <div className="relative z-10 flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40">
+                                    ✨
+                                </span>
+                                <h3 className="text-2xl font-bold text-white">Your Epic Story</h3>
+                            </div>
+                            <p className="max-w-xl text-white/60">
+                                あなたの一週間は、ひとつの物語です。AIが記録を紡ぎ、あなたを主人公にした英雄譚を作成します。
+                            </p>
+                        </div>
+
+                        <div className="relative z-10 hidden items-center gap-2 rounded-full bg-white/10 px-6 py-3 font-medium text-white ring-1 ring-white/10 transition-all group-hover:bg-white/20 group-hover:ring-white/20 sm:flex">
+                            <span>物語を読む</span>
+                            <span className="transition-transform group-hover:translate-x-1">→</span>
+                        </div>
+                    </div>
+                </Link>
+            </div>
         </DashboardLayout>
     )
 }
