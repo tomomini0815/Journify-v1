@@ -1,13 +1,15 @@
+```json
 {
   "name": "temp_app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "next lint",
     "postinstall": "prisma generate",
+    "vercel-build": "prisma migrate deploy && next build",
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push && prisma generate",
     "db:migrate": "prisma migrate dev && prisma generate",
