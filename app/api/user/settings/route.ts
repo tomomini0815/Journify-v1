@@ -16,32 +16,39 @@ export async function GET() {
             )
         }
 
-        let settings = await prisma.userSettings.findUnique({
-            where: { userId: user.id }
-        })
-
-        console.log(`GET /api/user/settings for ${user.id}:`, settings)
-
-        if (!settings) {
-            settings = await prisma.userSettings.create({
-                data: {
-                    userId: user.id,
-                    enableProjects: false
-                }
+        try {
+            let settings = await prisma.userSettings.findUnique({
+                where: { userId: user.id }
             })
-            console.log("Created default settings:", settings)
-        }
 
-        return NextResponse.json(settings)
+            console.log(`GET /api/user/settings for ${user.id}:`, settings)
+
+            if (!settings) {
+                settings = await prisma.userSettings.create({
+                    data: {
+                        userId: user.id,
+                        enableProjects: false
+                    }
+                })
+                console.log("Created default settings:", settings)
+            }
+
+            return NextResponse.json(settings)
+        } catch (dbError) {
+            // If database error (e.g., table doesn't exist), return default settings
+            console.error("Database error, returning default settings:", dbError)
+            return NextResponse.json({
+                userId: user.id,
+                enableProjects: false
+            })
+        }
     } catch (error) {
         console.error("Failed to fetch user settings:", error)
-        return NextResponse.json(
-            {
-                error: "Failed to fetch user settings",
-                details: error instanceof Error ? error.message : "Unknown error"
-            },
-            { status: 500 }
-        )
+        // Return default settings instead of error
+        return NextResponse.json({
+            userId: "unknown",
+            enableProjects: false
+        })
     }
 }
 
