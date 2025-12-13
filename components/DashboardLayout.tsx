@@ -40,20 +40,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     ]
 
     useEffect(() => {
-        // Initial check from localStorage to avoid flicker
-        if (typeof window !== 'undefined') {
-            const stored = localStorage.getItem('enableProjects')
-            if (stored === 'true') {
+        const updateNavigationFromStorage = () => {
+            if (typeof window !== 'undefined') {
+                const stored = localStorage.getItem('enableProjects')
                 const newNav = [...defaultNavigation]
-                newNav.splice(newNav.length - 1, 0, {
-                    name: "プロジェクト",
-                    href: "/projects",
-                    icon: Briefcase
-                })
+                if (stored === 'true') {
+                    newNav.splice(newNav.length - 1, 0, {
+                        name: "プロジェクト",
+                        href: "/projects",
+                        icon: Briefcase
+                    })
+                }
                 setNavigation(newNav)
             }
         }
 
+        // Initial update from localStorage
+        updateNavigationFromStorage()
+
+        // Fetch from API
         const fetchSettings = async () => {
             try {
                 const res = await fetch("/api/user/settings", {
@@ -63,39 +68,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     }
                 })
 
-                if (!res.ok) {
-                    console.warn(`Settings API returned ${res.status}, using defaults`)
-                    setNavigation(defaultNavigation)
-                    return
-                }
-
-                const settings = await res.json()
-
-                // Update localStorage
-                if (typeof window !== 'undefined') {
-                    localStorage.setItem('enableProjects', String(settings.enableProjects || false))
-                }
-
-                if (settings.enableProjects) {
-                    const newNav = [...defaultNavigation]
-                    // Insert Projects before Profile (last item)
-                    newNav.splice(newNav.length - 1, 0, {
-                        name: "プロジェクト",
-                        href: "/projects",
-                        icon: Briefcase
-                    })
-                    setNavigation(newNav)
-                } else {
-                    setNavigation(defaultNavigation)
+                if (res.ok) {
+                    const settings = await res.json()
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('enableProjects', String(settings.enableProjects || false))
+                        updateNavigationFromStorage()
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch settings", error)
-                // On error, use default navigation
-                setNavigation(defaultNavigation)
             }
         }
-
         fetchSettings()
+
+        // Listen for storage changes from other tabs/windows
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'enableProjects') {
+                updateNavigationFromStorage()
+            }
+        }
+        window.addEventListener('storage', handleStorageChange)
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange)
+        }
     }, [])
 
     const handleLogout = async () => {
