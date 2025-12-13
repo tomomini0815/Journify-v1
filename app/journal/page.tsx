@@ -1,30 +1,42 @@
 import prisma from "@/lib/prisma"
 import JournalClient from "./JournalClient"
-
-// Mock user ID for now - in production this would come from auth session
-const USER_ID = "42c1eda0-18f2-4213-86b0-55b47ee003f3"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
 export default async function JournalPage() {
-    const journals = await prisma.journalEntry.findMany({
-        where: { userId: USER_ID },
-        orderBy: { createdAt: "desc" },
-        select: {
-            id: true,
-            title: true,
-            content: true,
-            mood: true,
-            tags: true,
-            createdAt: true,
+    try {
+        const supabase = await createClient()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+            redirect("/login")
         }
-    })
 
-    // Serialize dates to strings
-    const serializedJournals = journals.map(journal => ({
-        ...journal,
-        createdAt: journal.createdAt.toISOString(),
-    }))
+        const journals = await prisma.journalEntry.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                title: true,
+                content: true,
+                mood: true,
+                tags: true,
+                createdAt: true,
+            }
+        })
 
-    return <JournalClient initialJournals={serializedJournals} />
+        // Serialize dates to strings
+        const serializedJournals = journals.map(journal => ({
+            ...journal,
+            createdAt: journal.createdAt.toISOString(),
+        }))
+
+        return <JournalClient initialJournals={serializedJournals} />
+    } catch (error) {
+        console.error("Journal page error:", error)
+        // Return empty state on error
+        return <JournalClient initialJournals={[]} />
+    }
 }
