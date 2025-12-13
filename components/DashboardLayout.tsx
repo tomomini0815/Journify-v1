@@ -87,10 +87,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 updateNavigationFromStorage()
             }
         }
+
+        // Listen for custom events
+        const handleCustomEvent = () => {
+            updateNavigationFromStorage()
+        }
+
         window.addEventListener('storage', handleStorageChange)
+        window.addEventListener('projectSettingsChanged', handleCustomEvent)
 
         return () => {
             window.removeEventListener('storage', handleStorageChange)
+            window.removeEventListener('projectSettingsChanged', handleCustomEvent)
         }
     }, [])
 
