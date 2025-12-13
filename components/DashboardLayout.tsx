@@ -56,29 +56,36 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         const fetchSettings = async () => {
             try {
-                const res = await fetch("/api/user/settings", { cache: 'no-store' })
-                if (res.ok) {
-                    const settings = await res.json()
-                    // Update localStorage
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('enableProjects', String(settings.enableProjects))
+                const res = await fetch("/api/user/settings", {
+                    cache: 'no-store',
+                    headers: {
+                        'Content-Type': 'application/json'
                     }
+                })
 
-                    if (settings.enableProjects) {
-                        const newNav = [...defaultNavigation]
-                        // Insert Projects before Profile (last item)
-                        newNav.splice(newNav.length - 1, 0, {
-                            name: "プロジェクト",
-                            href: "/projects",
-                            icon: Briefcase
-                        })
-                        setNavigation(newNav)
-                    } else {
-                        setNavigation(defaultNavigation)
-                    }
+                if (!res.ok) {
+                    console.warn(`Settings API returned ${res.status}, using defaults`)
+                    setNavigation(defaultNavigation)
+                    return
+                }
+
+                const settings = await res.json()
+
+                // Update localStorage
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('enableProjects', String(settings.enableProjects || false))
+                }
+
+                if (settings.enableProjects) {
+                    const newNav = [...defaultNavigation]
+                    // Insert Projects before Profile (last item)
+                    newNav.splice(newNav.length - 1, 0, {
+                        name: "プロジェクト",
+                        href: "/projects",
+                        icon: Briefcase
+                    })
+                    setNavigation(newNav)
                 } else {
-                    // If API fails, use default navigation
-                    console.warn("Failed to fetch settings, using defaults")
                     setNavigation(defaultNavigation)
                 }
             } catch (error) {
@@ -87,6 +94,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 setNavigation(defaultNavigation)
             }
         }
+
         fetchSettings()
     }, [])
 
