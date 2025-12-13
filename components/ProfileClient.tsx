@@ -56,14 +56,16 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
             // Update localStorage
             if (typeof window !== 'undefined') {
                 localStorage.setItem('enableProjects', String(newValue))
+                // Dispatch event for immediate update
+                window.dispatchEvent(new Event('projectSettingsChanged'))
             }
 
             setSuccess(newValue ? "プロジェクト機能を有効にしました" : "プロジェクト機能を無効にしました")
 
-            // Refresh the page to update navigation
+            // Reload page to ensure navigation updates
             setTimeout(() => {
-                router.refresh()
-            }, 500)
+                window.location.reload()
+            }, 1000)
         } catch (error) {
             console.error("Failed to update project settings:", error)
             setError("プロジェクト設定の保存に失敗しました")
