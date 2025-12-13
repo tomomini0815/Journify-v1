@@ -41,72 +41,108 @@ const getCachedProfileData = unstable_cache(
 )
 
 export default async function ProfilePage() {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-        return null // Middleware will redirect
-    }
+        if (!user) {
+            return null // Middleware will redirect
+        }
 
-    // Fetch profile and settings in parallel using cache
-    const [profile, settings, journalCount, goalCount, allJournalDates] = await getCachedProfileData(user.id)
+        // Fetch profile and settings in parallel using cache with error handling
+        let profile, settings, journalCount, goalCount, allJournalDates
 
-    // Calculate streak
-    let streak = 0
-    let uniqueDates = new Set<string>()
+        try {
+            [profile, settings, journalCount, goalCount, allJournalDates] = await getCachedProfileData(user.id)
+        } catch (dbError) {
+            console.error("Database error in profile page:", dbError)
+            // Provide fallback values
+            profile = null
+            settings = null
+            journalCount = 0
+            goalCount = 0
+            allJournalDates = []
+        }
 
-    if (allJournalDates.length > 0) {
-        uniqueDates = new Set(
-            allJournalDates.map(j => new Date(j.createdAt).toISOString().split('T')[0])
-        )
+        // Calculate streak
+        let streak = 0
+        let uniqueDates = new Set<string>()
 
-        const today = new Date()
-        const todayStr = today.toISOString().split('T')[0]
+        if (allJournalDates.length > 0) {
+            uniqueDates = new Set(
+                allJournalDates.map(j => new Date(j.createdAt).toISOString().split('T')[0])
+            )
 
-        const yesterday = new Date(today)
-        yesterday.setDate(yesterday.getDate() - 1)
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
+            const today = new Date()
+            const todayStr = today.toISOString().split('T')[0]
 
-        if (uniqueDates.has(todayStr) || uniqueDates.has(yesterdayStr)) {
-            let checkDate = new Date(today)
+            const yesterday = new Date(today)
+            yesterday.setDate(yesterday.getDate() - 1)
+            const yesterdayStr = yesterday.toISOString().split('T')[0]
 
-            if (!uniqueDates.has(todayStr)) {
-                checkDate = yesterday
-            }
+            if (uniqueDates.has(todayStr) || uniqueDates.has(yesterdayStr)) {
+                let checkDate = new Date(today)
 
-            while (true) {
-                const dateStr = checkDate.toISOString().split('T')[0]
-                if (uniqueDates.has(dateStr)) {
-                    streak++
-                    checkDate.setDate(checkDate.getDate() - 1)
-                } else {
-                    break
+                if (!uniqueDates.has(todayStr)) {
+                    checkDate = yesterday
+                }
+
+                while (true) {
+                    const dateStr = checkDate.toISOString().split('T')[0]
+                    if (uniqueDates.has(dateStr)) {
+                        streak++
+                        checkDate.setDate(checkDate.getDate() - 1)
+                    } else {
+                        break
+                    }
                 }
             }
         }
-    }
 
-    const daysUsed = uniqueDates.size
+        const daysUsed = uniqueDates.size
 
-    const initialData = {
-        name: profile?.name || "",
-        email: profile?.email || "",
-        bio: profile?.bio || "",
-        notifications: (profile?.preferences as any)?.notifications ?? true,
-        emailUpdates: (profile?.preferences as any)?.emailUpdates ?? false,
-        language: (profile?.preferences as any)?.language || "ja",
-        enableProjects: settings?.enableProjects ?? false,
-        stats: {
-            journalCount,
-            streak,
-            goalCount,
-            daysUsed
+        const initialData = {
+            name: profile?.name || "",
+            email: profile?.email || "",
+            bio: profile?.bio || "",
+            notifications: (profile?.preferences as any)?.notifications ?? true,
+            emailUpdates: (profile?.preferences as any)?.emailUpdates ?? false,
+            language: (profile?.preferences as any)?.language || "ja",
+            enableProjects: settings?.enableProjects ?? false,
+            stats: {
+                journalCount,
+                streak,
+                goalCount,
+                daysUsed
+            }
         }
-    }
 
-    return (
-        <DashboardLayout>
-            <ProfileClient initialData={initialData} />
-        </DashboardLayout>
-    )
+        return (
+            <DashboardLayout>
+                <ProfileClient initialData={initialData} />
+            </DashboardLayout>
+        )
+    } catch (error) {
+        console.error("Profile page error:", error)
+        // Return minimal profile page on error
+        return (
+            <DashboardLayout>
+                <ProfileClient initialData={{
+                    name: "",
+                    email: "",
+                    bio: "",
+                    notifications: true,
+                    emailUpdates: false,
+                    language: "ja",
+                    enableProjects: false,
+                    stats: {
+                        journalCount: 0,
+                        streak: 0,
+                        goalCount: 0,
+                        daysUsed: 0
+                    }
+                }} />
+            </DashboardLayout>
+        )
+    }
 }
