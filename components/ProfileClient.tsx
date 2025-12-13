@@ -117,6 +117,17 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 </motion.div>
             )}
 
+            {/* Success Message */}
+            {success && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-2xl text-emerald-200"
+                >
+                    {success}
+                </motion.div>
+            )}
+
             {/* Profile Picture Section */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
