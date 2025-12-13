@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from "recharts"
 import { motion } from "framer-motion"
 import { Loader2 } from "lucide-react"
+import Link from "next/link"
 
 // カテゴリーごとの色定義 - より鮮やかでスタイリッシュなカラーパレット
 const categoryColors: Record<string, string> = {
@@ -17,6 +18,20 @@ const categoryColors: Record<string, string> = {
     "社会貢献": "#14b8a6", // ティール
     "自己実現": "#a855f7", // パープル
 }
+
+// カテゴリー名からURLへのマッピング
+const categoryToUrl: Record<string, string> = {
+    "身体的健康": "/wellness/physical-health",
+    "精神的健康": "/wellness/mental-health",
+    "人間関係": "/wellness/relationships",
+    "仕事・キャリア": "/wellness/career",
+    "経済的安定": "/wellness/financial",
+    "学習・成長": "/wellness/learning",
+    "趣味・余暇": "/wellness/leisure",
+    "社会貢献": "/wellness/contribution",
+    "自己実現": "/wellness/self-actualization",
+}
+
 
 // カスタムツールチップ
 const CustomTooltip = ({ active, payload }: any) => {
@@ -263,16 +278,20 @@ export function LifeBalanceChart({ data: initialData }: { data?: { category: str
                 </ResponsiveContainer>
             </div>
 
-            {/* Color Legend - 9つの項目を色付きで表示 */}
+            {/* Color Legend - 9つの項目を色付きで表示（クリック可能） */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-6 pt-6 border-t border-white/10">
                 {displayData.map((item) => (
-                    <div key={item.category} className="flex items-center gap-2">
+                    <Link
+                        key={item.category}
+                        href={categoryToUrl[item.category]}
+                        className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition-colors group"
+                    >
                         <div
-                            className="w-2 h-2 rounded-full"
+                            className="w-2 h-2 rounded-full group-hover:scale-125 transition-transform"
                             style={{ backgroundColor: categoryColors[item.category] }}
                         ></div>
-                        <span className="text-xs text-white/70">{item.category}</span>
-                    </div>
+                        <span className="text-xs text-white/70 group-hover:text-white transition-colors">{item.category}</span>
+                    </Link>
                 ))}
             </div>
 

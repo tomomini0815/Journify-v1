@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Plus, Briefcase, Calendar, Clock, ArrowRight, CheckSquare } from "lucide-react"
+import { Plus, Briefcase, Calendar, Clock, ArrowRight, CheckSquare, Trash2 } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { AIStrategyModal } from "@/components/AIStrategyModal"
 
 type Project = {
     id: string
@@ -27,6 +28,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
     const router = useRouter()
     const [projects, setProjects] = useState<Project[]>(initialProjects)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isAIModalOpen, setIsAIModalOpen] = useState(false)
     const [newProject, setNewProject] = useState({
         title: "",
         description: "",
@@ -61,6 +63,58 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
         }
     }
 
+    const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
+        e.preventDefault() // Prevent navigation
+        e.stopPropagation()
+
+        if (!confirm("本当にこのプロジェクトを削除しますか？\n含まれるすべてのタスクとマイルストーンも削除されます。")) {
+            return
+        }
+
+        try {
+            const res = await fetch(`/api/projects/${projectId}`, {
+                method: "DELETE"
+            })
+
+            if (res.ok) {
+                setProjects(projects.filter(p => p.id !== projectId))
+                router.refresh()
+            }
+        } catch (error) {
+            console.error("Failed to delete project", error)
+            alert("削除に失敗しました")
+        }
+    }
+
+    const handleAICreate = async (plan: any) => {
+        try {
+            const today = new Date()
+            const endDate = new Date()
+            endDate.setMonth(endDate.getMonth() + 3) // Default 3 months
+
+            const res = await fetch("/api/projects", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: plan.title,
+                    description: plan.description,
+                    startDate: today.toISOString(),
+                    endDate: endDate.toISOString(),
+                    milestones: plan.milestones
+                })
+            })
+
+            if (res.ok) {
+                const project = await res.json()
+                setProjects([project, ...projects])
+                setIsAIModalOpen(false)
+                router.refresh()
+            }
+        } catch (error) {
+            console.error("Failed to create AI project", error)
+        }
+    }
+
     return (
         <DashboardLayout>
             <div className="max-w-6xl mx-auto">
@@ -69,13 +123,22 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                         <h1 className="text-[28px] font-bold text-white mb-2">プロジェクト</h1>
                         <p className="text-white/60">大きな目標を管理可能なプロジェクトに分割しましょう。</p>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl font-medium transition-all"
-                    >
-                        <Plus className="w-5 h-5" />
-                        新規プロジェクト
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setIsAIModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-medium transition-all text-indigo-300"
+                        >
+                            <span className="text-lg">✨</span>
+                            AIでプロジェクトを作成
+                        </button>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl font-medium transition-all"
+                        >
+                            <Plus className="w-5 h-5" />
+                            新規プロジェクト
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -84,19 +147,28 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="group bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all cursor-pointer h-full flex flex-col"
+                                className="group bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all cursor-pointer h-full flex flex-col relative"
                             >
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 bg-indigo-500/20 rounded-xl group-hover:bg-indigo-500/30 transition-colors">
                                         <Briefcase className="w-6 h-6 text-indigo-400" />
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${project.status === 'active' ? 'bg-emerald-500/20 text-emerald-300' :
-                                        project.status === 'completed' ? 'bg-blue-500/20 text-blue-300' :
-                                            'bg-white/10 text-white/60'
-                                        }`}>
-                                        {project.status === 'active' ? '進行中' :
-                                            project.status === 'completed' ? '完了' : 'アーカイブ'}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${project.status === 'active' ? 'bg-emerald-500/20 text-emerald-300' :
+                                            project.status === 'completed' ? 'bg-blue-500/20 text-blue-300' :
+                                                'bg-white/10 text-white/60'
+                                            }`}>
+                                            {project.status === 'active' ? '進行中' :
+                                                project.status === 'completed' ? '完了' : 'アーカイブ'}
+                                        </span>
+                                        <button
+                                            onClick={(e) => handleDeleteProject(e, project.id)}
+                                            className="p-1.5 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                            title="削除"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <h3 className="text-xl font-bold mb-2 group-hover:text-indigo-300 transition-colors">{project.title}</h3>
@@ -126,12 +198,20 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                             <Briefcase className="w-12 h-12 text-white/20 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-white mb-2">プロジェクトがありません</h3>
                             <p className="text-white/60 mb-6">新しいプロジェクトを作成して始めましょう</p>
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
-                            >
-                                プロジェクトを作成
-                            </button>
+                            <div className="flex justify-center gap-4">
+                                <button
+                                    onClick={() => setIsAIModalOpen(true)}
+                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors border border-white/10 text-indigo-300 flex items-center gap-2"
+                                >
+                                    <span>✨</span> AIで作成
+                                </button>
+                                <button
+                                    onClick={() => setIsModalOpen(true)}
+                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
+                                >
+                                    手動で作成
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -204,6 +284,12 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                         </motion.div>
                     </div>
                 )}
+
+                <AIStrategyModal
+                    isOpen={isAIModalOpen}
+                    onClose={() => setIsAIModalOpen(false)}
+                    onCreateProject={handleAICreate}
+                />
             </div>
         </DashboardLayout>
     )

@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase } from "lucide-react"
+import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase, ChevronDown, Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface DashboardLayoutProps {
@@ -25,6 +25,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const router = useRouter()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [navigation, setNavigation] = useState(defaultNavigation)
+    const [wellnessMenuOpen, setWellnessMenuOpen] = useState(false)
+
+    const wellnessItems = [
+        { name: "身体的健康", href: "/wellness/physical-health", icon: "💪", color: "#10b981" },
+        { name: "精神的健康", href: "/wellness/mental-health", icon: "🧠", color: "#8b5cf6" },
+        { name: "人間関係", href: "/wellness/relationships", icon: "❤️", color: "#ec4899" },
+        { name: "仕事・キャリア", href: "/wellness/career", icon: "💼", color: "#f59e0b" },
+        { name: "経済的安定", href: "/wellness/financial", icon: "💰", color: "#06b6d4" },
+        { name: "学習・成長", href: "/wellness/learning", icon: "📚", color: "#3b82f6" },
+        { name: "趣味・余暇", href: "/wellness/leisure", icon: "🎨", color: "#f97316" },
+        { name: "社会貢献", href: "/wellness/contribution", icon: "🤝", color: "#14b8a6" },
+        { name: "自己実現", href: "/wellness/self-actualization", icon: "🌟", color: "#a855f7" },
+    ]
 
     useEffect(() => {
         // Initial check from localStorage to avoid flicker
@@ -125,6 +138,48 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                 </Link>
                             )
                         })}
+
+                        {/* Wellness Submenu */}
+                        <div className="pt-4 mt-4 border-t border-white/10">
+                            <button
+                                onClick={() => setWellnessMenuOpen(!wellnessMenuOpen)}
+                                className="group flex items-center w-full px-3 py-3 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                            >
+                                <Heart className="mr-3 flex-shrink-0 h-5 w-5" />
+                                <span className="flex-1 text-left">幸福指標</span>
+                                <ChevronDown className={cn(
+                                    "h-4 w-4 transition-transform",
+                                    wellnessMenuOpen && "rotate-180"
+                                )} />
+                            </button>
+                            {wellnessMenuOpen && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="mt-1 space-y-1 pl-4"
+                                >
+                                    {wellnessItems.map((item) => {
+                                        const isActive = pathname === item.href
+                                        return (
+                                            <Link
+                                                key={item.name}
+                                                href={item.href}
+                                                className={cn(
+                                                    "flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all",
+                                                    isActive
+                                                        ? "text-white bg-white/10"
+                                                        : "text-white/50 hover:text-white hover:bg-white/5"
+                                                )}
+                                            >
+                                                <span className="mr-2 text-base">{item.icon}</span>
+                                                <span>{item.name}</span>
+                                            </Link>
+                                        )
+                                    })}
+                                </motion.div>
+                            )}
+                        </div>
                     </nav>
 
                     {/* Logout */}
@@ -187,6 +242,44 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     </Link>
                                 )
                             })}
+
+                            {/* Wellness Submenu - Mobile */}
+                            <div className="pt-4 mt-4 border-t border-white/10">
+                                <button
+                                    onClick={() => setWellnessMenuOpen(!wellnessMenuOpen)}
+                                    className="flex items-center w-full px-4 py-3 text-base font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                                >
+                                    <Heart className="mr-3 h-6 w-6" />
+                                    <span className="flex-1 text-left">幸福指標</span>
+                                    <ChevronDown className={cn(
+                                        "h-5 w-5 transition-transform",
+                                        wellnessMenuOpen && "rotate-180"
+                                    )} />
+                                </button>
+                                {wellnessMenuOpen && (
+                                    <div className="mt-1 space-y-1 pl-4">
+                                        {wellnessItems.map((item) => {
+                                            const isActive = pathname === item.href
+                                            return (
+                                                <Link
+                                                    key={item.name}
+                                                    href={item.href}
+                                                    onClick={() => setMobileMenuOpen(false)}
+                                                    className={cn(
+                                                        "flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all",
+                                                        isActive
+                                                            ? "text-white bg-white/10"
+                                                            : "text-white/50 hover:text-white hover:bg-white/5"
+                                                    )}
+                                                >
+                                                    <span className="mr-2 text-lg">{item.icon}</span>
+                                                    <span>{item.name}</span>
+                                                </Link>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         </nav>
                         <button
                             onClick={handleLogout}

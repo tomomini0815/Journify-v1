@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json()
-        const { title, description, startDate, endDate } = body
+        const { title, description, startDate, endDate, milestones } = body
 
         if (!title) {
             return NextResponse.json(
@@ -68,6 +68,19 @@ export async function POST(req: Request) {
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
                 userId: user.id,
+                milestones: milestones ? {
+                    create: milestones.map((m: any) => ({
+                        title: m.title,
+                        date: new Date(), // Default to now if not specified, logic can be improved
+                        tasks: {
+                            create: m.tasks.map((t: any) => ({
+                                text: t.text,
+                                priority: t.priority,
+                                userId: user.id
+                            }))
+                        }
+                    }))
+                } : undefined
             }
         })
 
