@@ -76,9 +76,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     } else {
                         setNavigation(defaultNavigation)
                     }
+                } else {
+                    // If API fails, use default navigation
+                    console.warn("Failed to fetch settings, using defaults")
+                    setNavigation(defaultNavigation)
                 }
             } catch (error) {
                 console.error("Failed to fetch settings", error)
+                // On error, use default navigation
+                setNavigation(defaultNavigation)
             }
         }
         fetchSettings()
