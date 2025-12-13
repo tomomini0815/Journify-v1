@@ -34,27 +34,39 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
     const [enableProjects, setEnableProjects] = useState(initialData.enableProjects)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState("")
+    const [success, setSuccess] = useState("")
 
     const handleProjectToggle = async (newValue: boolean) => {
         setEnableProjects(newValue)
+        setError("")
+        setSuccess("")
 
         try {
             // Save to API
-            await fetch("/api/user/settings", {
+            const res = await fetch("/api/user/settings", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ enableProjects: newValue })
             })
+
+            if (!res.ok) {
+                throw new Error("設定の保存に失敗しました")
+            }
 
             // Update localStorage
             if (typeof window !== 'undefined') {
                 localStorage.setItem('enableProjects', String(newValue))
             }
 
+            setSuccess(newValue ? "プロジェクト機能を有効にしました" : "プロジェクト機能を無効にしました")
+
             // Refresh the page to update navigation
-            router.refresh()
+            setTimeout(() => {
+                router.refresh()
+            }, 500)
         } catch (error) {
             console.error("Failed to update project settings:", error)
+            setError("プロジェクト設定の保存に失敗しました")
             // Revert on error
             setEnableProjects(!newValue)
         }
@@ -63,6 +75,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
     const handleSave = async () => {
         setIsSaving(true)
         setError("")
+        setSuccess("")
 
         try {
             const response = await fetch("/api/profile", {
@@ -82,12 +95,18 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
             })
 
             if (!response.ok) {
-                throw new Error("保存に失敗しました")
+                const errorData = await response.json()
+                throw new Error(errorData.error || "保存に失敗しました")
             }
 
+            setSuccess("プロフィールを保存しました")
+
             // Refresh to show updated data
-            router.refresh()
+            setTimeout(() => {
+                router.refresh()
+            }, 500)
         } catch (err: any) {
+            console.error("Profile save error:", err)
             setError(err.message || "保存中にエラーが発生しました")
         } finally {
             setIsSaving(false)
