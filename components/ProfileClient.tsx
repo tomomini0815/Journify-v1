@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { User, Mail, Bell, Lock, Palette, Globe, Save, Camera, Briefcase, Calendar } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface ProfileClientProps {
     initialData: {
@@ -23,6 +24,7 @@ interface ProfileClientProps {
 }
 
 export function ProfileClient({ initialData }: ProfileClientProps) {
+    const router = useRouter()
     const [name, setName] = useState(initialData.name)
     const [email] = useState(initialData.email)
     const [bio, setBio] = useState(initialData.bio)
@@ -32,6 +34,31 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
     const [enableProjects, setEnableProjects] = useState(initialData.enableProjects)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState("")
+
+    const handleProjectToggle = async (newValue: boolean) => {
+        setEnableProjects(newValue)
+
+        try {
+            // Save to API
+            await fetch("/api/user/settings", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enableProjects: newValue })
+            })
+
+            // Update localStorage
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('enableProjects', String(newValue))
+            }
+
+            // Refresh the page to update navigation
+            router.refresh()
+        } catch (error) {
+            console.error("Failed to update project settings:", error)
+            // Revert on error
+            setEnableProjects(!newValue)
+        }
+    }
 
     const handleSave = async () => {
         setIsSaving(true)
@@ -54,21 +81,12 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 }),
             })
 
-            await fetch("/api/user/settings", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enableProjects })
-            })
-
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('enableProjects', String(enableProjects))
-            }
-
-            window.location.reload()
-
             if (!response.ok) {
                 throw new Error("保存に失敗しました")
             }
+
+            // Refresh to show updated data
+            router.refresh()
         } catch (err: any) {
             setError(err.message || "保存中にエラーが発生しました")
         } finally {
@@ -268,7 +286,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                             </div>
                         </div>
                         <button
-                            onClick={() => setEnableProjects(!enableProjects)}
+                            onClick={() => handleProjectToggle(!enableProjects)}
                             className={`relative w-12 h-6 rounded-full transition-colors ${enableProjects ? "bg-emerald-500" : "bg-white/20"}`}
                         >
                             <div
