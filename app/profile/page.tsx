@@ -50,18 +50,17 @@ export default async function ProfilePage() {
         }
 
         // Fetch profile and settings in parallel using cache with error handling
-        let profile, settings, journalCount, goalCount, allJournalDates
+        let profile: any = null
+        let settings: any = null
+        let journalCount: number = 0
+        let goalCount: number = 0
+        let allJournalDates: any[] = []
 
         try {
             [profile, settings, journalCount, goalCount, allJournalDates] = await getCachedProfileData(user.id)
         } catch (dbError) {
             console.error("Database error in profile page:", dbError)
-            // Provide fallback values
-            profile = null
-            settings = null
-            journalCount = 0
-            goalCount = 0
-            allJournalDates = []
+            // Fallback values already set above
         }
 
         // Calculate streak
