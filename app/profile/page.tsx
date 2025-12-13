@@ -1,8 +1,11 @@
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { ProfileClient } from "@/components/ProfileClient"
 import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import { unstable_cache } from "next/cache"
+
+export const dynamic = 'force-dynamic'
 
 // Revalidate every 5 minutes (profile data changes infrequently)
 export const revalidate = 300
