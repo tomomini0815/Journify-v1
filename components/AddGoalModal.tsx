@@ -51,13 +51,13 @@ export function AddGoalModal({ isOpen, onClose, onAdd }: AddGoalModalProps) {
                         className="fixed inset-0 z-50 flex items-center justify-center p-4"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl">
                             {/* Header */}
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-2xl font-bold">新しい目標を追加</h2>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    className="p-2 hover:bg-white/10 rounded-xl transition-colors"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
@@ -119,9 +119,9 @@ export function AddGoalModal({ isOpen, onClose, onAdd }: AddGoalModalProps) {
                                                 key={p.id}
                                                 type="button"
                                                 onClick={() => setPriority(p.id)}
-                                                className={`flex-1 py-2 rounded-lg transition-all ${priority === p.id
-                                                    ? "bg-emerald-500 text-white"
-                                                    : "bg-white/5 text-white/60 hover:bg-white/10"
+                                                className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${priority === p.id
+                                                    ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/20"
+                                                    : "bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"
                                                     }`}
                                             >
                                                 {p.label}

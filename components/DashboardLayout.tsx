@@ -43,16 +43,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     useEffect(() => {
         const updateNavigationFromStorage = () => {
             if (typeof window !== 'undefined') {
-                const stored = localStorage.getItem('enableProjects')
-                const newNav = [...defaultNavigation]
-                if (stored === 'true') {
-                    newNav.splice(newNav.length - 1, 0, {
-                        name: "プロジェクト",
-                        href: "/projects",
-                        icon: Briefcase
-                    })
-                }
-                setNavigation(newNav)
+                // Projects is now always visible in defaultNavigation
+                // This function kept for potential future conditional navigation items
+                setNavigation(defaultNavigation)
             }
         }
 

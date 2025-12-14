@@ -68,21 +68,42 @@ export async function POST(req: Request) {
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
                 userId: user.id,
-                milestones: milestones ? {
-                    create: milestones.map((m: any) => ({
-                        title: m.title,
-                        date: new Date(), // Default to now if not specified, logic can be improved
-                        tasks: {
-                            create: m.tasks.map((t: any) => ({
-                                text: t.text,
-                                priority: t.priority,
-                                userId: user.id
-                            }))
-                        }
-                    }))
-                } : undefined
+            },
+            include: {
+                _count: {
+                    select: { tasks: true }
+                }
             }
         })
+
+        // Create milestones and tasks separately to properly set projectId
+        if (milestones && Array.isArray(milestones)) {
+            for (const m of milestones) {
+                const milestone = await prisma.milestone.create({
+                    data: {
+                        title: m.title,
+                        date: new Date(), // Default to now, can be improved with actual dates
+                        projectId: project.id,
+                    }
+                })
+
+                // Create tasks with both projectId and milestoneId
+                if (m.tasks && Array.isArray(m.tasks)) {
+                    for (const t of m.tasks) {
+                        await prisma.task.create({
+                            data: {
+                                text: t.text,
+                                priority: t.priority || 'medium',
+                                userId: user.id,
+                                projectId: project.id,  // Link to project for timeline
+                                milestoneId: milestone.id,  // Link to milestone
+                                status: 'todo',
+                            }
+                        })
+                    }
+                }
+            }
+        }
 
         return NextResponse.json(project)
     } catch (error) {
