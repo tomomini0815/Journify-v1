@@ -306,12 +306,12 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
                                 onClick={() => toggleMonth(month)}
                                 className="flex items-center justify-between p-6 cursor-pointer hover:bg-white/5 transition-colors"
                             >
-                                <div className="flex items-center gap-4">
-                                    <h2 className="text-xl font-bold">{formatMonthHeader(month)}</h2>
-                                    <div className="px-3 py-1 rounded-full bg-white/10 text-sm text-white/80">
+                                <div className="flex items-center gap-2 md:gap-4 whitespace-nowrap">
+                                    <h2 className="text-base md:text-xl font-bold">{formatMonthHeader(month)}</h2>
+                                    <div className="px-2 md:px-3 py-1 rounded-full bg-white/10 text-xs md:text-sm text-white/80">
                                         平均幸福度: <span className={`font-bold ${avgHappiness >= 80 ? 'text-emerald-400' : avgHappiness >= 60 ? 'text-blue-400' : 'text-yellow-400'}`}>{avgHappiness}</span>
                                     </div>
-                                    <span className="text-xs text-white/40">{monthJournals.length}件の記録</span>
+                                    <span className="text-[10px] md:text-xs text-white/40">{monthJournals.length}件の記録</span>
                                 </div>
                                 {isExpanded ? (
                                     <ChevronUp className="w-5 h-5 text-white/40" />

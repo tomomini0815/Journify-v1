@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { ArrowLeft, BookOpen, Lightbulb, BarChart3, Target, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
@@ -26,7 +26,37 @@ export function WellnessDimensionContent({ dimension }: WellnessDimensionContent
             newChecked.add(item)
         }
         setCheckedItems(newChecked)
+
+        // Save to localStorage
+        if (typeof window !== 'undefined') {
+            const date = new Date().toLocaleDateString()
+            localStorage.setItem(`checklist-${dimension.id}`, JSON.stringify({
+                date,
+                items: Array.from(newChecked)
+            }))
+        }
     }
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem(`checklist-${dimension.id}`)
+        if (saved) {
+            try {
+                const { date, items } = JSON.parse(saved)
+                const today = new Date().toLocaleDateString()
+
+                // Only restore if it's the same day
+                if (date === today && Array.isArray(items)) {
+                    setCheckedItems(new Set(items))
+                } else if (date !== today) {
+                    // Clear old data if date changed
+                    localStorage.removeItem(`checklist-${dimension.id}`)
+                }
+            } catch (e) {
+                console.error("Failed to parse checklist items", e)
+            }
+        }
+    }, [dimension.id])
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#0a0a0a]">
@@ -89,7 +119,7 @@ export function WellnessDimensionContent({ dimension }: WellnessDimensionContent
                 >
                     <div className="space-y-6">
                         <div>
-                            <h4 className="text-white font-semibold mb-2">この指標とは</h4>
+                            <h4 className="text-white font-semibold mb-2">指標のポイント</h4>
                             <p className="text-white/70 leading-relaxed">{dimension.theory.what}</p>
                         </div>
                         <div>

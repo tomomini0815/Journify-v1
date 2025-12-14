@@ -118,25 +118,25 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
     return (
         <DashboardLayout>
             <div className="max-w-6xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-[28px] font-bold text-white mb-2">プロジェクト</h1>
                         <p className="text-white/60">大きな目標を管理可能なプロジェクトに分割しましょう。</p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 self-end md:self-auto">
                         <button
                             onClick={() => setIsAIModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-medium transition-all text-indigo-300"
+                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-medium transition-all text-indigo-300 whitespace-nowrap"
                         >
                             <span className="text-lg">✨</span>
-                            AIでプロジェクトを作成
+                            AIで作成
                         </button>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl font-medium transition-all"
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl font-medium transition-all whitespace-nowrap"
                         >
                             <Plus className="w-5 h-5" />
-                            新規プロジェクト
+                            新規作成
                         </button>
                     </div>
                 </div>

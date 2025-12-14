@@ -181,8 +181,9 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
                 </button>
 
                 {/* Header Image/Gradient */}
-                <div className="h-32 bg-gradient-to-r from-indigo-900 via-purple-900 to-amber-900 flex items-center justify-center relative overflow-hidden flex-shrink-0">
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+                <div className="h-32 bg-[#1a1a1a] flex items-center justify-center relative overflow-hidden flex-shrink-0">
+                    <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-amber-500/20 blur-3xl" />
+                    <div className="absolute -right-16 -bottom-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
                     <div className="relative z-10 flex flex-col items-center">
                         <div className="flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-2">
                             <Sparkles className="w-4 h-4 text-amber-300" />
@@ -267,7 +268,7 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
                                     <button
                                         type="submit"
                                         disabled={!goal.trim()}
-                                        className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 mt-4"
+                                        className="w-full py-4 bg-gradient-to-r from-amber-500 via-purple-500 to-indigo-600 hover:from-amber-400 hover:via-purple-400 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2 mt-4"
                                     >
                                         <BrainCircuit className="w-5 h-5" />
                                         戦略プランを生成する
@@ -502,7 +503,7 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
 
                             <button
                                 onClick={handleCreate}
-                                className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-bold text-white shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                                className="w-full py-4 bg-gradient-to-r from-amber-500 via-purple-500 to-indigo-600 hover:from-amber-400 hover:via-purple-400 hover:to-indigo-500 rounded-xl font-bold text-white shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
                             >
                                 <Target className="w-5 h-5" />
                                 このプランでプロジェクトを開始

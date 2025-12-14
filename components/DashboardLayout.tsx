@@ -231,7 +231,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     className="md:hidden fixed inset-0 z-40 bg-[#0a0a0a]"
                 >
                     <div className="flex flex-col h-full pt-16 pb-4 px-4">
-                        <nav className="flex-1 space-y-2">
+                        <nav className="flex-1 space-y-2 overflow-y-auto">
                             {navigation.map((item) => {
                                 const Icon = item.icon
                                 const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href))

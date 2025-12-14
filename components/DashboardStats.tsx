@@ -19,18 +19,21 @@ export function StatCard({ icon: Icon, label, value, trend, delay }: StatCardPro
             transition={{ duration: 0.3, delay }}
             className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all"
         >
-            <div className="flex items-center gap-3">
-                {/* Left column: Icon and Value */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                {/* Left column: Icon and Value and Trend (Mobile) */}
                 <div className="flex items-center gap-3 flex-1">
                     <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-xl flex-shrink-0">
                         <Icon className="w-5 h-5 text-emerald-400" />
                     </div>
-                    <p className="text-2xl font-bold">{value}</p>
+                    <div className="flex items-baseline gap-2">
+                        <p className="text-2xl font-bold">{value}</p>
+                        <span className="sm:hidden text-xs text-emerald-400 font-medium">{trend}</span>
+                    </div>
                 </div>
 
-                {/* Right column: Trend and Label */}
-                <div className="text-right">
-                    <span className="text-xs text-emerald-400 font-medium block mb-1">{trend}</span>
+                {/* Right column: Trend (Desktop) and Label */}
+                <div className="text-left sm:text-right w-full sm:w-auto pl-[3.25rem] sm:pl-0">
+                    <span className="hidden sm:block text-xs text-emerald-400 font-medium mb-1">{trend}</span>
                     <p className="text-xs text-white/60 whitespace-nowrap">{label}</p>
                 </div>
             </div>

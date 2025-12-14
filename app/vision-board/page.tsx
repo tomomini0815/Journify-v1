@@ -351,7 +351,7 @@ export default function VisionBoardPage() {
                                 </a>
 
                                 <a
-                                    href="https://aistudio.google.com/app/prompts/new_freeform"
+                                    href="/nanobananaPro"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="group flex items-center justify-between p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 rounded-xl transition-all"
