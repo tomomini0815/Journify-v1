@@ -169,7 +169,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     initial={{ height: 0, opacity: 0 }}
                                     animate={{ height: "auto", opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
-                                    className="mt-1 space-y-1 pl-4 max-h-[300px] overflow-y-auto"
+                                    className="mt-1 space-y-1 pl-4 max-h-[400px] overflow-y-auto"
                                 >
                                     {wellnessItems.map((item) => {
                                         const isActive = pathname === item.href
