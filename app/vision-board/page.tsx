@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Image as ImageIcon, List, MessageSquare, Mail, Plus, X, Trash2, Upload, Search, ExternalLink, Sparkles } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -59,6 +60,9 @@ export default function VisionBoardPage() {
     const [letters, setLetters] = useState<Letter[]>([])
     const [letterPeriod, setLetterPeriod] = useState<"1year" | "5years" | "10years">("1year")
     const [letterContent, setLetterContent] = useState("")
+
+    // Image Modal State
+    const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
     const tabs = [
         { id: "collage" as Tab, name: "イメージコラージュ", icon: ImageIcon },
@@ -168,7 +172,8 @@ export default function VisionBoardPage() {
         }
     }
 
-    const deleteImage = async (id: string) => {
+    const deleteImage = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation() // Prevent opening modal
         try {
             const res = await fetch(`/api/vision-board/${id}`, { method: "DELETE" })
             if (res.ok) {
@@ -350,10 +355,8 @@ export default function VisionBoardPage() {
                                     <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-pink-400 transition-colors" />
                                 </a>
 
-                                <a
+                                <Link
                                     href="/nanobananaPro"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
                                     className="group flex items-center justify-between p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 rounded-xl transition-all"
                                 >
                                     <div className="flex items-center gap-3">
@@ -369,7 +372,7 @@ export default function VisionBoardPage() {
                                         </div>
                                     </div>
                                     <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-purple-400 transition-colors" />
-                                </a>
+                                </Link>
                             </div>
 
                             <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
@@ -386,12 +389,13 @@ export default function VisionBoardPage() {
                                     key={img.id}
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="relative group aspect-square rounded-xl overflow-hidden"
+                                    className="relative group aspect-square rounded-xl overflow-hidden cursor-pointer"
+                                    onClick={() => setSelectedImage(img.content)}
                                 >
-                                    <img src={img.content} alt={`Vision ${index + 1}`} className="w-full h-full object-cover" />
+                                    <img src={img.content} alt={`Vision ${index + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
                                     <button
-                                        onClick={() => deleteImage(img.id)}
-                                        className="absolute top-2 right-2 p-2 bg-red-500/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => deleteImage(img.id, e)}
+                                        className="absolute top-2 right-2 p-2 bg-red-500/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
@@ -566,6 +570,39 @@ export default function VisionBoardPage() {
                     </div>
                 )}
             </motion.div>
+
+            {/* Image Modal */}
+            <AnimatePresence>
+                {selectedImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedImage(null)}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            layoutId={`image-${selectedImage}`}
+                            className="relative max-w-5xl max-h-[90vh] w-full"
+                        >
+                            <img
+                                src={selectedImage}
+                                alt="Expanded Vision"
+                                className="w-full h-full object-contain rounded-xl shadow-2xl"
+                            />
+                            <button
+                                onClick={() => setSelectedImage(null)}
+                                className="absolute -top-4 -right-4 p-2 bg-white rounded-full text-black hover:bg-gray-200 transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </DashboardLayout>
     )
 }
