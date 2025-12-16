@@ -32,6 +32,9 @@ export async function GET(
                 },
                 comments: {
                     orderBy: { createdAt: 'desc' }
+                },
+                meetingLogs: {
+                    orderBy: { date: 'desc' }
                 }
             }
         })

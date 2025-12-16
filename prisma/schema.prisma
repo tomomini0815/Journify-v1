@@ -55,6 +55,7 @@ model Project {
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   documents       ProjectDocument[]
   tasks           Task[]
+  meetingLogs     MeetingLog[]
 
   @@index([userId])
   @@index([shareToken])
@@ -225,4 +226,19 @@ model WorkflowTemplate {
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
+}
+
+model MeetingLog {
+  id         String   @id @default(uuid())
+  title      String
+  date       DateTime
+  content    String
+  audioUrl   String?
+  transcript String?
+  projectId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }

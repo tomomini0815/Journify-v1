@@ -11,7 +11,7 @@ import { WorkflowTemplate } from '@/lib/workflowTemplates'
 import { MilestoneTemplate } from '@/lib/milestoneTemplates'
 import { isHoliday } from '@/lib/holidays'
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, use } from "react"
 import { motion } from "framer-motion"
 import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight, Download, File as FileIcon, Paperclip, Link as LinkIcon, Share2, Copy, Check, MessageSquare, Send, X, AlertCircle, FileText } from "lucide-react"
 import DocumentsView from './components/DocumentsView'
@@ -30,6 +30,16 @@ type Comment = {
     id: string
     content: string
     authorName: string
+    createdAt: string
+}
+
+type MeetingLog = {
+    id: string
+    title: string
+    date: string
+    content: string
+    audioUrl?: string
+    transcript?: string
     createdAt: string
 }
 
@@ -88,12 +98,60 @@ type Project = {
     milestones: Milestone[]
     tasks: Task[]
     comments: Comment[]
+    meetingLogs?: MeetingLog[]
 }
 
 
+// Web Speech API Types
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean
+    interimResults: boolean
+    lang: string
+    start(): void
+    stop(): void
+    abort(): void
+    onresult: (event: SpeechRecognitionEvent) => void
+    onerror: (event: SpeechRecognitionErrorEvent) => void
+    onend: () => void
+}
 
-export default function ProjectDetailsPage() {
-    const params = useParams()
+interface SpeechRecognitionEvent extends Event {
+    resultIndex: number
+    results: SpeechRecognitionResultList
+}
+
+interface SpeechRecognitionResultList {
+    length: number
+    item(index: number): SpeechRecognitionResult
+    [index: number]: SpeechRecognitionResult
+}
+
+interface SpeechRecognitionResult {
+    isFinal: boolean
+    length: number
+    item(index: number): SpeechRecognitionAlternative
+    [index: number]: SpeechRecognitionAlternative
+}
+
+interface SpeechRecognitionAlternative {
+    transcript: string
+    confidence: number
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+    error: string
+    message: string
+}
+
+declare global {
+    interface Window {
+        SpeechRecognition: { new(): SpeechRecognition }
+        webkitSpeechRecognition: { new(): SpeechRecognition }
+    }
+}
+
+export default function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params)
     const router = useRouter()
     const [project, setProject] = useState<Project | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -115,7 +173,7 @@ export default function ProjectDetailsPage() {
         approvalStatus: "none",
     })
     const [taskAttachments, setTaskAttachments] = useState<Attachment[]>([])
-    const [activeTab, setActiveTab] = useState<'list' | 'timeline' | 'docs'>('list')
+    const [activeTab, setActiveTab] = useState<'list' | 'timeline' | 'docs' | 'meetings'>('list')
     const [editingItem, setEditingItem] = useState<{ type: 'task' | 'milestone', id: string } | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'task' | 'milestone' | 'workflow', id: string, title: string } | null>(null)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -124,6 +182,39 @@ export default function ProjectDetailsPage() {
     const [showShareModal, setShowShareModal] = useState(false)
     const [shareUrl, setShareUrl] = useState<string | null>(null)
     const [copied, setCopied] = useState(false)
+
+    // State for Meeting Logs
+    const [showMeetingModal, setShowMeetingModal] = useState(false)
+    const [newMeeting, setNewMeeting] = useState<Omit<MeetingLog, "id" | "createdAt" | "updatedAt">>({
+        title: "",
+        date: new Date().toISOString().split('T')[0],
+        content: "",
+        audioUrl: "",
+        transcript: ""
+    })
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+    const [isRecording, setIsRecording] = useState(false)
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
+    const [aiStatus, setAiStatus] = useState<'idle' | 'uploading' | 'transcribing' | 'writing' | 'error'>('idle')
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const [isTranscribing, setIsTranscribing] = useState(false)
+
+    // Real-time transcription state
+    const [transcriptPreview, setTranscriptPreview] = useState("")
+    const recognitionRef = useRef<SpeechRecognition | null>(null)
+
+    // UI State for Meeting Logs
+    const [expandedLogIds, setExpandedLogIds] = useState<Set<string>>(new Set())
+
+    const toggleLog = (logId: string) => {
+        const newSet = new Set(expandedLogIds)
+        if (newSet.has(logId)) {
+            newSet.delete(logId)
+        } else {
+            newSet.add(logId)
+        }
+        setExpandedLogIds(newSet)
+    }
 
     // Configure DnD sensors to prevent blocking scroll
     const sensors = useSensors(
@@ -199,7 +290,7 @@ export default function ProjectDetailsPage() {
 
     const fetchProject = async () => {
         try {
-            const res = await fetch(`/api/projects/${params.id}`)
+            const res = await fetch(`/api/projects/${id}`)
             if (res.ok) {
                 const data = await res.json()
                 setProject(data)
@@ -217,8 +308,8 @@ export default function ProjectDetailsPage() {
         e.preventDefault()
         try {
             const url = editingItem
-                ? `/api/projects/${params.id}/milestones/${editingItem.id}`
-                : `/api/projects/${params.id}/milestones`
+                ? `/api/projects/${id}/milestones/${editingItem.id}`
+                : `/api/projects/${id}/milestones`
 
             const method = editingItem ? "PATCH" : "POST"
 
@@ -245,8 +336,8 @@ export default function ProjectDetailsPage() {
         const updatedTaskId = editingItem?.id
         try {
             const url = editingItem
-                ? `/api/projects/${params.id}/tasks/${editingItem.id}`
-                : `/api/projects/${params.id}/tasks`
+                ? `/api/projects/${id}/tasks/${editingItem.id}`
+                : `/api/projects/${id}/tasks`
 
             const method = editingItem ? "PATCH" : "POST"
             console.log("Fetching", url, method)
@@ -327,7 +418,7 @@ export default function ProjectDetailsPage() {
         setProject({ ...project, tasks: updatedTasks })
 
         try {
-            const res = await fetch(`/api/projects/${params.id}/tasks/${task.id}`, {
+            const res = await fetch(`/api/projects/${id}/tasks/${task.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ completed: newCompletedStatus, status: newStatus })
@@ -383,7 +474,7 @@ export default function ProjectDetailsPage() {
 
     const handleDeleteTask = async (taskId: string) => {
         try {
-            const res = await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
+            const res = await fetch(`/api/projects/${id}/tasks/${taskId}`, {
                 method: "DELETE"
             })
             if (res.ok) {
@@ -439,7 +530,7 @@ export default function ProjectDetailsPage() {
 
         // Persist to server
         try {
-            await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
+            await fetch(`/api/projects/${id}/tasks/${taskId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ description: updatedDescription })
@@ -455,7 +546,7 @@ export default function ProjectDetailsPage() {
         if (!project) return
 
         try {
-            const res = await fetch(`/api/projects/${params.id}/share`, {
+            const res = await fetch(`/api/projects/${id}/share`, {
                 method: "POST"
             })
 
@@ -480,7 +571,7 @@ export default function ProjectDetailsPage() {
         if (!project) return
 
         try {
-            const res = await fetch(`/api/projects/${params.id}/share`, {
+            const res = await fetch(`/api/projects/${id}/share`, {
                 method: "DELETE"
             })
 
@@ -505,6 +596,154 @@ export default function ProjectDetailsPage() {
             navigator.clipboard.writeText(shareUrl)
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
+        }
+    }
+
+    // Meeting log functions
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+            const chunks: Blob[] = []
+
+            recorder.ondataavailable = (e) => chunks.push(e.data)
+            recorder.onstop = async () => {
+                const blob = new Blob(chunks, { type: 'audio/webm' })
+                setAudioBlob(blob)
+                setAiStatus('uploading') // Set status immediately to avoid flicker
+
+                // Stop speech recognition
+                if (recognitionRef.current) {
+                    recognitionRef.current.stop()
+                }
+
+                // Automatically start AI processing
+                await processAudioWithAI(blob)
+            }
+
+            recorder.start()
+            setMediaRecorder(recorder)
+            setIsRecording(true)
+            setTranscriptPreview("") // Reset preview
+
+            // Initialize Speech Recognition
+            if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+                const recognition = new SpeechRecognition()
+                recognition.continuous = true
+                recognition.interimResults = true
+                recognition.lang = 'ja-JP'
+
+                // Better transcript handling: Accumulate final results
+                let accumulatedTranscript = ""
+                recognition.onresult = (event) => {
+                    let interimTranscript = ""
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            accumulatedTranscript += event.results[i][0].transcript
+                        } else {
+                            interimTranscript += event.results[i][0].transcript
+                        }
+                    }
+                    setTranscriptPreview(accumulatedTranscript + interimTranscript)
+                }
+
+                recognition.start()
+                recognitionRef.current = recognition
+            }
+
+        } catch (error) {
+            console.error('Error accessing microphone:', error)
+            alert('マイクへのアクセスが許可されていません')
+        }
+    }
+
+    const stopRecording = () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop()
+            mediaRecorder.stream.getTracks().forEach(track => track.stop())
+            setIsRecording(false)
+            if (recognitionRef.current) {
+                recognitionRef.current.stop()
+            }
+        }
+    }
+
+    const processAudioWithAI = async (blob: Blob) => {
+        setAiStatus('uploading')
+        setErrorMessage(null)
+
+        try {
+            // Upload audio file
+            const formData = new FormData()
+            formData.append("file", blob, "recording.webm")
+
+            const uploadRes = await fetch("/api/upload", {
+                method: "POST",
+                body: formData
+            })
+
+            if (!uploadRes.ok) throw new Error("音声のアップロードに失敗しました")
+
+            const uploadData = await uploadRes.json()
+
+            // Transcribe with AI
+            setAiStatus('transcribing')
+
+            const transcribeRes = await fetch(`/api/projects/${id}/meetings/transcribe`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ audioUrl: uploadData.url })
+            })
+
+            if (!transcribeRes.ok) {
+                const errorData = await transcribeRes.json().catch(() => ({ error: "Unknown error" }))
+                console.error("AI要約エラー詳細:", errorData)
+                throw new Error(errorData.details || errorData.error || "AI要約に失敗しました")
+            }
+
+            setAiStatus('writing')
+            // Simulate writing for better UX
+            await new Promise(resolve => setTimeout(resolve, 800))
+
+            const transcribeData = await transcribeRes.json()
+
+            setNewMeeting(prev => ({
+                ...prev,
+                title: transcribeData.title || prev.title,
+                content: transcribeData.content,
+                audioUrl: uploadData.url,
+                transcript: transcribeData.transcript
+            }))
+
+            setAiStatus('idle')
+
+        } catch (error) {
+            console.error("AI要約エラー:", error)
+            setAiStatus('error')
+            setErrorMessage(error instanceof Error ? error.message : "不明なエラーが発生しました")
+        }
+    }
+
+
+
+    const createMeetingLog = async (e: React.FormEvent) => {
+        e.preventDefault()
+        try {
+            const res = await fetch(`/api/projects/${id}/meetings`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newMeeting)
+            })
+
+            if (res.ok) {
+                await fetchProject()
+                setShowMeetingModal(false)
+                setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
+                setAudioBlob(null)
+            }
+        } catch (error) {
+            console.error("議事録作成エラー:", error)
         }
     }
 
@@ -534,7 +773,7 @@ export default function ProjectDetailsPage() {
 
         // Persist to server
         try {
-            const res = await fetch(`/api/projects/${params.id}/tasks/${taskId}`, {
+            const res = await fetch(`/api/projects/${id}/tasks/${taskId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus, completed: isCompleted })
@@ -590,7 +829,7 @@ export default function ProjectDetailsPage() {
 
             // Save to server
             try {
-                await fetch(`/api/projects/${params.id}/milestones`, {
+                await fetch(`/api/projects/${id}/milestones`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -701,7 +940,7 @@ export default function ProjectDetailsPage() {
         try {
             // Create tasks sequentially to maintain order
             for (const task of newTasks) {
-                await fetch(`/api/projects/${params.id}/tasks`, {
+                await fetch(`/api/projects/${id}/tasks`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -726,7 +965,7 @@ export default function ProjectDetailsPage() {
 
     const handleDeleteMilestone = async (milestoneId: string) => {
         try {
-            const res = await fetch(`/api/projects/${params.id}/milestones/${milestoneId}`, {
+            const res = await fetch(`/api/projects/${id}/milestones/${milestoneId}`, {
                 method: "DELETE"
             })
             if (res.ok) {
@@ -748,7 +987,7 @@ export default function ProjectDetailsPage() {
                 setProject({ ...project, tasks: updatedTasks })
             }
 
-            const res = await fetch(`/api/projects/${params.id}/workflows/${workflowId}`, {
+            const res = await fetch(`/api/projects/${id}/workflows/${workflowId}`, {
                 method: "DELETE"
             })
 
@@ -944,7 +1183,7 @@ export default function ProjectDetailsPage() {
                                     </span>
                                 )}
                             </button>
-                            <Link href={`/projects/${params.id}/edit`}>
+                            <Link href={`/projects/${id}/edit`}>
                                 <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
                                     <MoreVertical className="w-5 h-5" />
                                 </button>
@@ -1029,10 +1268,152 @@ export default function ProjectDetailsPage() {
                                 <FileText className="w-4 h-4" />
                                 資料・ファイル
                             </button>
+                            <button
+                                onClick={() => setActiveTab('meetings')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'meetings'
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                議事ログ
+                            </button>
                         </div>
 
                         {activeTab === 'docs' ? (
-                            <DocumentsView projectId={params.id as string} />
+                            <DocumentsView projectId={id} />
+                        ) : activeTab === 'meetings' ? (
+                            /* Meeting Logs View */
+                            <div className="p-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-lg font-semibold">議事録一覧</h3>
+                                    <button
+                                        onClick={() => {
+                                            // Set default date to now with time, formatted for datetime-local
+                                            const now = new Date()
+                                            now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+                                            const defaultDate = now.toISOString().slice(0, 16)
+
+                                            setNewMeeting({
+                                                title: "",
+                                                date: defaultDate,
+                                                content: "",
+                                                audioUrl: "",
+                                                transcript: ""
+                                            })
+                                            setAudioBlob(null)
+                                            setShowMeetingModal(true)
+                                        }}
+                                        className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-sm transition-colors flex items-center gap-2"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        新規作成
+                                    </button>
+                                </div>
+
+                                {project.meetingLogs && project.meetingLogs.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {project.meetingLogs.map((log) => {
+                                            const isExpanded = expandedLogIds.has(log.id)
+                                            return (
+                                                <div key={log.id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden transition-all duration-200">
+                                                    <div
+                                                        className="p-4 flex justify-between items-center cursor-pointer hover:bg-white/5"
+                                                        onClick={() => toggleLog(log.id)}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
+                                                                <ChevronRight className="w-5 h-5 text-white/40" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-semibold text-white">{log.title}</h4>
+                                                                <p className="text-sm text-white/60">
+                                                                    {new Date(log.date).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    const date = new Date(log.date)
+                                                                    date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+
+                                                                    setNewMeeting({
+                                                                        title: log.title,
+                                                                        date: date.toISOString().slice(0, 16),
+                                                                        content: log.content,
+                                                                        audioUrl: log.audioUrl || "",
+                                                                        transcript: log.transcript || ""
+                                                                    })
+                                                                    // We need to track which log is being edited if we want PATCH
+                                                                    // For now, the implementation seems to imply deleting old and creating new or we need an update API
+                                                                    // The current UI uses `createMeetingLog` for create.
+                                                                    // Let's assume for now we just show details.
+                                                                    // Wait, there is no edit functionality shown in the previous code snippet for logs, just delete.
+                                                                    // Ah, I see "createMeetingLog" uses POST. 
+                                                                    // If we want to edit, we need logic for that. 
+                                                                    // But the user just asked for "collapsible". I will keep existing functionality.
+                                                                    // The existing "edit" button logic was missing from my view, or I missed searching it.
+                                                                    // Looking at previous `view_file`, I see a delete button.
+                                                                    // I will preserve the delete button.
+                                                                }}
+                                                                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg transition-all"
+                                                            >
+                                                                {/* Edit button placeholder if needed */}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {isExpanded && (
+                                                        <div className="px-4 pb-4 pt-0 border-t border-white/5 mt-2">
+                                                            <div className="pt-4 space-y-4">
+                                                                <div className="flex justify-end gap-2 mb-2">
+                                                                    <button
+                                                                        onClick={async (e) => {
+                                                                            e.stopPropagation()
+                                                                            if (confirm('この議事録を削除しますか?')) {
+                                                                                try {
+                                                                                    const res = await fetch(`/api/projects/${id}/meetings/${log.id}`, {
+                                                                                        method: "DELETE"
+                                                                                    })
+                                                                                    if (res.ok) {
+                                                                                        const updatedLogs = project.meetingLogs!.filter(l => l.id !== log.id)
+                                                                                        setProject({ ...project, meetingLogs: updatedLogs })
+                                                                                    }
+                                                                                } catch (error) {
+                                                                                    console.error("Failed to delete meeting log", error)
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                        className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1 px-3 py-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                        削除
+                                                                    </button>
+                                                                </div>
+                                                                <audio controls src={log.audioUrl} className="w-full h-10" />
+                                                                <div className="prose prose-invert max-w-none">
+                                                                    <pre className="whitespace-pre-wrap font-sans text-sm text-white/80 leading-relaxed bg-black/20 p-4 rounded-lg">
+                                                                        {log.content}
+                                                                    </pre>
+                                                                </div>
+
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+
+                                ) : (
+                                    <div className="text-center py-12 text-white/40">
+                                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                        <p>議事録がまだありません</p>
+                                    </div>
+                                )}
+                            </div>
                         ) : activeTab === 'list' ? (
                             <div className="p-4">
                                 <DndContext
@@ -1067,7 +1448,7 @@ export default function ProjectDetailsPage() {
                                         <KanbanColumn
                                             id="done"
                                             title="完了"
-                                            tasks={project.tasks.filter(t => t.status === 'done')}
+                                            tasks={project.tasks.filter(t => t.status === 'done' || t.completed)}
                                             openEditTaskModal={openEditTaskModal}
                                             setDeleteConfirm={setDeleteConfirm}
                                             toggleTaskCompletion={toggleTaskCompletion}
@@ -1447,72 +1828,74 @@ export default function ProjectDetailsPage() {
                         )}
                     </div>
                     {/* Comments Side Panel */}
-                    {showComments && (
-                        <div className="fixed inset-y-0 right-0 w-80 md:w-96 bg-[#1a1a1a] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col">
-                            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#252525]">
-                                <h3 className="font-bold text-white flex items-center gap-2">
-                                    <MessageSquare className="w-4 h-4 text-emerald-400" />
-                                    共有コメント
-                                </h3>
-                                <button onClick={() => setShowComments(false)} className="text-white/40 hover:text-white transition-colors">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
+                    {
+                        showComments && (
+                            <div className="fixed inset-y-0 right-0 w-80 md:w-96 bg-[#1a1a1a] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col">
+                                <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#252525]">
+                                    <h3 className="font-bold text-white flex items-center gap-2">
+                                        <MessageSquare className="w-4 h-4 text-emerald-400" />
+                                        共有コメント
+                                    </h3>
+                                    <button onClick={() => setShowComments(false)} className="text-white/40 hover:text-white transition-colors">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
 
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                {project?.comments && project.comments.length > 0 ? (
-                                    project.comments.map(comment => (
-                                        <div key={comment.id} className={`p-3 rounded-xl border ${comment.authorName === '管理者'
-                                            ? 'bg-indigo-500/10 border-indigo-500/20 ml-4'
-                                            : 'bg-white/5 border-white/10 mr-4'
-                                            }`}>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className={`text-xs font-bold ${comment.authorName === '管理者' ? 'text-indigo-300' : 'text-emerald-300'
-                                                    }`}>
-                                                    {comment.authorName}
-                                                </span>
-                                                <span className="text-[10px] text-white/40">
-                                                    {new Date(comment.createdAt).toLocaleString('ja-JP')}
-                                                </span>
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                    {project?.comments && project.comments.length > 0 ? (
+                                        project.comments.map(comment => (
+                                            <div key={comment.id} className={`p-3 rounded-xl border ${comment.authorName === '管理者'
+                                                ? 'bg-indigo-500/10 border-indigo-500/20 ml-4'
+                                                : 'bg-white/5 border-white/10 mr-4'
+                                                }`}>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className={`text-xs font-bold ${comment.authorName === '管理者' ? 'text-indigo-300' : 'text-emerald-300'
+                                                        }`}>
+                                                        {comment.authorName}
+                                                    </span>
+                                                    <span className="text-[10px] text-white/40">
+                                                        {new Date(comment.createdAt).toLocaleString('ja-JP')}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-white/80 whitespace-pre-wrap">{comment.content}</p>
                                             </div>
-                                            <p className="text-sm text-white/80 whitespace-pre-wrap">{comment.content}</p>
+                                        ))
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-white/20 pb-20">
+                                            <MessageSquare className="w-12 h-12 mb-2 opacity-20" />
+                                            <p className="text-sm">コメントはまだありません</p>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-white/20 pb-20">
-                                        <MessageSquare className="w-12 h-12 mb-2 opacity-20" />
-                                        <p className="text-sm">コメントはまだありません</p>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
 
-                            <div className="p-4 border-t border-white/10 bg-[#252525]">
-                                <form onSubmit={handlePostReply}>
-                                    <textarea
-                                        value={newReply}
-                                        onChange={(e) => setNewReply(e.target.value)}
-                                        placeholder="返信を入力..."
-                                        className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50 mb-2 h-20 resize-none placeholder:text-white/20"
-                                        required
-                                    />
-                                    <div className="flex justify-end">
-                                        <button
-                                            type="submit"
-                                            disabled={isSubmittingReply || !newReply.trim()}
-                                            className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium text-white transition-colors flex items-center gap-2"
-                                        >
-                                            {isSubmittingReply ? '送信中...' : (
-                                                <>
-                                                    <Send className="w-3 h-3" />
-                                                    送信
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                </form>
+                                <div className="p-4 border-t border-white/10 bg-[#252525]">
+                                    <form onSubmit={handlePostReply}>
+                                        <textarea
+                                            value={newReply}
+                                            onChange={(e) => setNewReply(e.target.value)}
+                                            placeholder="返信を入力..."
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50 mb-2 h-20 resize-none placeholder:text-white/20"
+                                            required
+                                        />
+                                        <div className="flex justify-end">
+                                            <button
+                                                type="submit"
+                                                disabled={isSubmittingReply || !newReply.trim()}
+                                                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium text-white transition-colors flex items-center gap-2"
+                                            >
+                                                {isSubmittingReply ? '送信中...' : (
+                                                    <>
+                                                        <Send className="w-3 h-3" />
+                                                        送信
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
                 </div >
 
                 {/* Milestone Modal */}
@@ -1790,68 +2173,250 @@ export default function ProjectDetailsPage() {
                 }
 
                 {/* Share Modal */}
-                {showShareModal && shareUrl && (
-                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-6 max-w-md w-full"
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <Share2 className="w-5 h-5 text-emerald-400" />
-                                    プロジェクトを共有
-                                </h3>
-                                <button
-                                    onClick={() => setShowShareModal(false)}
-                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                                >
-                                    <Trash2 className="w-5 h-5 text-white/60" />
-                                </button>
-                            </div>
-
-                            <p className="text-white/60 text-sm mb-4">
-                                このリンクを共有すると、誰でもプロジェクトを閲覧できます（編集不可）
-                            </p>
-
-                            <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4">
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="text"
-                                        value={shareUrl}
-                                        readOnly
-                                        className="flex-1 bg-transparent text-white text-sm outline-none"
-                                    />
+                {
+                    showShareModal && shareUrl && (
+                        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-6 max-w-md w-full"
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <Share2 className="w-5 h-5 text-emerald-400" />
+                                        プロジェクトを共有
+                                    </h3>
                                     <button
-                                        onClick={copyShareLink}
-                                        className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg transition-colors"
+                                        onClick={() => setShowShareModal(false)}
+                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                                     >
-                                        {copied ? (
-                                            <Check className="w-4 h-4 text-emerald-400" />
-                                        ) : (
-                                            <Copy className="w-4 h-4 text-emerald-400" />
-                                        )}
+                                        <Trash2 className="w-5 h-5 text-white/60" />
                                     </button>
                                 </div>
-                            </div>
 
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setShowShareModal(false)}
-                                    className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white"
-                                >
-                                    閉じる
-                                </button>
-                                <button
-                                    onClick={removeShareLink}
-                                    className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 rounded-xl transition-colors text-rose-300"
-                                >
-                                    共有を解除
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
+                                <p className="text-white/60 text-sm mb-4">
+                                    このリンクを共有すると、誰でもプロジェクトを閲覧できます（編集不可）
+                                </p>
+
+                                <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={shareUrl}
+                                            readOnly
+                                            className="flex-1 bg-transparent text-white text-sm outline-none"
+                                        />
+                                        <button
+                                            onClick={copyShareLink}
+                                            className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg transition-colors"
+                                        >
+                                            {copied ? (
+                                                <Check className="w-4 h-4 text-emerald-400" />
+                                            ) : (
+                                                <Copy className="w-4 h-4 text-emerald-400" />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowShareModal(false)}
+                                        className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white"
+                                    >
+                                        閉じる
+                                    </button>
+                                    <button
+                                        onClick={removeShareLink}
+                                        className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 rounded-xl transition-colors text-rose-300"
+                                    >
+                                        共有を解除
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )
+                }
+
+                {/* Meeting Log Modal */}
+                {
+                    showMeetingModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-2xl my-8"
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold">議事録作成</h2>
+                                    <button
+                                        onClick={() => {
+                                            setShowMeetingModal(false)
+                                            setAudioBlob(null)
+                                            setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
+                                        }}
+                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <form onSubmit={createMeetingLog} className="space-y-4">
+                                    {/* Recording Section */}
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 overflow-hidden relative">
+                                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                            音声録音
+                                            {isRecording && <span className="text-xs text-red-500 animate-pulse">● 録音中</span>}
+                                        </h3>
+
+                                        {/* AI Status Bar (Notion Style) */}
+                                        {aiStatus !== 'idle' && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                className="absolute top-0 left-0 right-0 bg-indigo-500/10 border-b border-indigo-500/20 backdrop-blur-sm z-10"
+                                            >
+                                                <div className="px-4 py-2 flex items-center gap-3 text-sm text-indigo-300">
+                                                    {aiStatus === 'uploading' && (
+                                                        <>
+                                                            <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                                                            音声をアップロード中...
+                                                        </>
+                                                    )}
+                                                    {aiStatus === 'transcribing' && (
+                                                        <>
+                                                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
+                                                            AIが会話を分析しています...
+                                                        </>
+                                                    )}
+                                                    {aiStatus === 'writing' && (
+                                                        <>
+                                                            <MessageSquare className="w-4 h-4 animate-pulse" />
+                                                            議事録を作成中...
+                                                        </>
+                                                    )}
+                                                    {aiStatus === 'error' && (
+                                                        <div className="flex items-center gap-2 text-red-400 w-full">
+                                                            <X className="w-4 h-4" />
+                                                            <span>{errorMessage}</span>
+                                                            <button
+                                                                onClick={() => audioBlob && processAudioWithAI(audioBlob)}
+                                                                className="ml-auto text-xs bg-red-500/20 hover:bg-red-500/30 px-2 py-1 rounded"
+                                                            >
+                                                                再試行
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        <div className="flex items-center gap-3 mt-2">
+                                            {!isRecording ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={startRecording}
+                                                    disabled={aiStatus !== 'idle' && aiStatus !== 'error'}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all shadow-lg shadow-red-900/20"
+                                                >
+                                                    <div className="w-2 h-2 bg-white rounded-full" />
+                                                    録音開始
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={stopRecording}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-white/10"
+                                                >
+                                                    <div className="w-3 h-3 bg-red-500 rounded-sm" />
+                                                    停止してAI要約
+                                                </button>
+                                            )}
+
+                                            {audioBlob && !isRecording && aiStatus === 'idle' && (
+                                                <motion.span
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    className="text-sm text-emerald-400 flex items-center gap-1"
+                                                >
+                                                    <Check className="w-4 h-4" />
+                                                    AI要約が完了しました
+                                                </motion.span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Form Fields */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">タイトル *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newMeeting.title}
+                                            onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                            placeholder="会議のタイトル"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">日付 *</label>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={newMeeting.date}
+                                            onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">内容 *</label>
+                                        <div className="relative">
+                                            <textarea
+                                                required
+                                                value={isRecording ? transcriptPreview : newMeeting.content}
+                                                onChange={(e) => setNewMeeting({ ...newMeeting, content: e.target.value })}
+                                                rows={8}
+                                                className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors resize-none ${isRecording ? 'animate-pulse border-red-500/30' : ''}`}
+                                                placeholder={isRecording ? "話した内容がここに表示されます..." : "議事録の内容を入力してください"}
+                                                readOnly={isRecording}
+                                            />
+                                            {isRecording && (
+                                                <div className="absolute bottom-4 right-4 text-xs text-white/40 flex items-center gap-2">
+                                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                                    リアルタイム文字起こし中
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-3 pt-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowMeetingModal(false)
+                                                setAudioBlob(null)
+                                                setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
+                                            }}
+                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                        >
+                                            キャンセル
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                        >
+                                            保存
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    )
+                }
             </div >
         </DashboardLayout >
     )
