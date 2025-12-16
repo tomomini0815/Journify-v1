@@ -71,7 +71,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
             />
             <StatCard
                 icon={TrendingUp}
-                label="平均幸福度(過去30日)"
+                label="平均幸福度"
                 value={stats.happiness}
                 trend="+5%"
                 delay={0.3}

@@ -735,10 +735,20 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const createMeetingLog = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
+            // FIX: Convert local datetime string to proper ISO string with timezone
+            // newMeeting.date is like "2025-12-16T14:17" (Local)
+            // new Date() in browser treats it as local time
+            // .toISOString() converts it to UTC (e.g., 05:17Z)
+            const dateObj = new Date(newMeeting.date)
+            const isoDate = !isNaN(dateObj.getTime()) ? dateObj.toISOString() : newMeeting.date
+
             const res = await fetch(`/api/projects/${id}/meetings`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newMeeting)
+                body: JSON.stringify({
+                    ...newMeeting,
+                    date: isoDate
+                })
             })
 
             if (res.ok) {
