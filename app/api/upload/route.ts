@@ -39,10 +39,10 @@ export async function POST(req: NextRequest) {
             type: file.type
         });
 
-    } catch (error) {
-        console.error("Upload error:", error);
+    } catch (error: any) {
+        console.error("Upload error details:", error);
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: "Internal server error", details: error.message },
             { status: 500 }
         );
     }

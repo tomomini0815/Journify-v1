@@ -2364,7 +2364,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                     <div>
                                         <label className="block text-sm font-medium text-white/60 mb-2">日付 *</label>
                                         <input
-                                            type="date"
+                                            type="datetime-local"
                                             required
                                             value={newMeeting.date}
                                             onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
