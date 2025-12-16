@@ -33,19 +33,26 @@ export async function POST(
             )
         }
 
-        const { audioUrl } = await req.json()
+        const { audioUrl, audioData } = await req.json()
 
-        if (!audioUrl) {
+        if (!audioUrl && !audioData) {
             return NextResponse.json(
-                { error: "Audio URL is required" },
+                { error: "Audio data or URL is required" },
                 { status: 400 }
             )
         }
 
-        // Read the audio file
-        const audioPath = path.join(process.cwd(), "public", audioUrl)
-        const audioBuffer = await readFile(audioPath)
-        const audioBase64 = audioBuffer.toString('base64')
+        let audioBase64 = ""
+
+        if (audioData) {
+            // Remove data URL prefix if present
+            audioBase64 = audioData.replace(/^data:.+;base64,/, "")
+        } else if (audioUrl) {
+            // Read the audio file (Fallback for local dev)
+            const audioPath = path.join(process.cwd(), "public", audioUrl)
+            const audioBuffer = await readFile(audioPath)
+            audioBase64 = audioBuffer.toString('base64')
+        }
 
         // Try multiple models in order of preference/availability
         const modelsToTry = [

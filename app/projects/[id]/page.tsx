@@ -670,30 +670,26 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     }
 
     const processAudioWithAI = async (blob: Blob) => {
-        setAiStatus('uploading')
+        setAiStatus('uploading') // "Processing" state
         setErrorMessage(null)
 
         try {
-            // Upload audio file
-            const formData = new FormData()
-            formData.append("file", blob, "recording.webm")
-
-            const uploadRes = await fetch("/api/upload", {
-                method: "POST",
-                body: formData
+            // Convert to Base64
+            const reader = new FileReader()
+            const base64Promise = new Promise<string>((resolve, reject) => {
+                reader.onloadend = () => resolve(reader.result as string)
+                reader.onerror = reject
+                reader.readAsDataURL(blob)
             })
+            const audioData = await base64Promise
 
-            if (!uploadRes.ok) throw new Error("音声のアップロードに失敗しました")
-
-            const uploadData = await uploadRes.json()
-
-            // Transcribe with AI
+            // Transcribe with AI (direct send)
             setAiStatus('transcribing')
 
             const transcribeRes = await fetch(`/api/projects/${id}/meetings/transcribe`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ audioUrl: uploadData.url })
+                body: JSON.stringify({ audioData })
             })
 
             if (!transcribeRes.ok) {
@@ -712,7 +708,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 ...prev,
                 title: transcribeData.title || prev.title,
                 content: transcribeData.content,
-                audioUrl: uploadData.url,
+                audioUrl: "", // No persistent URL without upload
                 transcript: transcribeData.transcript
             }))
 
@@ -1392,7 +1388,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                         削除
                                                                     </button>
                                                                 </div>
-                                                                <audio controls src={log.audioUrl} className="w-full h-10" />
+                                                                {log.audioUrl && <audio controls src={log.audioUrl} className="w-full h-10" />}
                                                                 <div className="prose prose-invert max-w-none">
                                                                     <pre className="whitespace-pre-wrap font-sans text-sm text-white/80 leading-relaxed bg-black/20 p-4 rounded-lg">
                                                                         {log.content}
