@@ -350,16 +350,16 @@ async function QuickActionSection({ userId }: { userId: string }) {
                 href="/journal/new"
                 className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600/20 to-teal-600/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-emerald-500/10"
             >
-                <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-6 transition-colors group-hover:bg-[#1a1a1a]/60 h-full">
+                <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-4 md:p-6 transition-colors group-hover:bg-[#1a1a1a]/60 h-full">
                     <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-emerald-600/20 blur-3xl transition-all group-hover:bg-emerald-600/30" />
 
-                    <div className="relative z-10 flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-                            <PenTool className="w-6 h-6" />
+                    <div className="relative z-10 flex items-center gap-3 md:gap-4">
+                        <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform flex-shrink-0">
+                            <PenTool className="w-5 h-5 md:w-6 md:h-6" />
                         </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-white mb-1">クイックジャーナル</h3>
-                            <p className="text-white/60 text-sm">
+                        <div className="min-w-0">
+                            <h3 className="text-lg md:text-xl font-bold text-white mb-0.5 md:mb-1 truncate">クイックジャーナル</h3>
+                            <p className="text-white/60 text-xs md:text-sm truncate">
                                 今の気分や思考を記録
                             </p>
                         </div>
@@ -377,16 +377,16 @@ async function QuickActionSection({ userId }: { userId: string }) {
                 href={project ? `/projects/${project.id}?action=new-meeting` : "/projects"}
                 className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600/20 to-cyan-600/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-blue-500/10"
             >
-                <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-6 transition-colors group-hover:bg-[#1a1a1a]/60 h-full">
+                <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-4 md:p-6 transition-colors group-hover:bg-[#1a1a1a]/60 h-full">
                     <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-blue-600/20 blur-3xl transition-all group-hover:bg-blue-600/30" />
 
-                    <div className="relative z-10 flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
-                            <Mic className="w-6 h-6" />
+                    <div className="relative z-10 flex items-center gap-3 md:gap-4">
+                        <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform flex-shrink-0">
+                            <Mic className="w-5 h-5 md:w-6 md:h-6" />
                         </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-white mb-1">クイック録音</h3>
-                            <p className="text-white/60 text-sm">
+                        <div className="min-w-0">
+                            <h3 className="text-lg md:text-xl font-bold text-white mb-0.5 md:mb-1 truncate">クイック録音</h3>
+                            <p className="text-white/60 text-xs md:text-sm truncate">
                                 {project
                                     ? "最新の議事録を作成"
                                     : "議事録を開始"}
