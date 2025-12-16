@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, useDroppable, DragEndEvent, DragStartEvent, useDraggable, defaultDropAnimation } from "@dnd-kit/core"
 import { TaskDescriptionEditor } from '@/components/TaskDescriptionEditor'
 import { FileUploader } from '@/components/FileUploader'
@@ -283,6 +283,15 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             document.documentElement.style.overflow = ''
         }
     }, [showTaskModal, showMilestoneModal, deleteConfirm])
+
+    const searchParams = useSearchParams()
+
+    useEffect(() => {
+        const action = searchParams.get('action')
+        if (action === 'new-meeting') {
+            setShowMeetingModal(true)
+        }
+    }, [searchParams])
 
     useEffect(() => {
         fetchProject()

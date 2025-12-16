@@ -326,6 +326,56 @@ async function GoalProgressSection({ userId }: { userId: string }) {
     )
 }
 
+const getCachedRecentProject = unstable_cache(
+    async (userId: string) => {
+        return await prisma.project.findFirst({
+            where: { userId },
+            orderBy: { updatedAt: 'desc' },
+            select: { id: true, title: true }
+        })
+    },
+    ['dashboard-recent-project'],
+    { revalidate: 60, tags: ['dashboard', 'projects'] }
+)
+
+import { Mic } from "lucide-react"
+
+async function QuickActionSection({ userId }: { userId: string }) {
+    const project = await getCachedRecentProject(userId)
+
+    return (
+        <div className="mb-6">
+            <Link
+                href={project ? `/projects/${project.id}?action=new-meeting` : "/projects"}
+                className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600/20 to-indigo-600/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-violet-500/10"
+            >
+                <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-6 transition-colors group-hover:bg-[#1a1a1a]/60">
+                    <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-violet-600/20 blur-3xl transition-all group-hover:bg-violet-600/30" />
+
+                    <div className="relative z-10 flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500 text-white shadow-lg shadow-violet-500/30 group-hover:scale-110 transition-transform">
+                            <Mic className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-white mb-1">クイック録音</h3>
+                            <p className="text-white/60 text-sm">
+                                {project
+                                    ? `${project.title} の議事録をすぐに作成`
+                                    : "プロジェクトを作成して議事録を開始"}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 hidden items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/10 transition-all group-hover:bg-white/20 group-hover:ring-white/20 sm:flex">
+                        <span>録音開始</span>
+                        <span className="transition-transform group-hover:translate-x-1">→</span>
+                    </div>
+                </div>
+            </Link>
+        </div>
+    )
+}
+
 export default async function DashboardPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -338,6 +388,11 @@ export default async function DashboardPage() {
         <DashboardLayout>
             {/* Welcome Section */}
             <DashboardGreeting />
+
+            {/* Quick Action */}
+            <Suspense fallback={null}>
+                <QuickActionSection userId={user.id} />
+            </Suspense>
 
             {/* Stats Cards */}
             <Suspense fallback={<StatsSkeleton />}>
