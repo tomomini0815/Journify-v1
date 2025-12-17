@@ -1756,7 +1756,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                             <div className="bg-[#1a1a1a] border border-white/20 rounded-lg px-3 py-2 shadow-xl min-w-[200px] max-w-[320px]">
                                                                                 <div className="text-sm font-medium text-white mb-1">{task.text}</div>
                                                                                 <div className="text-xs text-white/60">
-                                                                                    {taskStart.toLocaleDateString('ja-JP')} - {taskEnd.toLocaleDateString('ja-JP')}
+                                                                                    {taskStart.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} - {taskEnd.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                                                                 </div>
                                                                                 <div className="text-xs text-white/40 mt-1">期限: {duration}日</div>
                                                                                 {task.description && (
@@ -2590,13 +2590,13 @@ function KanbanTaskCard({ task, isLast, openEditTaskModal, setDeleteConfirm, tog
                 {task.startDate && (
                     <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        <span>開始: {new Date(task.startDate).toLocaleDateString()}</span>
+                        <span>開始: {new Date(task.startDate).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                 )}
                 {task.endDate && (
                     <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        <span>終了: {new Date(task.endDate).toLocaleDateString()}</span>
+                        <span>終了: {new Date(task.endDate).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                 )}
                 {task.attachments && task.attachments.length > 0 && (
