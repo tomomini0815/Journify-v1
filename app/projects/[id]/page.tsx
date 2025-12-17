@@ -1282,9 +1282,9 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                     setEditingItem(null)
                                     setShowTaskModal(true)
                                 }}
-                                className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-sm transition-colors flex items-center gap-2"
+                                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition-colors flex items-center gap-2"
                             >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-4 h-4 text-indigo-400" />
                                 タスク追加
                             </button>
                         </div>
@@ -1331,7 +1331,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                     }`}
                             >
                                 <MessageSquare className="w-4 h-4" />
-                                議事ログ
+                                議事録
                             </button>
                         </div>
 
@@ -1359,7 +1359,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                             setAudioBlob(null)
                                             setShowMeetingModal(true)
                                         }}
-                                        className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-sm transition-colors flex items-center gap-2"
+                                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm transition-colors flex items-center gap-2"
                                     >
                                         <Plus className="w-4 h-4" />
                                         新規作成
