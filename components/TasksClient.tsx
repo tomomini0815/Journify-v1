@@ -975,7 +975,7 @@ function TaskCard({
                     {task.scheduledDate && (
                         <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
                             <Calendar className="w-3 h-3" />
-                            <span>{task.scheduledDate.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>{task.scheduledDate.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                     )}
 

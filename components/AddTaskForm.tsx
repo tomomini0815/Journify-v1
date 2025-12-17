@@ -59,7 +59,7 @@ export function AddTaskForm({
                             className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
                         />
                         <span className={`text-xs mr-2 whitespace-nowrap ${scheduledDate ? 'text-emerald-400 font-medium' : 'hidden md:inline-block'}`}>
-                            {scheduledDate ? new Date(scheduledDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                            {scheduledDate ? new Date(scheduledDate).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
                         <div className={`p-1.5 rounded-lg transition-colors ${scheduledDate ? 'bg-emerald-500/10 text-emerald-500' : 'group-hover/date:bg-white/5'}`}>
                             <Calendar className={iconSize} />
