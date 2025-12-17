@@ -635,6 +635,11 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             setIsRecording(true)
             setTranscriptPreview("") // Reset preview
 
+            // Auto-fill date with current local time
+            const now = new Date()
+            const localIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16)
+            setNewMeeting(prev => ({ ...prev, date: localIso }))
+
             // Initialize Speech Recognition
             if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
