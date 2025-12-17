@@ -1016,14 +1016,31 @@ function TaskCard({
                     <div className={`text-lg transition-all ${task.completed ? "text-white/40 line-through" : "text-white"}`}>
                         {task.text}
                     </div>
-                    {task.scheduledDate && (
+                    {(task.startDate || task.scheduledDate) && (
                         <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
                             <Calendar className="w-3 h-3" />
                             <span>
-                                {task.startDate ? new Date(task.startDate).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
-                                {task.startDate && task.endDate ? ' - ' : ''}
-                                {task.endDate ? new Date(task.endDate).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
-                                {!task.startDate && !task.endDate && task.scheduledDate ? new Date(task.scheduledDate).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                                {(() => {
+                                    const start = task.startDate ? new Date(task.startDate) : (task.scheduledDate ? new Date(task.scheduledDate) : null)
+                                    const end = task.endDate ? new Date(task.endDate) : null
+
+                                    if (!start) return ''
+
+                                    const formatDate = (d: Date) => d.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                                    const formatTime = (d: Date) => d.toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+
+                                    if (start && end) {
+                                        if (start.getTime() === end.getTime()) {
+                                            return formatDate(start)
+                                        }
+                                        const isSameDay = start.getFullYear() === end.getFullYear() &&
+                                            start.getMonth() === end.getMonth() &&
+                                            start.getDate() === end.getDate()
+                                        return isSameDay ? `${formatDate(start)} - ${formatTime(end)}` : `${formatDate(start)} - ${formatDate(end)}`
+                                    }
+
+                                    return formatDate(start)
+                                })()}
                             </span>
                         </div>
                     )}

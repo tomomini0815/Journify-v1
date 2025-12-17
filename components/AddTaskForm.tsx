@@ -65,7 +65,7 @@ export function AddTaskForm({
                                 className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
                             />
                             <span className={`text-xs mr-1 whitespace-nowrap ${startDate ? 'text-emerald-400 font-medium' : 'hidden md:inline-block'}`}>
-                                {startDate ? new Date(startDate).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '開始'}
+                                {startDate ? new Date(startDate).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
                             </span>
                             {!startDate && <span className="text-xs mr-1 hidden md:inline-block">開始</span>}
                             <div className={`p-1.5 rounded-lg transition-colors ${startDate ? 'bg-emerald-500/10 text-emerald-500' : 'group-hover/date:bg-white/5'}`}>
@@ -84,7 +84,7 @@ export function AddTaskForm({
                                 className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full h-full"
                             />
                             <span className={`text-xs mr-1 whitespace-nowrap ${endDate ? 'text-emerald-400 font-medium' : 'hidden md:inline-block'}`}>
-                                {endDate ? new Date(endDate).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '終了'}
+                                {endDate ? new Date(endDate).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
                             </span>
                             {!endDate && <span className="text-xs mr-1 hidden md:inline-block">終了</span>}
                             <div className={`p-1.5 rounded-lg transition-colors ${endDate ? 'bg-emerald-500/10 text-emerald-500' : 'group-hover/date:bg-white/5'}`}>
