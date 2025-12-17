@@ -30,10 +30,24 @@ export async function PATCH(
             )
         }
 
-        const meetingLog = await prisma.meetingLog.update({
+        // Verify meeting log ownership
+        const existingLog = await prisma.meetingLog.findFirst({
             where: {
                 id: meetingId,
                 projectId: id
+            }
+        })
+
+        if (!existingLog) {
+            return NextResponse.json(
+                { error: "Meeting log not found" },
+                { status: 404 }
+            )
+        }
+
+        const meetingLog = await prisma.meetingLog.update({
+            where: {
+                id: meetingId
             },
             data: {
                 title,
@@ -80,12 +94,20 @@ export async function DELETE(
             )
         }
 
-        await prisma.meetingLog.delete({
+        // Use deleteMany to ensure we only delete if it matches both ID and ProjectID
+        const { count } = await prisma.meetingLog.deleteMany({
             where: {
                 id: meetingId,
                 projectId: id
             }
         })
+
+        if (count === 0) {
+            return NextResponse.json(
+                { error: "Meeting log not found" },
+                { status: 404 }
+            )
+        }
 
         return NextResponse.json({ success: true })
     } catch (error) {
