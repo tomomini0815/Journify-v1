@@ -692,6 +692,14 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             })
             const audioData = await base64Promise
 
+            // Check size limit (Vercel has ~4.5MB body limit)
+            // Base64 is ~1.33x original size. 3.5MB * 1.33 = ~4.6MB
+            // Setting safety limit to 3MB (approx 4MB payload)
+            const MAX_SIZE_BYTES = 3 * 1024 * 1024;
+            if (blob.size > MAX_SIZE_BYTES) {
+                throw new Error("録音時間が長すぎます（制限: 約3MB）。短く区切って録音してください。")
+            }
+
             // Transcribe with AI (direct send)
             setAiStatus('transcribing')
 
@@ -702,9 +710,27 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             })
 
             if (!transcribeRes.ok) {
-                const errorData = await transcribeRes.json().catch(() => ({ error: "Unknown error" }))
-                console.error("AI要約エラー詳細:", errorData)
-                throw new Error(errorData.details || errorData.error || "AI要約に失敗しました")
+                // Handle specific HTTP errors
+                if (transcribeRes.status === 413) {
+                    throw new Error("録音データのサイズが大きすぎます。短く区切ってください。")
+                }
+                if (transcribeRes.status === 504) {
+                    throw new Error("AI処理がタイムアウトしました。もう一度試すか、短く区切ってください。")
+                }
+
+                // Try to parse JSON, fallback to text
+                const text = await transcribeRes.text()
+                let errorDetails
+                try {
+                    const json = JSON.parse(text)
+                    errorDetails = json.details || json.error
+                } catch (e) {
+                    // If JSON parse fails, use the raw text (truncated)
+                    errorDetails = text.slice(0, 100) || `Status: ${transcribeRes.status}`
+                }
+
+                console.error("AI要約エラー詳細:", { status: transcribeRes.status, text })
+                throw new Error(errorDetails || "AI要約に失敗しました")
             }
 
             setAiStatus('writing')
