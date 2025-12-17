@@ -36,7 +36,9 @@ export default async function TasksPage() {
         ...task,
         status: (task.status === 'in-progress' || task.status === 'done' ? task.status : 'todo') as 'todo' | 'in-progress' | 'done',
         createdAt: new Date(task.createdAt).toISOString(),
-        scheduledDate: task.scheduledDate ? new Date(task.scheduledDate).toISOString() : null
+        scheduledDate: task.scheduledDate ? new Date(task.scheduledDate).toISOString() : null,
+        startDate: task.startDate ? new Date(task.startDate).toISOString() : null,
+        endDate: task.endDate ? new Date(task.endDate).toISOString() : null
     }))
 
     return (

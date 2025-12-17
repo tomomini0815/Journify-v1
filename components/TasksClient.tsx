@@ -13,6 +13,8 @@ type Task = {
     status: 'todo' | 'in-progress' | 'done'
     createdAt: Date
     scheduledDate?: Date
+    startDate?: Date
+    endDate?: Date
 }
 
 interface SerializedTask {
@@ -22,6 +24,8 @@ interface SerializedTask {
     status?: 'todo' | 'in-progress' | 'done'
     createdAt: string
     scheduledDate?: string | null
+    startDate?: string | null
+    endDate?: string | null
 }
 
 interface TasksClientProps {
@@ -33,10 +37,13 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         ...t,
         status: t.status || (t.completed ? 'done' : 'todo'),
         createdAt: new Date(t.createdAt),
-        scheduledDate: t.scheduledDate ? new Date(t.scheduledDate) : undefined
+        scheduledDate: t.scheduledDate ? new Date(t.scheduledDate) : undefined,
+        startDate: t.startDate ? new Date(t.startDate) : undefined,
+        endDate: t.endDate ? new Date(t.endDate) : undefined
     })))
     const [newTask, setNewTask] = useState("")
-    const [scheduledDate, setScheduledDate] = useState("")
+    const [startDate, setStartDate] = useState("")
+    const [endDate, setEndDate] = useState("")
     const [description, setDescription] = useState("")
     const [error, setError] = useState("")
     const [activeTab, setActiveTab] = useState<'kanban' | 'calendar'>('kanban')
@@ -86,7 +93,9 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     text: newTask,
-                    scheduledDate: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+                    scheduledDate: startDate ? new Date(startDate).toISOString() : null, // Fallback
+                    startDate: startDate ? new Date(startDate).toISOString() : null,
+                    endDate: endDate ? new Date(endDate).toISOString() : null,
                     status: 'todo',
                     description: description
                 }),
@@ -95,16 +104,21 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
             if (res.ok) {
                 const task = await res.json()
                 const newScheduledDate = task.scheduledDate ? new Date(task.scheduledDate) : undefined
+                const newStartDate = task.startDate ? new Date(task.startDate) : (newScheduledDate || undefined)
+                const newEndDate = task.endDate ? new Date(task.endDate) : undefined
 
                 setTasks([{
                     ...task,
                     status: task.status || 'todo',
                     createdAt: new Date(task.createdAt),
-                    scheduledDate: newScheduledDate
+                    scheduledDate: newScheduledDate,
+                    startDate: newStartDate,
+                    endDate: newEndDate
                 }, ...tasks])
 
                 setNewTask("")
-                setScheduledDate("")
+                setStartDate("")
+                setEndDate("")
                 setDescription("")
                 setError("")
 
@@ -167,6 +181,12 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
             if (updates.scheduledDate !== undefined) {
                 body.scheduledDate = updates.scheduledDate ? updates.scheduledDate.toISOString() : null
             }
+            if (updates.startDate !== undefined) {
+                body.startDate = updates.startDate ? updates.startDate.toISOString() : null
+            }
+            if (updates.endDate !== undefined) {
+                body.endDate = updates.endDate ? updates.endDate.toISOString() : null
+            }
 
             await fetch(`/api/tasks/${taskId}`, {
                 method: "PATCH",
@@ -197,6 +217,8 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         await updateTask(editingTask.id, {
             text: editingTask.text,
             scheduledDate: editingTask.scheduledDate,
+            startDate: editingTask.startDate,
+            endDate: editingTask.endDate,
             status: editingTask.status
         })
         closeEditModal()
@@ -240,7 +262,12 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         const hours = String(date.getHours()).padStart(2, '0')
         const minutes = String(date.getMinutes()).padStart(2, '0')
 
-        setScheduledDate(`${year}-${month}-${day}T${hours}:${minutes}`)
+        const newDate = `${year}-${month}-${day}T${hours}:${minutes}`
+        setStartDate(newDate)
+        // Check if previously set end date is before new start date, if so, clear it or adjust
+        if (endDate && new Date(endDate) < new Date(newDate)) {
+            setEndDate("")
+        }
         setActiveTab('kanban')
 
         setTimeout(() => {
@@ -540,8 +567,10 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                     <AddTaskForm
                                         newTask={newTask}
                                         setNewTask={setNewTask}
-                                        scheduledDate={scheduledDate}
-                                        setScheduledDate={setScheduledDate}
+                                        startDate={startDate}
+                                        setStartDate={setStartDate}
+                                        endDate={endDate}
+                                        setEndDate={setEndDate}
                                         description={description}
                                         setDescription={setDescription}
                                         onSubmit={addTask}
@@ -721,17 +750,30 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
 
                                                 <div>
                                                     <label className="block text-sm font-medium text-white/60 mb-2">
-                                                        予定日時
+                                                        予定日時 (開始 - 終了)
                                                     </label>
-                                                    <input
-                                                        type="datetime-local"
-                                                        value={editingTask.scheduledDate ? new Date(editingTask.scheduledDate.getTime() - editingTask.scheduledDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
-                                                        onChange={(e) => setEditingTask({
-                                                            ...editingTask,
-                                                            scheduledDate: e.target.value ? new Date(e.target.value) : undefined
-                                                        })}
-                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors [color-scheme:dark]"
-                                                    />
+                                                    <div className="flex flex-col gap-2">
+                                                        <input
+                                                            type="datetime-local"
+                                                            value={editingTask.startDate ? new Date(editingTask.startDate.getTime() - editingTask.startDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : (editingTask.scheduledDate ? new Date(editingTask.scheduledDate.getTime() - editingTask.scheduledDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '')}
+                                                            onChange={(e) => setEditingTask({
+                                                                ...editingTask,
+                                                                startDate: e.target.value ? new Date(e.target.value) : undefined,
+                                                                scheduledDate: e.target.value ? new Date(e.target.value) : undefined // Sync for compatibility
+                                                            })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors [color-scheme:dark]"
+                                                        />
+                                                        <span className="text-center text-white/20 text-xs">⬇</span>
+                                                        <input
+                                                            type="datetime-local"
+                                                            value={editingTask.endDate ? new Date(editingTask.endDate.getTime() - editingTask.endDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                                                            onChange={(e) => setEditingTask({
+                                                                ...editingTask,
+                                                                endDate: e.target.value ? new Date(e.target.value) : undefined
+                                                            })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors [color-scheme:dark]"
+                                                        />
+                                                    </div>
                                                 </div>
 
                                                 <div>
@@ -799,8 +841,10 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                 <AddTaskForm
                                     newTask={newTask}
                                     setNewTask={setNewTask}
-                                    scheduledDate={scheduledDate}
-                                    setScheduledDate={setScheduledDate}
+                                    startDate={startDate}
+                                    setStartDate={setStartDate}
+                                    endDate={endDate}
+                                    setEndDate={setEndDate}
                                     description={description}
                                     setDescription={setDescription}
                                     onSubmit={addTask}
@@ -975,7 +1019,12 @@ function TaskCard({
                     {task.scheduledDate && (
                         <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
                             <Calendar className="w-3 h-3" />
-                            <span>{task.scheduledDate.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>
+                                {task.startDate ? new Date(task.startDate).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                                {task.startDate && task.endDate ? ' - ' : ''}
+                                {task.endDate ? new Date(task.endDate).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                                {!task.startDate && !task.endDate && task.scheduledDate ? new Date(task.scheduledDate).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                            </span>
                         </div>
                     )}
 

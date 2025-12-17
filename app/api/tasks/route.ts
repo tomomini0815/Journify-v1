@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json()
-        const { text, scheduledDate, status, description } = body
+        const { text, scheduledDate, status, description, startDate, endDate } = body
 
         if (!text) {
             return NextResponse.json({ error: "Text is required" }, { status: 400 })
@@ -45,7 +45,9 @@ export async function POST(request: Request) {
         const task = await prisma.task.create({
             data: {
                 text,
-                scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+                scheduledDate: scheduledDate ? new Date(scheduledDate) : (startDate ? new Date(startDate) : null),
+                startDate: startDate ? new Date(startDate) : (scheduledDate ? new Date(scheduledDate) : null),
+                endDate: endDate ? new Date(endDate) : null,
                 status: status || 'todo',
                 userId: user.id,
                 description: description || null,
