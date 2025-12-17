@@ -783,10 +783,19 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             })
 
             if (res.ok) {
+                const createdLog = await res.json()
                 await fetchProject()
                 setShowMeetingModal(false)
                 setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
                 setAudioBlob(null)
+
+                // Redirect to meetings tab and expand the new log
+                setActiveTab("meetings")
+                setExpandedLogIds(prev => {
+                    const next = new Set(prev)
+                    next.add(createdLog.id)
+                    return next
+                })
             }
         } catch (error) {
             console.error("議事録作成エラー:", error)
