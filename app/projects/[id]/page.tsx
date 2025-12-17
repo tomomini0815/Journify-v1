@@ -1117,8 +1117,8 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             url: task.url || "",
             status: task.status || "todo",
             priority: task.priority || "medium",
-            startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : "",
-            endDate: task.endDate ? new Date(task.endDate).toISOString().split('T')[0] : "",
+            startDate: task.startDate ? new Date(task.startDate).toISOString().slice(0, 16) : "",
+            endDate: task.endDate ? new Date(task.endDate).toISOString().slice(0, 16) : "",
             color: task.color || "#6366f1",
             approvalStatus: task.approvalStatus || "none"
         })
@@ -2139,18 +2139,18 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-white/60 mb-2">開始日</label>
+                                                <label className="block text-sm font-medium text-white/60 mb-2">開始日時</label>
                                                 <input
-                                                    type="date"
+                                                    type="datetime-local"
                                                     value={newTask.startDate}
                                                     onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
                                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-white/60 mb-2">終了日</label>
+                                                <label className="block text-sm font-medium text-white/60 mb-2">終了日時</label>
                                                 <input
-                                                    type="date"
+                                                    type="datetime-local"
                                                     value={newTask.endDate}
                                                     onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
                                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
