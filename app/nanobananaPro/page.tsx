@@ -73,11 +73,11 @@ export default function NanobananaProPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center"
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-full mb-4">
-                        <Sparkles className="w-4 h-4 text-indigo-400" />
-                        <span className="text-sm font-medium text-indigo-200">Nanobanana Pro</span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 border border-teal-500/30 rounded-full mb-4">
+                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                        <span className="text-sm font-medium text-cyan-200">Nanobanana Pro</span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-200 via-blue-200 to-emerald-200 mb-2">
+                    <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-200 via-cyan-200 to-emerald-200 mb-2">
                         Gemini AI Studio
                     </h1>
                     <p className="text-white/60">
@@ -92,10 +92,10 @@ export default function NanobananaProPage() {
                     transition={{ delay: 0.1 }}
                     className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative overflow-hidden flex flex-col items-center justify-center text-center group hover:bg-white/10 transition-colors"
                 >
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-                    <div className="mb-6 p-4 bg-indigo-500/20 rounded-full group-hover:scale-110 transition-transform duration-500">
-                        <Sparkles className="w-12 h-12 text-indigo-300" />
+                    <div className="mb-6 p-4 bg-teal-500/20 rounded-full group-hover:scale-110 transition-transform duration-500">
+                        <Sparkles className="w-12 h-12 text-cyan-300" />
                     </div>
 
                     <h2 className="text-2xl font-bold text-white mb-4">Step 1: AIで画像を生成</h2>
@@ -106,7 +106,7 @@ export default function NanobananaProPage() {
 
                     <Button
                         asChild
-                        className="bg-gradient-to-r from-indigo-600 via-blue-600 to-emerald-600 hover:from-indigo-500 hover:via-blue-500 hover:to-emerald-500 text-white rounded-xl px-8 h-12 text-lg shadow-lg shadow-indigo-500/20"
+                        className="bg-gradient-to-r from-teal-600 via-cyan-600 to-emerald-600 hover:from-teal-500 hover:via-cyan-500 hover:to-emerald-500 text-white rounded-xl px-8 h-12 text-lg shadow-lg shadow-teal-500/20"
                     >
                         <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">
                             Geminiを開く <ExternalLink className="ml-2 w-5 h-5" />

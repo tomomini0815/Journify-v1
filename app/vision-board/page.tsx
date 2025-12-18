@@ -357,21 +357,21 @@ export default function VisionBoardPage() {
 
                                 <Link
                                     href="/nanobananaPro"
-                                    className="group flex items-center justify-between p-4 bg-gradient-to-br from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 rounded-xl transition-all"
+                                    className="group flex items-center justify-between p-4 bg-gradient-to-br from-teal-500/20 to-cyan-500/20 hover:from-teal-500/30 hover:to-cyan-500/30 border border-teal-500/30 hover:border-cyan-500/50 rounded-xl transition-all"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center">
-                                            <Sparkles className="w-5 h-5 text-purple-300" />
+                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500/30 to-cyan-500/30 flex items-center justify-center">
+                                            <Sparkles className="w-5 h-5 text-cyan-300" />
                                         </div>
                                         <div>
                                             <p className="font-medium text-white flex items-center gap-1">
                                                 Gemini AI
-                                                <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 rounded text-purple-300">NEW</span>
+                                                <span className="text-[10px] px-1.5 py-0.5 bg-cyan-500/20 rounded text-cyan-300">NEW</span>
                                             </p>
                                             <p className="text-xs text-white/40">AI画像生成</p>
                                         </div>
                                     </div>
-                                    <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-purple-400 transition-colors" />
+                                    <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-cyan-400 transition-colors" />
                                 </Link>
                             </div>
 
