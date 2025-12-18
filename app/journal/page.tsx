@@ -55,6 +55,6 @@ export default async function JournalPage() {
     } catch (error) {
         console.error("Journal page error:", error)
         // Return empty state on error
-        return <JournalClient initialJournals={[]} />
+        return <JournalClient initialJournals={[]} initialVoiceJournals={[]} />
     }
 }
