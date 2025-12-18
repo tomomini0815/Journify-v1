@@ -192,7 +192,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
 
     if (compact) {
         return (
-            <div className="rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 p-6 backdrop-blur-xl">
+            <div className="rounded-2xl bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border border-teal-500/20 p-6 backdrop-blur-xl">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h3 className="text-lg font-bold text-white">音声ジャーナル</h3>
@@ -205,8 +205,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all ${isRecording
-                                ? "bg-red-500 hover:bg-red-600"
-                                : "bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                            ? "bg-red-500 hover:bg-red-600"
+                            : "bg-gradient-to-br from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
                             } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                         {isProcessing ? (
@@ -314,8 +314,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all ${isRecording
-                                ? "bg-red-500 hover:bg-red-600"
-                                : "bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                            ? "bg-red-500 hover:bg-red-600"
+                            : "bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                             } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                         {isProcessing ? (

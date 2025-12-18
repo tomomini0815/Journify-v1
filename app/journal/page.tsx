@@ -27,13 +27,31 @@ export default async function JournalPage() {
             }
         })
 
+        const voiceJournals = await prisma.voiceJournal.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                transcript: true,
+                aiSummary: true,
+                sentiment: true,
+                tags: true,
+                createdAt: true,
+            }
+        })
+
         // Serialize dates to strings
         const serializedJournals = journals.map(journal => ({
             ...journal,
             createdAt: journal.createdAt.toISOString(),
         }))
 
-        return <JournalClient initialJournals={serializedJournals} />
+        const serializedVoiceJournals = voiceJournals.map(vj => ({
+            ...vj,
+            createdAt: vj.createdAt.toISOString(),
+        }))
+
+        return <JournalClient initialJournals={serializedJournals} initialVoiceJournals={serializedVoiceJournals} />
     } catch (error) {
         console.error("Journal page error:", error)
         // Return empty state on error

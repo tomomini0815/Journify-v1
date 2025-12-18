@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, Plus, Calendar, Filter, ChevronDown, ChevronUp } from "lucide-react"
+import { Search, Plus, Calendar, Filter, ChevronDown, ChevronUp, Mic, Heart, Meh, Frown } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,14 +17,27 @@ interface Journal {
     createdAt: string
 }
 
-interface JournalClientProps {
-    initialJournals: Journal[]
+interface VoiceJournal {
+    id: string
+    transcript: string
+    aiSummary: string
+    sentiment: string | null
+    tags: string[]
+    createdAt: string
 }
 
-export default function JournalClient({ initialJournals }: JournalClientProps) {
+interface JournalClientProps {
+    initialJournals: Journal[]
+    initialVoiceJournals: VoiceJournal[]
+}
+
+export default function JournalClient({ initialJournals, initialVoiceJournals }: JournalClientProps) {
+    const [activeTab, setActiveTab] = useState<"written" | "voice">("written")
     const [searchQuery, setSearchQuery] = useState("")
     const [journals, setJournals] = useState<Journal[]>(initialJournals)
+    const [voiceJournals, setVoiceJournals] = useState<VoiceJournal[]>(initialVoiceJournals)
     const [expandedMonths, setExpandedMonths] = useState<string[]>([])
+
 
     // Filter States
     const [showDateFilter, setShowDateFilter] = useState(false)
@@ -137,12 +150,35 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="flex flex-col gap-4 mb-8"
             >
+                {/* Tabs */}
+                <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/10">
+                    <button
+                        onClick={() => setActiveTab("written")}
+                        className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${activeTab === "written"
+                            ? "bg-emerald-500 text-white shadow-lg"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                            }`}
+                    >
+                        📝 テキストジャーナル
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("voice")}
+                        className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === "voice"
+                            ? "bg-teal-500 text-white shadow-lg"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                            }`}
+                    >
+                        <Mic className="w-4 h-4" />
+                        音声ジャーナル
+                    </button>
+                </div>
+
                 {/* Search */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                     <Input
                         type="text"
-                        placeholder="ジャーナルを検索..."
+                        placeholder={activeTab === "written" ? "ジャーナルを検索..." : "音声ジャーナルを検索..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
@@ -287,98 +323,100 @@ export default function JournalClient({ initialJournals }: JournalClientProps) {
                 </div>
             </motion.div>
             <div className="space-y-6">
-                {sortedMonths.map((month, monthIndex) => {
-                    const monthJournals = groupedJournals[month]
-                    if (!monthJournals) return null
-                    const avgHappiness = calculateAverageHappiness(monthJournals)
-                    const isExpanded = expandedMonths.includes(month)
+                {activeTab === "written" ? (
+                    // Written Journals Display
+                    sortedMonths.map((month, monthIndex) => {
+                        const monthJournals = groupedJournals[month]
+                        if (!monthJournals) return null
+                        const avgHappiness = calculateAverageHappiness(monthJournals)
+                        const isExpanded = expandedMonths.includes(month)
 
-                    return (
-                        <motion.div
-                            key={month}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: monthIndex * 0.1 }}
-                            className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden"
-                        >
-                            {/* Month Header */}
-                            <div
-                                onClick={() => toggleMonth(month)}
-                                className="flex items-center justify-between p-6 cursor-pointer hover:bg-white/5 transition-colors"
+                        return (
+                            <motion.div
+                                key={month}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: monthIndex * 0.1 }}
+                                className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden"
                             >
-                                <div className="flex items-center gap-2 md:gap-4 whitespace-nowrap">
-                                    <h2 className="text-base md:text-xl font-bold">{formatMonthHeader(month)}</h2>
-                                    <div className="px-2 md:px-3 py-1 rounded-full bg-white/10 text-xs md:text-sm text-white/80">
-                                        平均幸福度: <span className={`font-bold ${avgHappiness >= 80 ? 'text-emerald-400' : avgHappiness >= 60 ? 'text-blue-400' : 'text-yellow-400'}`}>{avgHappiness}</span>
-                                    </div>
-                                    <span className="text-[10px] md:text-xs text-white/40">{monthJournals.length}件の記録</span>
-                                </div>
-                                {isExpanded ? (
-                                    <ChevronUp className="w-5 h-5 text-white/40" />
-                                ) : (
-                                    <ChevronDown className="w-5 h-5 text-white/40" />
-                                )}
-                            </div>
-
-                            {/* Entries Grid */}
-                            <AnimatePresence>
-                                {isExpanded && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: "auto", opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        <div className="p-6 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {monthJournals.map((entry) => (
-                                                <Link href={`/journal/${entry.id}`} key={entry.id}>
-                                                    <div className="bg-black/20 backdrop-blur-sm border border-white/5 rounded-2xl p-5 hover:bg-white/5 transition-all cursor-pointer group h-full flex flex-col">
-                                                        {/* Header */}
-                                                        <div className="flex items-start justify-between mb-3">
-                                                            <div className="flex-1">
-                                                                <h3 className="font-semibold text-lg mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">
-                                                                    {entry.title}
-                                                                </h3>
-                                                                <p className="text-sm text-white/60">
-                                                                    {new Date(entry.createdAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
-                                                                </p>
-                                                            </div>
-                                                            {entry.mood !== null && (
-                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-                                                                        ${entry.mood >= 4 ? 'bg-emerald-500/20 text-emerald-400' :
-                                                                        entry.mood >= 3 ? 'bg-blue-500/20 text-blue-400' :
-                                                                            'bg-yellow-500/20 text-yellow-400'}`}>
-                                                                    {entry.mood}
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Preview */}
-                                                        <p className="text-white/70 text-sm mb-4 line-clamp-3 flex-1">
-                                                            {stripHtml(entry.content).substring(0, 100)}...
-                                                        </p>
-
-                                                        {/* Tags */}
-                                                        <div className="flex flex-wrap gap-2 mt-auto">
-                                                            {entry.tags.map((tag) => (
-                                                                <span
-                                                                    key={tag}
-                                                                    className="px-2 py-1 bg-white/5 text-white/60 text-xs rounded-md"
-                                                                >
-                                                                    #{tag}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                            ))}
+                                {/* Month Header */}
+                                <div
+                                    onClick={() => toggleMonth(month)}
+                                    className="flex items-center justify-between p-6 cursor-pointer hover:bg-white/5 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2 md:gap-4 whitespace-nowrap">
+                                        <h2 className="text-base md:text-xl font-bold">{formatMonthHeader(month)}</h2>
+                                        <div className="px-2 md:px-3 py-1 rounded-full bg-white/10 text-xs md:text-sm text-white/80">
+                                            平均幸福度: <span className={`font-bold ${avgHappiness >= 80 ? 'text-emerald-400' : avgHappiness >= 60 ? 'text-blue-400' : 'text-yellow-400'}`}>{avgHappiness}</span>
                                         </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </motion.div>
-                    )
-                })}
+                                        <span className="text-[10px] md:text-xs text-white/40">{monthJournals.length}件の記録</span>
+                                    </div>
+                                    {isExpanded ? (
+                                        <ChevronUp className="w-5 h-5 text-white/40" />
+                                    ) : (
+                                        <ChevronDown className="w-5 h-5 text-white/40" />
+                                    )}
+                                </div>
+
+                                {/* Entries Grid */}
+                                <AnimatePresence>
+                                    {isExpanded && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <div className="p-6 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {monthJournals.map((entry) => (
+                                                    <Link href={`/journal/${entry.id}`} key={entry.id}>
+                                                        <div className="bg-black/20 backdrop-blur-sm border border-white/5 rounded-2xl p-5 hover:bg-white/5 transition-all cursor-pointer group h-full flex flex-col">
+                                                            {/* Header */}
+                                                            <div className="flex items-start justify-between mb-3">
+                                                                <div className="flex-1">
+                                                                    <h3 className="font-semibold text-lg mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">
+                                                                        {entry.title}
+                                                                    </h3>
+                                                                    <p className="text-sm text-white/60">
+                                                                        {new Date(entry.createdAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                                                                    </p>
+                                                                </div>
+                                                                {entry.mood !== null && (
+                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                                                                        ${entry.mood >= 4 ? 'bg-emerald-500/20 text-emerald-400' :
+                                                                            entry.mood >= 3 ? 'bg-blue-500/20 text-blue-400' :
+                                                                                'bg-yellow-500/20 text-yellow-400'}`}>
+                                                                        {entry.mood}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Preview */}
+                                                            <p className="text-white/70 text-sm mb-4 line-clamp-3 flex-1">
+                                                                {stripHtml(entry.content).substring(0, 100)}...
+                                                            </p>
+
+                                                            {/* Tags */}
+                                                            <div className="flex flex-wrap gap-2 mt-auto">
+                                                                {entry.tags.map((tag) => (
+                                                                    <span
+                                                                        key={tag}
+                                                                        className="px-2 py-1 bg-white/5 text-white/60 text-xs rounded-md"
+                                                                    >
+                                                                        #{tag}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
+                        )
+                    })}
             </div>
 
         </DashboardLayout>

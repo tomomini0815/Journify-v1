@@ -428,14 +428,14 @@ export default async function DashboardPage() {
             {/* Welcome Section */}
             <DashboardGreeting />
 
-            {/* Quick Action */}
-            <Suspense fallback={null}>
-                <QuickActionSection userId={user.id} />
-            </Suspense>
-
             {/* Quick Voice Journal */}
             <Suspense fallback={null}>
                 <QuickJournalSection />
+            </Suspense>
+
+            {/* Quick Action */}
+            <Suspense fallback={null}>
+                <QuickActionSection userId={user.id} />
             </Suspense>
 
             {/* Stats Cards */}
