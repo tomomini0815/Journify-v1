@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -9,23 +9,27 @@ datasource db {
 }
 
 model User {
-  id               String             @id
-  email            String             @unique
-  name             String?
-  bio              String?
-  avatarUrl        String?
-  preferences      Json?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  goals            Goal[]
-  happiness        HappinessEntry[]
-  journals         JournalEntry[]
-  lifeBalance      LifeBalanceEntry[]
-  projects         Project[]
-  tasks            Task[]
-  settings         UserSettings?
-  visionBoardItems VisionBoardItem[]
+  id                String             @id
+  email             String             @unique
+  name              String?
+  bio               String?
+  avatarUrl         String?
+  preferences       Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  goals             Goal[]
+  happiness         HappinessEntry[]
+  journals          JournalEntry[]
+  lifeBalance       LifeBalanceEntry[]
+  projects          Project[]
+  tasks             Task[]
+  settings          UserSettings?
+  visionBoardItems  VisionBoardItem[]
   workflowTemplates WorkflowTemplate[]
+  stats             UserStats?
+  challenges        DailyChallenge[]
+  badges            Badge[]
+  voiceJournals     VoiceJournal[]
 }
 
 model UserSettings {
@@ -160,30 +164,30 @@ model VisionBoardItem {
 }
 
 model Task {
-  id            String       @id @default(uuid())
-  text          String
-  completed     Boolean      @default(false)
-  scheduledDate DateTime?
-  userId        String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  milestoneId   String?
-  projectId     String?
-  endDate       DateTime?
-  startDate     DateTime?
-  color         String?      @default("#6366f1")
-  description   String?
-  priority      String       @default("medium")
-  status        String       @default("todo")
-  workflowId    String?
-  workflowName  String?
-  url           String?
-  approvalStatus String    @default("none") // none, pending, approved, rejected
+  id              String       @id @default(uuid())
+  text            String
+  completed       Boolean      @default(false)
+  scheduledDate   DateTime?
+  userId          String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  milestoneId     String?
+  projectId       String?
+  endDate         DateTime?
+  startDate       DateTime?
+  color           String?      @default("#6366f1")
+  description     String?
+  priority        String       @default("medium")
+  status          String       @default("todo")
+  workflowId      String?
+  workflowName    String?
+  url             String?
+  approvalStatus  String       @default("none") // none, pending, approved, rejected
   rejectionReason String?
-  attachments   Attachment[]
-  milestone     Milestone?   @relation(fields: [milestoneId], references: [id])
-  project       Project?     @relation(fields: [projectId], references: [id])
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attachments     Attachment[]
+  milestone       Milestone?   @relation(fields: [milestoneId], references: [id])
+  project         Project?     @relation(fields: [projectId], references: [id])
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([milestoneId])
@@ -221,7 +225,7 @@ model WorkflowTemplate {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
   description String
-  tasks       Json     // WorkflowTask[]
+  tasks       Json // WorkflowTask[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -241,4 +245,92 @@ model MeetingLog {
   project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+}
+
+// ============================================
+// Gamification Models
+// ============================================
+
+model UserStats {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // XP and Level
+  totalXP Int @default(0)
+  level   Int @default(1)
+
+  // Streak
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+
+  // Statistics
+  totalJournals Int @default(0)
+  totalTasks    Int @default(0)
+  totalMeetings Int @default(0)
+  totalGoals    Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model DailyChallenge {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date DateTime @db.Date
+
+  // Challenge Progress
+  journalCreated Boolean @default(false)
+  tasksCompleted Int     @default(0)
+  meetingCreated Boolean @default(false)
+
+  // Rewards
+  xpEarned    Int     @default(0)
+  badgeEarned String?
+  completed   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model Badge {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  badgeType   String // "daily_hero", "streak_7", "journal_master", etc.
+  title       String
+  description String?
+  icon        String? // Emoji or icon name
+  earnedAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, badgeType])
+}
+
+model VoiceJournal {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  audioUrl   String?
+  transcript String   @db.Text
+  aiSummary  String   @db.Text
+  sentiment  String? // "positive", "neutral", "negative"
+  tags       String[] // AI-generated tags
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([sentiment])
 }
