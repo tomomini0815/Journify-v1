@@ -267,6 +267,37 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                     </div>
                 )}
 
+                {/* Mood Selector - Compact */}
+                <AnimatePresence>
+                    {audioBlob && !isRecording && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-4"
+                        >
+                            <h4 className="text-white text-sm font-semibold mb-3">今の気分は？</h4>
+                            <div className="grid grid-cols-5 gap-2">
+                                {MOOD_OPTIONS.map((mood) => (
+                                    <motion.button
+                                        key={mood.value}
+                                        onClick={() => setSelectedMood(mood.value)}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className={`p-2 rounded-xl transition-all ${selectedMood === mood.value
+                                                ? 'bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 border-2 border-cyan-400'
+                                                : 'bg-white/5 hover:bg-white/10 border border-white/10'
+                                            }`}
+                                    >
+                                        <div className="text-2xl">{mood.emoji}</div>
+                                        <div className="text-white/70 text-[10px] font-medium mt-1">{mood.label}</div>
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* Action Buttons */}
                 {audioBlob && !isRecording && (
                     <div className="flex gap-2">
@@ -404,8 +435,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.95 }}
                                         className={`p-4 rounded-2xl transition-all ${selectedMood === mood.value
-                                                ? 'bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 border-2 border-cyan-400 shadow-lg shadow-cyan-500/20'
-                                                : 'bg-white/5 hover:bg-white/10 border border-white/10'
+                                            ? 'bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 border-2 border-cyan-400 shadow-lg shadow-cyan-500/20'
+                                            : 'bg-white/5 hover:bg-white/10 border border-white/10'
                                             }`}
                                     >
                                         <div className="text-4xl mb-2">{mood.emoji}</div>
