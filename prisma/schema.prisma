@@ -325,6 +325,7 @@ model VoiceJournal {
   transcript String   @db.Text
   aiSummary  String   @db.Text
   sentiment  String? // "positive", "neutral", "negative"
+  mood       Int? // 1-10 scale for mood tracking
   tags       String[] // AI-generated tags
 
   createdAt DateTime @default(now())

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { MOOD_OPTIONS } from "@/lib/moodUtils";
 
 interface VoiceJournalRecorderProps {
     onComplete?: (journalId: string) => void;
@@ -18,6 +19,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [transcript, setTranscript] = useState("");
     const [interimTranscript, setInterimTranscript] = useState("");
+    const [selectedMood, setSelectedMood] = useState<number | null>(null);
+    const [showMoodSelector, setShowMoodSelector] = useState(false);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
@@ -150,7 +153,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     audioPath: uploadData.filepath,
-                    transcript: transcript || "音声を認識できませんでした" // リアルタイム文字起こしを使用
+                    transcript: transcript || "音声を認識できませんでした", // リアルタイム文字起こしを使用
+                    mood: selectedMood // 気分を追加
                 })
             });
 
@@ -165,6 +169,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
             setRecordingTime(0);
             setTranscript("");
             setInterimTranscript("");
+            setSelectedMood(null);
+            setShowMoodSelector(false);
 
             if (onComplete) {
                 onComplete(result.id);
@@ -185,6 +191,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
         setAudioBlob(null);
         setTranscript("");
         setInterimTranscript("");
+        setSelectedMood(null);
+        setShowMoodSelector(false);
     };
 
     const formatTime = (seconds: number) => {
@@ -374,6 +382,42 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                                 />
                                 <span className="text-white/60">録音中...</span>
                             </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Mood Selector */}
+                <AnimatePresence>
+                    {audioBlob && !isRecording && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="mb-6 max-w-2xl mx-auto"
+                        >
+                            <h4 className="text-white text-lg font-semibold mb-4">今の気分は？</h4>
+                            <div className="grid grid-cols-5 gap-3">
+                                {MOOD_OPTIONS.map((mood) => (
+                                    <motion.button
+                                        key={mood.value}
+                                        onClick={() => setSelectedMood(mood.value)}
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className={`p-4 rounded-2xl transition-all ${selectedMood === mood.value
+                                                ? 'bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 border-2 border-cyan-400 shadow-lg shadow-cyan-500/20'
+                                                : 'bg-white/5 hover:bg-white/10 border border-white/10'
+                                            }`}
+                                    >
+                                        <div className="text-4xl mb-2">{mood.emoji}</div>
+                                        <div className="text-white/80 text-xs font-medium">{mood.label}</div>
+                                    </motion.button>
+                                ))}
+                            </div>
+                            {!selectedMood && (
+                                <p className="text-white/40 text-sm mt-3 text-center">
+                                    気分を選択してください（任意）
+                                </p>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>

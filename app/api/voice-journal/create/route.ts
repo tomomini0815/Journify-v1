@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { audioPath, transcript: providedTranscript } = await req.json();
+        const { audioPath, transcript: providedTranscript, mood } = await req.json();
 
         if (!audioPath) {
             return NextResponse.json({ error: "Audio path is required" }, { status: 400 });
@@ -80,6 +80,7 @@ JSONのみを返し、他の説明は不要です。`;
                 transcript: transcript,
                 aiSummary: summary || transcript.substring(0, 100),
                 sentiment: sentiment,
+                mood: mood, // Add mood field
                 tags: tags
             }
         });
