@@ -7,6 +7,10 @@ import Link from "next/link"
 import { unstable_cache } from "next/cache"
 
 import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
+import { DashboardGreeting } from "@/components/DashboardGreeting"
+
+// Dynamic import for Jojo (client-side only)
+const Jojo = dynamic(() => import("@/components/Jojo"), { ssr: false })
 
 // Revalidate every 60 seconds
 export const revalidate = 60
@@ -30,8 +34,6 @@ function getMoodEmoji(mood: number | null | undefined): string {
             return "❓" // Unknown
     }
 }
-
-import { DashboardGreeting } from "@/components/DashboardGreeting"
 
 // Cached data fetching functions
 const getCachedJournalData = unstable_cache(
@@ -497,6 +499,9 @@ export default async function DashboardPage() {
                     </div>
                 </Link>
             </div>
+
+            {/* Jojo AI Mascot */}
+            <Jojo userId={user.id} />
         </DashboardLayout>
     )
 }
