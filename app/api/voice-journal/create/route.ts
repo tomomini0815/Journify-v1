@@ -83,9 +83,10 @@ JSONのみを返し、他の説明は不要です。`;
         };
 
         // Add mood only if provided (for backward compatibility during migration)
-        if (mood !== undefined && mood !== null) {
+        // Temporarily disabled until migration runs
+        /* if (mood !== undefined && mood !== null) {
             voiceJournalData.mood = mood;
-        }
+        } */
 
         const voiceJournal = await prisma.voiceJournal.create({
             data: voiceJournalData
@@ -138,8 +139,24 @@ JSONのみを返し、他の説明は不要です。`;
 
     } catch (error: any) {
         console.error("Voice journal creation error:", error);
+        console.error("Error details:", {
+            name: error?.name,
+            message: error?.message,
+            stack: error?.stack,
+            code: error?.code,
+            meta: error?.meta
+        });
+
         return NextResponse.json(
-            { error: "Failed to create voice journal", details: error.message },
+            {
+                error: "Failed to create voice journal",
+                details: error.message,
+                // Include more details in dev/debug
+                debug: {
+                    code: error?.code,
+                    meta: error?.meta
+                }
+            },
             { status: 500 }
         );
     } finally {
