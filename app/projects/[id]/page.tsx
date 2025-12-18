@@ -684,56 +684,49 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     }
 
     const processAudioWithAI = async (blob: Blob) => {
-        setAiStatus('uploading') // "Processing" state
+        setAiStatus('uploading')
         setErrorMessage(null)
 
         try {
-            // Convert to Base64
-            const reader = new FileReader()
-            const base64Promise = new Promise<string>((resolve, reject) => {
-                reader.onloadend = () => resolve(reader.result as string)
-                reader.onerror = reject
-                reader.readAsDataURL(blob)
-            })
-            const audioData = await base64Promise
+            // Upload to server (public/uploads) or Storage
+            // This bypasses the base64 payload size for the transcribe request
+            const formData = new FormData()
+            const filename = `recording-${Date.now()}.webm`
+            formData.append("file", blob, filename)
 
-            // Check size limit (Vercel has ~4.5MB body limit)
-            // Base64 is ~1.33x original size. 3.5MB * 1.33 = ~4.6MB
-            // Setting safety limit to 3MB (approx 4MB payload)
-            const MAX_SIZE_BYTES = 3 * 1024 * 1024;
-            if (blob.size > MAX_SIZE_BYTES) {
-                throw new Error("録音時間が長すぎます（制限: 約3MB）。短く区切って録音してください。")
+            const uploadRes = await fetch("/api/upload", {
+                method: "POST",
+                body: formData
+            })
+
+            if (!uploadRes.ok) {
+                if (uploadRes.status === 413) {
+                    throw new Error("録音データのサイズが大きすぎます。")
+                }
+                throw new Error("音声のアップロードに失敗しました")
             }
 
-            // Transcribe with AI (direct send)
+            const uploadData = await uploadRes.json()
+            const audioUrl = uploadData.url
+
+            // Transcribe with AI (using file URL)
             setAiStatus('transcribing')
 
             const transcribeRes = await fetch(`/api/projects/${id}/meetings/transcribe`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ audioData })
+                body: JSON.stringify({ audioUrl }) // Send URL instead of data
             })
 
             if (!transcribeRes.ok) {
-                // Handle specific HTTP errors
-                if (transcribeRes.status === 413) {
-                    throw new Error("録音データのサイズが大きすぎます。短く区切ってください。")
-                }
-                if (transcribeRes.status === 504) {
-                    throw new Error("AI処理がタイムアウトしました。もう一度試すか、短く区切ってください。")
-                }
-
-                // Try to parse JSON, fallback to text
                 const text = await transcribeRes.text()
                 let errorDetails
                 try {
                     const json = JSON.parse(text)
                     errorDetails = json.details || json.error
                 } catch (e) {
-                    // If JSON parse fails, use the raw text (truncated)
-                    errorDetails = text.slice(0, 100) || `Status: ${transcribeRes.status}`
+                    errorDetails = text.slice(0, 100)
                 }
-
                 console.error("AI要約エラー詳細:", { status: transcribeRes.status, text })
                 throw new Error(errorDetails || "AI要約に失敗しました")
             }
@@ -748,7 +741,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 ...prev,
                 title: transcribeData.title || prev.title,
                 content: transcribeData.content,
-                audioUrl: "", // No persistent URL without upload
+                audioUrl: audioUrl, // Save the URL of the uploaded file
                 transcript: transcribeData.transcript
             }))
 
