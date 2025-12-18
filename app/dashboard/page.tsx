@@ -1,6 +1,5 @@
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { DashboardStats } from "@/components/DashboardStats"
-import dynamic from 'next/dynamic'
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
@@ -8,9 +7,8 @@ import { unstable_cache } from "next/cache"
 
 import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 import { DashboardGreeting } from "@/components/DashboardGreeting"
-
-// Dynamic import for Jojo (client-side only)
-const Jojo = dynamic(() => import("@/components/Jojo"), { ssr: false })
+import Jojo from "@/components/Jojo"
+import DailyChallenges from "@/components/DailyChallenges"
 
 // Revalidate every 60 seconds
 export const revalidate = 60
@@ -434,14 +432,15 @@ export default async function DashboardPage() {
                 <ChartsSection userId={user.id} />
             </Suspense>
 
-            {/* Recent Journals and Goals */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Recent Journals, Goals, and Daily Challenges */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <Suspense fallback={<RecentJournalsSkeleton />}>
                     <RecentJournalsSection userId={user.id} />
                 </Suspense>
                 <Suspense fallback={<GoalProgressSkeleton />}>
                     <GoalProgressSection userId={user.id} />
                 </Suspense>
+                <DailyChallenges />
             </div>
 
             {/* Year in Review Banner */}
