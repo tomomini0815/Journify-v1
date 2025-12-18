@@ -164,7 +164,7 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                     <button
                         onClick={() => setActiveTab("voice")}
                         className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === "voice"
-                            ? "bg-cyan-500 text-white shadow-lg"
+                            ? "bg-cyan-600 text-white shadow-lg"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                             }`}
                     >
@@ -430,11 +430,11 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className="bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-cyan-500/20 rounded-2xl p-6 hover:border-cyan-500/40 transition-all"
+                            className="bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 rounded-2xl p-6 hover:border-cyan-600/40 transition-all"
                         >
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-emerald-500 rounded-full flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-600 to-emerald-500 rounded-full flex items-center justify-center">
                                         <Mic className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
@@ -478,7 +478,7 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                     {vj.tags.map((tag, i) => (
                                         <span
                                             key={i}
-                                            className="px-3 py-1 bg-cyan-500/20 text-cyan-300 rounded-full text-xs"
+                                            className="px-3 py-1 bg-cyan-600/20 text-cyan-300 rounded-full text-xs"
                                         >
                                             #{tag}
                                         </span>

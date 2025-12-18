@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface VoiceJournalRecorderProps {
     onComplete?: (journalId: string) => void;
@@ -10,6 +11,7 @@ interface VoiceJournalRecorderProps {
 }
 
 export default function VoiceJournalRecorder({ onComplete, compact = false }: VoiceJournalRecorderProps) {
+    const router = useRouter();
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
@@ -168,7 +170,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                 onComplete(result.id);
             }
 
-            alert("音声ジャーナルを作成しました！");
+            // ジャーナルページに遷移
+            router.push("/journal");
 
         } catch (error) {
             console.error("Failed to process voice journal:", error);
@@ -192,7 +195,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
 
     if (compact) {
         return (
-            <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-cyan-500/20 p-6 backdrop-blur-xl">
+            <div className="rounded-2xl bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 p-6 backdrop-blur-xl">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h3 className="text-lg font-bold text-white">音声ジャーナル</h3>
@@ -287,7 +290,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
     }
 
     return (
-        <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-cyan-500/20 p-8 backdrop-blur-xl">
+        <div className="rounded-2xl bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 p-8 backdrop-blur-xl">
             <div className="text-center">
                 <h3 className="text-2xl font-bold text-white mb-2">音声ジャーナル</h3>
                 <p className="text-white/60 mb-8">ワンタップで思いを記録</p>
