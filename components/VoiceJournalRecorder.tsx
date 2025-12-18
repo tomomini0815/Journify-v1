@@ -176,8 +176,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                 onComplete(result.id);
             }
 
-            // ジャーナルページに遷移
-            router.push("/journal");
+            // 音声ジャーナルページに遷移
+            router.push("/journal?tab=voice");
 
         } catch (error) {
             console.error("Failed to process voice journal:", error);
@@ -285,8 +285,8 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                         className={`p-2 rounded-xl transition-all ${selectedMood === mood.value
-                                                ? 'bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 border-2 border-cyan-400'
-                                                : 'bg-white/5 hover:bg-white/10 border border-white/10'
+                                            ? 'bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 border-2 border-cyan-400'
+                                            : 'bg-white/5 hover:bg-white/10 border border-white/10'
                                             }`}
                                     >
                                         <div className="text-2xl">{mood.emoji}</div>
