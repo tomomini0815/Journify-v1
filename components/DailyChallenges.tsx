@@ -82,7 +82,7 @@ export default function DailyChallenges() {
 
     if (loading) {
         return (
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-6 backdrop-blur-xl">
+            <div className="rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-6 backdrop-blur-xl">
                 <div className="animate-pulse">
                     <div className="h-6 bg-white/10 rounded w-1/2 mb-4"></div>
                     <div className="space-y-3">
@@ -96,9 +96,8 @@ export default function DailyChallenges() {
     }
 
     return (
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 p-6 backdrop-blur-xl relative overflow-hidden">
-            {/* Background glow */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-6 backdrop-blur-xl relative overflow-hidden">
+
 
             {/* Header */}
             <div className="relative z-10 mb-6">
@@ -150,8 +149,8 @@ export default function DailyChallenges() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
                         className={`p-4 rounded-xl transition-all ${item.completed
-                                ? "bg-emerald-500/20 border border-emerald-500/30"
-                                : "bg-white/5 border border-white/10"
+                            ? "bg-emerald-500/20 border border-emerald-500/30"
+                            : "bg-white/5 border border-white/10"
                             }`}
                     >
                         <div className="flex items-center justify-between">
