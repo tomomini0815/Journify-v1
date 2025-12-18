@@ -35,11 +35,11 @@ export async function POST(
             )
         }
 
-        const { audioUrl, audioData } = await req.json()
+        const { audioPath, audioData } = await req.json()
 
-        if (!audioUrl && !audioData) {
+        if (!audioPath && !audioData) {
             return NextResponse.json(
-                { error: "Audio data or URL is required" },
+                { error: "Audio path or data is required" },
                 { status: 400 }
             )
         }
@@ -93,15 +93,15 @@ export async function POST(
 
         let requestParts: any[] = []
 
-        if (audioUrl) {
-            // Local file path
-            const audioPath = path.join(process.cwd(), "public", audioUrl)
+        if (audioPath) {
+            // File already uploaded to /tmp, use it directly
+            console.log(`Using uploaded file: ${audioPath}`)
 
             try {
                 // Upload to Google AI File Manager
                 console.log(`Uploading file to Gemini: ${audioPath}`)
                 const uploadResponse = await fileManager.uploadFile(audioPath, {
-                    mimeType: "audio/webm", // Assuming webm from recorder
+                    mimeType: "audio/webm",
                     displayName: `Meeting Audio ${new Date().toISOString()}`
                 })
 

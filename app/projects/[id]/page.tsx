@@ -707,15 +707,15 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             }
 
             const uploadData = await uploadRes.json()
-            const audioUrl = uploadData.url
+            const audioPath = uploadData.filepath // Absolute path to /tmp file
 
-            // Transcribe with AI (using file URL)
+            // Transcribe with AI (using file path)
             setAiStatus('transcribing')
 
             const transcribeRes = await fetch(`/api/projects/${id}/meetings/transcribe`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ audioUrl }) // Send URL instead of data
+                body: JSON.stringify({ audioPath }) // Send absolute path
             })
 
             if (!transcribeRes.ok) {
@@ -741,7 +741,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 ...prev,
                 title: transcribeData.title || prev.title,
                 content: transcribeData.content,
-                audioUrl: audioUrl, // Save the URL of the uploaded file
+                audioUrl: uploadData.filename, // Store filename for reference
                 transcript: transcribeData.transcript
             }))
 
