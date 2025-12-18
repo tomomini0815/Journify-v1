@@ -413,7 +413,7 @@ async function QuickJournalSection() {
         </div>
     )
 }
-}
+
 
 export default async function DashboardPage() {
     const supabase = await createClient()
