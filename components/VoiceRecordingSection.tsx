@@ -26,7 +26,7 @@ export default function VoiceRecordingSection({ projectId, projectTitle }: Voice
                             flex-1 sm:flex-none justify-center
                             flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all
                             ${activeTab === "journal"
-                                ? "bg-gradient-to-r from-amber-500 to-indigo-500 text-white shadow-lg shadow-amber-500/20"
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20"
                                 : "text-white/60 hover:text-white hover:bg-white/5"
                             }
                         `}
@@ -41,7 +41,7 @@ export default function VoiceRecordingSection({ projectId, projectTitle }: Voice
                             flex-1 sm:flex-none justify-center
                             flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all
                             ${activeTab === "meeting"
-                                ? "bg-gradient-to-r from-amber-500 to-indigo-500 text-white shadow-lg shadow-amber-500/20"
+                                ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20"
                                 : "text-white/60 hover:text-white hover:bg-white/5"
                             }
                         `}
