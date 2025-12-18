@@ -192,7 +192,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
 
     if (compact) {
         return (
-            <div className="rounded-2xl bg-gradient-to-br from-teal-500/10 to-emerald-500/10 border border-teal-500/20 p-6 backdrop-blur-xl">
+            <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-cyan-500/20 p-6 backdrop-blur-xl">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h3 className="text-lg font-bold text-white">音声ジャーナル</h3>
@@ -206,7 +206,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                         whileTap={{ scale: 0.95 }}
                         className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all ${isRecording
                             ? "bg-red-500 hover:bg-red-600"
-                            : "bg-gradient-to-br from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+                            : "bg-gradient-to-br from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
                             } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                         {isProcessing ? (
@@ -269,7 +269,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                         <button
                             onClick={processVoiceJournal}
                             disabled={isProcessing}
-                            className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                            className="flex-1 bg-gradient-to-r from-cyan-600 to-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
                         >
                             {isProcessing ? (
                                 <Loader2 className="w-4 h-4 inline animate-spin" />
@@ -287,7 +287,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
     }
 
     return (
-        <div className="rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 p-8 backdrop-blur-xl">
+        <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-cyan-500/20 p-8 backdrop-blur-xl">
             <div className="text-center">
                 <h3 className="text-2xl font-bold text-white mb-2">音声ジャーナル</h3>
                 <p className="text-white/60 mb-8">ワンタップで思いを記録</p>
@@ -315,7 +315,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                         whileTap={{ scale: 0.95 }}
                         className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all ${isRecording
                             ? "bg-red-500 hover:bg-red-600"
-                            : "bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                            : "bg-gradient-to-br from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
                             } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                         {isProcessing ? (
@@ -393,7 +393,7 @@ export default function VoiceJournalRecorder({ onComplete, compact = false }: Vo
                             <button
                                 onClick={processVoiceJournal}
                                 disabled={isProcessing}
-                                className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg hover:shadow-emerald-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="bg-gradient-to-r from-cyan-600 to-emerald-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg hover:shadow-cyan-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isProcessing ? (
                                     <span className="flex items-center gap-2">

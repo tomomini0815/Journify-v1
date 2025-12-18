@@ -164,7 +164,7 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                     <button
                         onClick={() => setActiveTab("voice")}
                         className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === "voice"
-                            ? "bg-teal-500 text-white shadow-lg"
+                            ? "bg-cyan-500 text-white shadow-lg"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                             }`}
                     >
@@ -416,7 +416,78 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                 </AnimatePresence>
                             </motion.div>
                         )
-                    })}
+                    })
+                ) : (
+                    // Voice Journals Display
+                    voiceJournals.filter(vj => {
+                        if (!searchQuery) return true
+                        return vj.transcript.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            vj.aiSummary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            vj.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                    }).map((vj, index) => (
+                        <motion.div
+                            key={vj.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-cyan-500/20 rounded-2xl p-6 hover:border-cyan-500/40 transition-all"
+                        >
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-emerald-500 rounded-full flex items-center justify-center">
+                                        <Mic className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-white/60 text-sm">
+                                                {new Date(vj.createdAt).toLocaleDateString('ja-JP', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </span>
+                                            {vj.sentiment && (
+                                                <span className={`px-2 py-0.5 rounded-full text-xs ${vj.sentiment === 'positive' ? 'bg-emerald-500/20 text-emerald-400' :
+                                                    vj.sentiment === 'negative' ? 'bg-red-500/20 text-red-400' :
+                                                        'bg-blue-500/20 text-blue-400'
+                                                    }`}>
+                                                    {vj.sentiment === 'positive' ? '😊 ポジティブ' :
+                                                        vj.sentiment === 'negative' ? '😔 ネガティブ' :
+                                                            '😐 ニュートラル'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <h3 className="text-white font-semibold mb-2">📄 要約</h3>
+                                <p className="text-white/80 text-sm leading-relaxed">{vj.aiSummary}</p>
+                            </div>
+
+                            <div className="mb-4">
+                                <h3 className="text-white font-semibold mb-2">📝 文字起こし</h3>
+                                <p className="text-white/70 text-sm leading-relaxed line-clamp-3">{vj.transcript}</p>
+                            </div>
+
+                            {vj.tags && vj.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {vj.tags.map((tag, i) => (
+                                        <span
+                                            key={i}
+                                            className="px-3 py-1 bg-cyan-500/20 text-cyan-300 rounded-full text-xs"
+                                        >
+                                            #{tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </motion.div>
+                    ))
+                )}
             </div>
 
         </DashboardLayout>
