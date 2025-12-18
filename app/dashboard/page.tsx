@@ -400,6 +400,33 @@ async function QuickActionSection({ userId }: { userId: string }) {
                     </div>
                 </div>
             </Link>
+
+            {/* Voice Journal */}
+            <Link
+                href="/voice-journal"
+                className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600/20 to-pink-600/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-purple-500/10"
+            >
+                <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-4 md:p-6 transition-colors group-hover:bg-[#1a1a1a]/60 h-full">
+                    <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-purple-600/20 blur-3xl transition-all group-hover:bg-purple-600/30" />
+
+                    <div className="relative z-10 flex items-center gap-2 md:gap-4">
+                        <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-2xl bg-purple-500 text-white shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform flex-shrink-0">
+                            <Mic className="w-5 h-5 md:w-6 md:h-6" />
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="text-sm md:text-xl font-bold text-white mb-0.5 md:mb-1 truncate">音声ジャーナル</h3>
+                            <p className="text-white/60 text-[10px] md:text-sm truncate">
+                                ワンタップで思いを記録
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 hidden lg:flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/10 transition-all group-hover:bg-white/20 group-hover:ring-white/20">
+                        <span>録音</span>
+                        <span className="transition-transform group-hover:translate-x-1">→</span>
+                    </div>
+                </div>
+            </Link>
         </div>
     )
 }
