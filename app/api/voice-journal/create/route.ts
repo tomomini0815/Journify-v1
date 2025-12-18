@@ -73,16 +73,22 @@ JSONのみを返し、他の説明は不要です。`;
         }
 
         // 音声ジャーナルを保存
+        const voiceJournalData: any = {
+            userId: user.id,
+            audioUrl: audioPath,
+            transcript: transcript,
+            aiSummary: summary || transcript.substring(0, 100),
+            sentiment: sentiment,
+            tags: tags
+        };
+
+        // Add mood only if provided (for backward compatibility during migration)
+        if (mood !== undefined && mood !== null) {
+            voiceJournalData.mood = mood;
+        }
+
         const voiceJournal = await prisma.voiceJournal.create({
-            data: {
-                userId: user.id,
-                audioUrl: audioPath,
-                transcript: transcript,
-                aiSummary: summary || transcript.substring(0, 100),
-                sentiment: sentiment,
-                mood: mood, // Add mood field
-                tags: tags
-            }
+            data: voiceJournalData
         });
 
         // デイリーチャレンジを更新
