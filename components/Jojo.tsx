@@ -69,15 +69,15 @@ export default function Jojo({ userId }: JojoProps) {
                         exit={{ opacity: 0, y: 20, scale: 0.8 }}
                         className="absolute bottom-20 right-0 mb-2"
                     >
-                        <div className="relative max-w-xs">
-                            <div className="bg-gradient-to-br from-emerald-500/90 to-teal-500/90 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-emerald-400/20">
+                        <div className="relative max-w-sm">
+                            <div className="bg-gradient-to-br from-emerald-500/90 to-teal-500/90 backdrop-blur-xl rounded-2xl p-5 shadow-2xl border border-emerald-400/20">
                                 <button
                                     onClick={() => setShowMessage(false)}
                                     className="absolute -top-2 -right-2 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
                                 >
                                     <X className="w-4 h-4 text-white" />
                                 </button>
-                                <p className="text-white text-sm leading-relaxed">{message}</p>
+                                <p className="text-white text-base leading-relaxed whitespace-pre-wrap">{message}</p>
                             </div>
                             {/* Speech bubble tail */}
                             <div className="absolute -bottom-2 right-8 w-4 h-4 bg-gradient-to-br from-emerald-500/90 to-teal-500/90 rotate-45" />
@@ -85,6 +85,7 @@ export default function Jojo({ userId }: JojoProps) {
                     </motion.div>
                 )}
             </AnimatePresence>
+
 
             {/* Jojo Character */}
             <motion.button
