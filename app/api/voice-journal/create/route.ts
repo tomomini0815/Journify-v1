@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PrismaClient } from "@prisma/client";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleAIFileManager } from "@google/generative-ai/server";
 
 const prisma = new PrismaClient();
 
@@ -15,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { audioPath } = await req.json();
+        const { audioPath, transcript: providedTranscript } = await req.json();
 
         if (!audioPath) {
             return NextResponse.json({ error: "Audio path is required" }, { status: 400 });
@@ -26,71 +25,66 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "API key not configured" }, { status: 500 });
         }
 
-        // Gemini APIで音声を処理
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const fileManager = new GoogleAIFileManager(apiKey);
+        let transcript = providedTranscript || "音声を認識できませんでした";
+        let summary = "";
+        let sentiment = "neutral";
+        let tags: string[] = [];
 
-        console.log(`Uploading voice file: ${audioPath}`);
+        // Gemini APIで要約と分析のみ実行（文字起こしは既にある）
+        if (transcript && transcript !== "音声を認識できませんでした") {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-        // 音声ファイルをアップロード
-        const uploadResponse = await fileManager.uploadFile(audioPath, {
-            mimeType: "audio/webm",
-            displayName: `Voice Journal ${new Date().toISOString()}`
-        });
-
-        console.log(`File uploaded: ${uploadResponse.file.uri}`);
-
-        // 文字起こしと分析
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
-        const prompt = `この音声を文字起こしし、以下の情報を JSON 形式で返してください:
+            const prompt = `以下のテキストを分析し、JSON形式で返してください:
 
 {
-  "transcript": "完全な文字起こし",
   "summary": "内容の要約（2-3文）",
   "sentiment": "positive/neutral/negative のいずれか",
   "tags": ["タグ1", "タグ2", "タグ3"] // 最大5個のキーワード
 }
 
-音声の内容を正確に文字起こしし、全体的な感情とキーワードを抽出してください。
+テキスト:
+${transcript}
+
 JSONのみを返し、他の説明は不要です。`;
 
-        const result = await model.generateContent([
-            {
-                fileData: {
-                    mimeType: uploadResponse.file.mimeType,
-                    fileUri: uploadResponse.file.uri
+            try {
+                const result = await model.generateContent(prompt);
+                const responseText = result.response.text();
+
+                // JSONを抽出
+                let jsonText = responseText.trim();
+                if (jsonText.startsWith("```json")) {
+                    jsonText = jsonText.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+                } else if (jsonText.startsWith("```")) {
+                    jsonText = jsonText.replace(/```\n?/g, "");
                 }
-            },
-            { text: prompt }
-        ]);
 
-        const responseText = result.response.text();
-        console.log("Gemini response:", responseText);
-
-        // JSONを抽出（マークダウンコードブロックを除去）
-        let jsonText = responseText.trim();
-        if (jsonText.startsWith("```json")) {
-            jsonText = jsonText.replace(/```json\n?/g, "").replace(/```\n?/g, "");
-        } else if (jsonText.startsWith("```")) {
-            jsonText = jsonText.replace(/```\n?/g, "");
+                const analysis = JSON.parse(jsonText);
+                summary = analysis.summary;
+                sentiment = analysis.sentiment;
+                tags = analysis.tags || [];
+            } catch (error) {
+                console.error("Analysis error:", error);
+                // フォールバック
+                summary = transcript.substring(0, 100) + "...";
+                tags = [];
+            }
         }
-
-        const analysis = JSON.parse(jsonText);
 
         // 音声ジャーナルを保存
         const voiceJournal = await prisma.voiceJournal.create({
             data: {
                 userId: user.id,
                 audioUrl: audioPath,
-                transcript: analysis.transcript,
-                aiSummary: analysis.summary,
-                sentiment: analysis.sentiment,
-                tags: analysis.tags || []
+                transcript: transcript,
+                aiSummary: summary || transcript.substring(0, 100),
+                sentiment: sentiment,
+                tags: tags
             }
         });
 
-        // デイリーチャレンジを更新（ジャーナル作成としてカウント）
+        // デイリーチャレンジを更新
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
