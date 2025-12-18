@@ -393,18 +393,18 @@ export default async function DashboardPage() {
 
             {/* Year in Review Banner */}
             <div className="mb-8">
-                <Link href="/year-in-review" className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-purple-500/10">
+                <Link href="/year-in-review" className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500/20 to-indigo-500/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-amber-500/10">
                     <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-8 transition-colors group-hover:bg-[#1a1a1a]/60">
                         {/* Background effects */}
-                        <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl transition-all group-hover:bg-purple-500/30" />
-                        <div className="absolute -right-16 -bottom-16 h-64 w-64 rounded-full bg-pink-500/20 blur-3xl transition-all group-hover:bg-pink-500/30" />
+                        <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-amber-500/20 blur-3xl transition-all group-hover:bg-amber-500/30" />
+                        <div className="absolute -right-16 -bottom-16 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl transition-all group-hover:bg-indigo-500/30" />
 
                         <div className="relative z-10 flex flex-col gap-2">
                             <div className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/40">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40">
                                     📊
                                 </span>
-                                <h3 className="text-2xl font-bold text-white">{new Date().getFullYear()}年のあなた</h3>
+                                <h3 className="text-2xl font-bold text-white">これまでの統計詳細</h3>
                             </div>
                             <p className="max-w-xl text-white/60">
                                 この1年間の成長を振り返りましょう。あなたの記録、達成、そして歩んできた道のりを美しく可視化します。
