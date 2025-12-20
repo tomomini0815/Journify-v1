@@ -83,11 +83,9 @@ JSONのみを返し、他の説明は不要です。`;
         };
 
         // Add mood if provided
-        // DISABLED: Database migration needed - mood column doesn't exist yet
-        // To enable: Run manual migration on production database
-        /* if (mood !== undefined && mood !== null) {
+        if (mood !== undefined && mood !== null) {
             voiceJournalData.mood = mood;
-        } */
+        }
 
         const voiceJournal = await prisma.voiceJournal.create({
             data: voiceJournalData

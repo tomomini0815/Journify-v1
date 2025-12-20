@@ -12,7 +12,8 @@
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push && prisma generate",
     "db:migrate": "prisma migrate dev && prisma generate",
-    "clear-test-data": "tsx scripts/clear-test-data.ts"
+    "clear-test-data": "tsx scripts/clear-test-data.ts",
+    "migrate-mood": "tsx scripts/migrate-add-mood.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

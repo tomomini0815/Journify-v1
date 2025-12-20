@@ -35,6 +35,7 @@ export default async function JournalPage() {
                 transcript: true,
                 aiSummary: true,
                 sentiment: true,
+                mood: true,
                 tags: true,
                 createdAt: true,
             }

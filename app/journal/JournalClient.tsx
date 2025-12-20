@@ -23,6 +23,7 @@ interface VoiceJournal {
     transcript: string
     aiSummary: string
     sentiment: string | null
+    mood: number | null
     tags: string[]
     createdAt: string
 }
@@ -57,12 +58,16 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
 
     // Initialize expanded months
     useEffect(() => {
-        if (initialJournals.length > 0) {
+        if (activeTab === 'written' && initialJournals.length > 0) {
             const date = new Date(initialJournals[0].createdAt)
             const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
             setExpandedMonths([key])
+        } else if (activeTab === 'voice' && initialVoiceJournals.length > 0) {
+            const date = new Date(initialVoiceJournals[0].createdAt)
+            const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+            setExpandedMonths([key])
         }
-    }, [initialJournals])
+    }, [activeTab]) // Only depend on activeTab to avoid array size warnings
 
     const stripHtml = (html: string) => {
         const tmp = document.createElement("DIV")
@@ -93,6 +98,14 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
         return matchesSearch && matchesDate && matchesMood && matchesTags
     })
 
+    // Filter voice journals
+    const filteredVoiceJournals = voiceJournals.filter(vj => {
+        if (!searchQuery) return true
+        return vj.transcript.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            vj.aiSummary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            vj.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    })
+
     // Group journals by month
     const groupedJournals = filteredJournals.reduce((acc, journal) => {
         const date = new Date(journal.createdAt)
@@ -102,7 +115,17 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
         return acc
     }, {} as Record<string, Journal[]>)
 
+    // Group voice journals by month
+    const groupedVoiceJournals = filteredVoiceJournals.reduce((acc, vj) => {
+        const date = new Date(vj.createdAt)
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+        if (!acc[key]) acc[key] = []
+        acc[key].push(vj)
+        return acc
+    }, {} as Record<string, VoiceJournal[]>)
+
     const sortedMonths = Object.keys(groupedJournals).sort((a, b) => b.localeCompare(a))
+    const sortedVoiceMonths = Object.keys(groupedVoiceJournals).sort((a, b) => b.localeCompare(a))
 
     const toggleMonth = (month: string) => {
         setExpandedMonths(prev =>
@@ -116,6 +139,13 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
         if (monthJournals.length === 0) return 0
         const total = monthJournals.reduce((sum, j) => sum + (j.mood || 0), 0)
         return Math.round((total / monthJournals.length / 5) * 100)
+    }
+
+    const calculateAverageMood = (monthVoiceJournals: VoiceJournal[]) => {
+        const moodsWithValues = monthVoiceJournals.filter(vj => vj.mood !== null)
+        if (moodsWithValues.length === 0) return null
+        const total = moodsWithValues.reduce((sum, vj) => sum + (vj.mood || 0), 0)
+        return Math.round(total / moodsWithValues.length)
     }
 
     const formatMonthHeader = (monthKey: string) => {
@@ -328,6 +358,8 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                     </Link>
                 </div>
             </motion.div>
+
+            {/* Journal List */}
             <div className="space-y-6">
                 {activeTab === "written" ? (
                     // Written Journals Display
@@ -424,60 +456,106 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                         )
                     })
                 ) : (
-                    // Voice Journals Display
-                    voiceJournals.filter(vj => {
-                        if (!searchQuery) return true
-                        return vj.transcript.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            vj.aiSummary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            vj.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-                    }).map((vj, index) => (
-                        <motion.div
-                            key={vj.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className="bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 rounded-2xl p-6 hover:border-cyan-600/40 transition-all"
-                        >
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-600 to-emerald-500 rounded-full flex items-center justify-center">
-                                        <Mic className="w-5 h-5 text-white" />
+                    // Voice Journals Display - Month Grouped
+                    sortedVoiceMonths.map((month, monthIndex) => {
+                        const monthVoiceJournals = groupedVoiceJournals[month]
+                        if (!monthVoiceJournals) return null
+                        const avgMood = calculateAverageMood(monthVoiceJournals)
+                        const isExpanded = expandedMonths.includes(month)
+
+                        return (
+                            <motion.div
+                                key={month}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: monthIndex * 0.1 }}
+                                className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden"
+                            >
+                                {/* Month Header */}
+                                <div
+                                    onClick={() => toggleMonth(month)}
+                                    className="flex items-center justify-between p-6 cursor-pointer hover:bg-white/5 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2 md:gap-4 whitespace-nowrap">
+                                        <h2 className="text-base md:text-xl font-bold">{formatMonthHeader(month)}</h2>
+                                        {avgMood !== null && (
+                                            <div className="px-2 md:px-3 py-1 rounded-full bg-white/10 text-xs md:text-sm text-white/80">
+                                                平均気分: <span className={`font-bold ${avgMood >= 7 ? 'text-emerald-400' : avgMood >= 5 ? 'text-blue-400' : avgMood >= 3 ? 'text-yellow-400' : 'text-red-400'}`}>{avgMood}</span>/10
+                                            </div>
+                                        )}
+                                        <span className="text-[10px] md:text-xs text-white/40">{monthVoiceJournals.length}件の記録</span>
                                     </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-white/60 text-sm">
-                                                {new Date(vj.createdAt).toLocaleDateString('ja-JP', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
-                                            </span>
-                                        </div>
-                                    </div>
+                                    {isExpanded ? (
+                                        <ChevronUp className="w-5 h-5 text-white/40" />
+                                    ) : (
+                                        <ChevronDown className="w-5 h-5 text-white/40" />
+                                    )}
                                 </div>
-                            </div>
 
-                            <div className="mb-4">
-                                <h3 className="text-white font-semibold mb-2">📝 文字起こし</h3>
-                                <p className="text-white/70 text-sm leading-relaxed line-clamp-3">{vj.transcript}</p>
-                            </div>
-
-                            {vj.tags && vj.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    {vj.tags.map((tag, i) => (
-                                        <span
-                                            key={i}
-                                            className="px-3 py-1 bg-cyan-600/20 text-cyan-300 rounded-full text-xs"
+                                {/* Entries Grid */}
+                                <AnimatePresence>
+                                    {isExpanded && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
                                         >
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </motion.div>
-                    ))
+                                            <div className="p-6 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {monthVoiceJournals.map((vj) => (
+                                                    <Link href={`/voice-journal/${vj.id}`} key={vj.id}>
+                                                        <div className="bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 rounded-2xl p-5 hover:border-cyan-600/40 transition-all cursor-pointer group h-full flex flex-col">
+                                                            {/* Header */}
+                                                            <div className="flex items-start justify-between mb-3">
+                                                                <div className="flex items-center gap-2 flex-1">
+                                                                    <div className="w-8 h-8 bg-gradient-to-br from-cyan-600 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                                        <Mic className="w-4 h-4 text-white" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-sm text-white/60 truncate">
+                                                                            {new Date(vj.createdAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                {vj.mood !== null && (
+                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
+                                                                    ${vj.mood >= 7 ? 'bg-emerald-500/20 text-emerald-400' :
+                                                                            vj.mood >= 5 ? 'bg-blue-500/20 text-blue-400' :
+                                                                                vj.mood >= 3 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                                    'bg-red-500/20 text-red-400'}`}>
+                                                                        {vj.mood}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Preview */}
+                                                            <p className="text-white/70 text-sm mb-4 line-clamp-3 flex-1">
+                                                                {vj.transcript}
+                                                            </p>
+
+                                                            {/* Tags */}
+                                                            {vj.tags && vj.tags.length > 0 && (
+                                                                <div className="flex flex-wrap gap-2 mt-auto">
+                                                                    {vj.tags.map((tag, i) => (
+                                                                        <span
+                                                                            key={i}
+                                                                            className="px-2 py-1 bg-cyan-600/20 text-cyan-300 rounded-md text-xs"
+                                                                        >
+                                                                            #{tag}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
+                        )
+                    })
                 )}
             </div>
 
