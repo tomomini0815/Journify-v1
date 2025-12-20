@@ -6,12 +6,14 @@ import { Mic, PenTool } from "lucide-react"
 import VoiceJournalRecorder from "./VoiceJournalRecorder"
 
 interface VoiceRecordingSectionProps {
-    projectId?: string
-    projectTitle?: string
+    projects?: Array<{ id: string; title: string }>
 }
 
-export default function VoiceRecordingSection({ projectId, projectTitle }: VoiceRecordingSectionProps) {
+export default function VoiceRecordingSection({ projects }: VoiceRecordingSectionProps) {
     const [activeTab, setActiveTab] = useState<"journal" | "meeting">("journal")
+    const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(
+        projects?.[0]?.id
+    )
 
     return (
         <div className="mb-4">
@@ -58,34 +60,59 @@ export default function VoiceRecordingSection({ projectId, projectTitle }: Voice
                     // Voice Journal Recorder
                     <VoiceJournalRecorder compact={true} />
                 ) : (
-                    // Meeting Minutes Link
-                    <Link
-                        href={projectId ? `/projects/${projectId}?action=new-meeting` : "/projects"}
-                        className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-cyan-600/20 to-blue-600/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-cyan-500/10"
-                    >
-                        <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-6 transition-colors group-hover:bg-[#1a1a1a]/60">
-                            <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-cyan-600/20 blur-3xl transition-all group-hover:bg-cyan-600/30" />
+                    // Meeting Minutes - New Design
+                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-900/40 via-cyan-900/30 to-teal-800/40 p-8 border border-cyan-500/20">
+                        {/* Background glow effect */}
+                        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+                        <div className="absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl" />
 
-                            <div className="relative z-10 flex items-center gap-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
-                                    <Mic className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-white mb-1">議事録を作成</h3>
-                                    <p className="text-white/60 text-sm">
-                                        {projectId
-                                            ? `${projectTitle || "最新のプロジェクト"}の議事録を作成`
-                                            : "プロジェクトを作成して議事録を開始"}
+                        <div className="relative z-10 flex items-center justify-between gap-6">
+                            {/* Left side - Text and Dropdown */}
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-white mb-4">議事録を録音して要約</h3>
+
+                                {/* Project Dropdown */}
+                                {projects && projects.length > 0 ? (
+                                    <div className="max-w-xs">
+                                        <label className="block text-white/70 text-xs font-medium mb-2">
+                                            プロジェクトを選択
+                                        </label>
+                                        <select
+                                            value={selectedProjectId}
+                                            onChange={(e) => setSelectedProjectId(e.target.value)}
+                                            className="w-full px-4 py-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all hover:bg-white/15"
+                                        >
+                                            {projects.map(project => (
+                                                <option key={project.id} value={project.id} className="bg-gray-900 text-white">
+                                                    {project.title}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <p className="text-white/50 text-sm">
+                                        プロジェクトを作成して議事録を開始
                                     </p>
-                                </div>
+                                )}
                             </div>
 
-                            <div className="relative z-10 flex items-center gap-2 rounded-full bg-white/10 px-6 py-3 font-medium text-white ring-1 ring-white/10 transition-all group-hover:bg-white/20 group-hover:ring-white/20">
-                                <span>開始</span>
-                                <span className="transition-transform group-hover:translate-x-1">→</span>
-                            </div>
+                            {/* Right side - Cyan Circular Mic Button */}
+                            <Link
+                                href={selectedProjectId ? `/projects/${selectedProjectId}?action=new-meeting` : "/projects"}
+                                className="group"
+                            >
+                                <div className="relative">
+                                    {/* Glow effect on hover */}
+                                    <div className="absolute inset-0 rounded-full bg-cyan-400 blur-xl opacity-0 group-hover:opacity-50 transition-opacity" />
+
+                                    {/* Main button */}
+                                    <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 flex items-center justify-center shadow-2xl shadow-cyan-500/40 transition-all group-hover:scale-110 group-hover:shadow-cyan-500/60 cursor-pointer">
+                                        <Mic className="w-9 h-9 text-white" strokeWidth={2.5} />
+                                    </div>
+                                </div>
+                            </Link>
                         </div>
-                    </Link>
+                    </div>
                 )}
             </div>
         </div>

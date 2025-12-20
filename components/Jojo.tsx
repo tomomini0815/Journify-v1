@@ -154,7 +154,19 @@ export default function Jojo({ userId }: JojoProps) {
                                 >
                                     <X className="w-4 h-4 text-white" />
                                 </button>
-                                <p className="text-white font-medium text-base leading-relaxed tracking-wide">{message}</p>
+                                <div className="text-white">
+                                    {message.split('\n').map((line, index) => (
+                                        <p
+                                            key={index}
+                                            className={index === 0
+                                                ? "font-medium text-base leading-relaxed tracking-wide mb-2"
+                                                : "font-normal text-sm opacity-90"
+                                            }
+                                        >
+                                            {line}
+                                        </p>
+                                    ))}
+                                </div>
                             </div>
                             {/* Speech bubble tail */}
                             <div className="absolute -bottom-2 right-8 w-4 h-4 bg-gradient-to-br from-emerald-500/90 to-teal-500/90 rotate-45" />

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>世界の名言集 - JOJO Edition</title>
+    <meta name="description" content="世界中の著名人による心に響く名言集。人生を変える言葉がここに。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="stars2"></div>
+    <div class="stars3"></div>
+    
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">世界の名言集</h1>
+            <p class="hero-subtitle">時代を超えて語り継がれる、偉大なる言葉たち</p>
+            <div class="hero-ornament"></div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="filter-section">
+            <button class="filter-btn active" data-category="all">すべて</button>
+            <button class="filter-btn" data-category="courage">勇気</button>
+            <button class="filter-btn" data-category="justice">正義</button>
+            <button class="filter-btn" data-category="friendship">友情</button>
+            <button class="filter-btn" data-category="determination">決意</button>
+            <button class="filter-btn" data-category="wisdom">知恵</button>
+        </div>
+
+        <div class="quotes-grid" id="quotesGrid">
+            <!-- Quotes will be dynamically inserted here -->
+        </div>
+    </main>
+
+    <div class="modal" id="quoteModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <div class="modal-quote" id="modalQuote"></div>
+            <div class="modal-author" id="modalAuthor"></div>
+            <div class="modal-context" id="modalContext"></div>
+            <button class="share-btn" id="shareBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                    <polyline points="16 6 12 2 8 6"></polyline>
+                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                </svg>
+                シェア
+            </button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2025 世界の名言集. All quotes are timeless wisdom.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

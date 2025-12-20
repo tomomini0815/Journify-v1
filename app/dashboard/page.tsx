@@ -326,27 +326,26 @@ async function GoalProgressSection({ userId }: { userId: string }) {
     )
 }
 
-const getCachedRecentProject = unstable_cache(
+const getCachedUserProjects = unstable_cache(
     async (userId: string) => {
-        return await prisma.project.findFirst({
+        return await prisma.project.findMany({
             where: { userId },
             orderBy: { updatedAt: 'desc' },
             select: { id: true, title: true }
         })
     },
-    ['dashboard-recent-project'],
+    ['dashboard-user-projects'],
     { revalidate: 60, tags: ['dashboard', 'projects'] }
 )
 
 import VoiceRecordingSection from "@/components/VoiceRecordingSection"
 
 async function VoiceRecordingSectionWrapper({ userId }: { userId: string }) {
-    const project = await getCachedRecentProject(userId)
+    const projects = await getCachedUserProjects(userId)
 
     return (
         <VoiceRecordingSection
-            projectId={project?.id}
-            projectTitle={project?.title}
+            projects={projects}
         />
     )
 }

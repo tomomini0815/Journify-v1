@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 
 interface Journal {
     id: string
@@ -32,7 +33,12 @@ interface JournalClientProps {
 }
 
 export default function JournalClient({ initialJournals, initialVoiceJournals }: JournalClientProps) {
-    const [activeTab, setActiveTab] = useState<"written" | "voice">("written")
+    const searchParams = useSearchParams()
+    const tabParam = searchParams.get('tab')
+
+    const [activeTab, setActiveTab] = useState<"written" | "voice">(
+        tabParam === 'voice' ? 'voice' : 'written'
+    )
     const [searchQuery, setSearchQuery] = useState("")
     const [journals, setJournals] = useState<Journal[]>(initialJournals)
     const [voiceJournals, setVoiceJournals] = useState<VoiceJournal[]>(initialVoiceJournals)
@@ -448,24 +454,9 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                                     minute: '2-digit'
                                                 })}
                                             </span>
-                                            {vj.sentiment && (
-                                                <span className={`px-2 py-0.5 rounded-full text-xs ${vj.sentiment === 'positive' ? 'bg-emerald-500/20 text-emerald-400' :
-                                                    vj.sentiment === 'negative' ? 'bg-red-500/20 text-red-400' :
-                                                        'bg-blue-500/20 text-blue-400'
-                                                    }`}>
-                                                    {vj.sentiment === 'positive' ? '😊 ポジティブ' :
-                                                        vj.sentiment === 'negative' ? '😔 ネガティブ' :
-                                                            '😐 ニュートラル'}
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="mb-4">
-                                <h3 className="text-white font-semibold mb-2">📄 要約</h3>
-                                <p className="text-white/80 text-sm leading-relaxed">{vj.aiSummary}</p>
                             </div>
 
                             <div className="mb-4">

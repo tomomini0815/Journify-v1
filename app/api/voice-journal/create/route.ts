@@ -82,8 +82,8 @@ JSONのみを返し、他の説明は不要です。`;
             tags: tags
         };
 
-        // Add mood only if provided (for backward compatibility during migration)
-        // Temporarily disabled until migration runs
+        // Add mood if provided (TEMPORARILY DISABLED - run migration first)
+        // Uncomment after running: npx prisma migrate dev --name add_voice_journal_mood
         /* if (mood !== undefined && mood !== null) {
             voiceJournalData.mood = mood;
         } */
