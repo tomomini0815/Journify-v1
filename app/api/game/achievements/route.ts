@@ -23,7 +23,7 @@ export async function GET(req: Request) {
         if (achievements.length === 0) {
             for (const achData of DEFAULT_ACHIEVEMENTS) {
                 await prisma.achievement.create({
-                    data: achData
+                    data: achData as any
                 })
             }
 
