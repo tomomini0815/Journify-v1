@@ -168,7 +168,7 @@ export async function POST(req: Request) {
                 return NextResponse.json({ error: 'Stats not found' }, { status: 404 })
             }
 
-            const { updatedStats, result } = grantQuestReward(stats as any, userQuest.quest)
+            const { updatedStats, result } = grantQuestReward(stats as any, userQuest.quest as any)
 
             // ステータスを更新
             await prisma.userStats.update({
