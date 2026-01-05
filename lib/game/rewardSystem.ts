@@ -210,7 +210,7 @@ export function getDailyLoginBonus(streakDays: number): {
     // ストリークボーナス
     const streakMultiplier = Math.min(3, 1 + (streakDays / 30))
 
-    const bonus = {
+    const bonus: { xp: number; gold: number; crystals?: number } = {
         xp: Math.floor(baseXP * streakMultiplier),
         gold: Math.floor(baseGold * streakMultiplier)
     }
