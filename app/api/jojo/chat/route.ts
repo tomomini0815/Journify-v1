@@ -21,48 +21,69 @@ export async function POST(req: Request) {
             return NextResponse.json({ reply: "APIキーが設定されていません。" });
         }
 
-        // インテント分析（簡易的）
-        const isTaskQuery = /タスク|やる|予定|リスト/.test(message);
-        const isNewsQuery = /ニュース|情報|出来事/.test(message);
+        // インテント分析
+        const messageLower = message.toLowerCase();
+        const isTaskQuery = /タスク|やる|予定|リスト/.test(messageLower);
+        const isTodayQuery = /今日|today/.test(messageLower);
+        const isNewsQuery = /ニュース|情報|出来事/.test(messageLower);
 
         let contextInfo = "";
 
         if (isTaskQuery) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const whereClause: any = {
+                userId: user.id,
+                completed: false
+            };
+
+            // "今日"が含まれていれば、期日が今日、または今日以前の未完了タスク（期限切れ）を表示
+            if (isTodayQuery) {
+                whereClause.scheduledDate = {
+                    lt: tomorrow
+                };
+            }
+
             const tasks = await prisma.task.findMany({
-                where: {
-                    userId: user.id,
-                    completed: false
-                },
+                where: whereClause,
                 take: 5,
                 orderBy: { scheduledDate: "asc" }
             });
 
             if (tasks.length > 0) {
-                contextInfo = `未完了のタスク: ${tasks.map(t => t.text).join(", ")}`;
+                const taskList = tasks.map(t => {
+                    const date = t.scheduledDate ? new Date(t.scheduledDate).toLocaleDateString("ja-JP") : "日付なし";
+                    return `・${t.text} (${date})`;
+                }).join("\n");
+                contextInfo = `【未完了タスク情報】\n${taskList}\n\nこのタスク情報を元に、ユーザーを励ましたり、具体的なアドバイスをしてください。`;
             } else {
-                contextInfo = "未完了のタスクはありません。";
+                contextInfo = "【タスク情報】\n現在、未完了のタスクはありません！素晴らしい！";
             }
         }
 
         if (isNewsQuery) {
-            // ニュースAPIがないため、豆知識を提供
-            contextInfo = "ユーザーはニュースを聞いていますが、リアルタイムニュース機能はないため、代わりに元気が出る「今日の豆知識」か「最新テックトレンドの小話」を1つ教えてください。";
+            contextInfo = "【コンテキスト】\nユーザーは時事ネタを求めていますが、あなたはリアルタイム検索ができません。代わりに、元気が出る「今日の豆知識」や、あなたの得意な「モチベーションアップの秘訣」を教えてあげてください。";
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `あなたはJojo（ジョジョ）という名前の、超エネルギッシュで情熱的なAIライフコーチです。
-ユーザーからの音声入力に対して、短く（50文字以内）、パンチの効いた返答をしてください。
+ユーザーである私（${user.email}）からの音声入力に対して、短く（60文字以内）、パンチの効いた返答をしてください。
 
 ユーザーの入力: "${message}"
-追加コンテキスト: ${contextInfo}
+
+${contextInfo}
 
 ルール:
-1. 常にハイテンションで、情熱的に話すこと。
-2. 絵文字（🔥, ⚡, 🚀など）を適度に使用すること。
-3. 音声で読み上げられることを想定し、聞き取りやすい言葉を選ぶこと。
-4. 説明的になりすぎず、会話のキャッチボールを重視すること。
+1. 常にハイテンションで、情熱的に話すこと（松岡修造や熱血アニメキャラのようなイメージ）。
+2. 文字数は**必ず60文字以内**に収めること（長すぎると読み上げが大変なため）。
+3. 絵文字（🔥, ⚡, 🚀, 💪など）を文末に1つか2つ付けること。
+4. 私のタスクや状況について言及があれば、具体的に応援すること。
+5. 「〜ですね」「〜ます」だけでなく、たまにタメ口や呼びかけ（Hey!など）を混ぜてフレンドリーに。
 
 返答のみをテキストで出力してください。`;
 

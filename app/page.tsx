@@ -7,6 +7,7 @@ import { motion, useScroll, useTransform, useSpring, AnimatePresence, useMotionV
 import { ArrowUpRight, Menu, CheckCircle2, Calendar, BarChart3 } from "lucide-react"
 import CustomCursor from "@/components/CustomCursor"
 import MagneticButton from "@/components/MagneticButton"
+import LandingHero from "@/components/LandingHero"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 const useParallax = (value: MotionValue<number>, distance: number) => {
@@ -282,91 +283,7 @@ export default function LandingPage() {
           </div>
         </nav>
 
-        <section className="relative h-[100vh] md:h-[120vh] flex flex-col items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 z-0 overflow-hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] md:w-[60vw] md:h-[60vw] bg-gradient-to-br from-amber-900/20 to-purple-900/20 rounded-full blur-[120px]" />
-
-            <motion.div
-              style={{ x: partyX, y: partyY }}
-              className="absolute top-[10%] left-[5%] w-[35vw] h-[25vw] md:w-[20vw] md:h-[15vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
-              onTouchStart={() => isMobile && handleImageTouch('hero-party')}
-            >
-              <Image src="/images/japanese_celebration.png" alt="Success Party" fill className={`object-cover rounded-xl ${touchedImages.has('hero-party') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
-            </motion.div>
-
-            <motion.div
-              style={{ x: jetX, y: jetY }}
-              className="absolute top-[12%] right-[5%] w-[38vw] h-[24vw] md:w-[22vw] md:h-[14vw] opacity-70 hover:opacity-100 transition-opacity duration-500 hover:z-20"
-              onTouchStart={() => isMobile && handleImageTouch('hero-jet')}
-            >
-              <Image src="/images/japanese_travel_luxury.png" alt="Private Jet" fill className={`object-cover rounded-xl ${touchedImages.has('hero-jet') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
-            </motion.div>
-
-            <motion.div
-              style={{ x: dealX, y: dealY }}
-              className="absolute bottom-[15%] left-[5%] w-[30vw] h-[30vw] md:w-[18vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
-              onTouchStart={() => isMobile && handleImageTouch('hero-deal')}
-            >
-              <Image src="/images/japanese_business_deal.png" alt="Business Deal" fill className={`object-cover rounded-xl ${touchedImages.has('hero-deal') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
-            </motion.div>
-
-            <motion.div
-              style={{ x: beachX, y: beachY }}
-              className="absolute bottom-[20%] right-[5%] w-[40vw] h-[28vw] md:w-[25vw] md:h-[18vw] opacity-60 hover:opacity-100 transition-opacity duration-500 hover:z-20"
-              onTouchStart={() => isMobile && handleImageTouch('hero-beach')}
-            >
-              <Image src="/images/beach.png" alt="Beach" fill className={`object-cover rounded-xl ${touchedImages.has('hero-beach') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
-            </motion.div>
-
-            <motion.div
-              style={{ x: familyX, y: familyY }}
-              className="absolute top-[40%] left-[-10%] md:left-[-5%] w-[25vw] h-[35vw] md:w-[15vw] md:h-[20vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
-              onTouchStart={() => isMobile && handleImageTouch('hero-family')}
-            >
-              <Image src="/images/japanese_family.png" alt="Happy Family" fill className={`object-cover rounded-xl ${touchedImages.has('hero-family') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
-            </motion.div>
-
-            <motion.div
-              style={{ x: horizonX, y: horizonY }}
-              className="absolute top-[35%] right-[-5%] md:right-[-2%] w-[28vw] h-[38vw] md:w-[16vw] md:h-[22vw] opacity-50 hover:opacity-100 transition-opacity duration-500 hover:z-20"
-              onTouchStart={() => isMobile && handleImageTouch('hero-horizon')}
-            >
-              <Image src="/images/mountain_freedom.png" alt="Horizon" fill className={`object-cover rounded-xl ${touchedImages.has('hero-horizon') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
-            </motion.div>
-
-            <motion.div
-              style={{ x: homeX, y: homeY }}
-              className="absolute bottom-[5%] left-[30%] w-[40vw] h-[25vw] md:w-[20vw] md:h-[12vw] opacity-40 hover:opacity-100 transition-opacity duration-500 hover:z-20"
-              onTouchStart={() => isMobile && handleImageTouch('hero-home')}
-            >
-              <Image src="/images/home.png" alt="Luxury Villa" fill className={`object-cover rounded-xl ${touchedImages.has('hero-home') ? '' : 'grayscale'} hover:grayscale-0 transition-all duration-500`} />
-            </motion.div>
-          </div>
-
-          <div className="z-10 text-center mix-blend-difference pointer-events-none px-4">
-            <motion.h1
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 2.2, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[15vw] md:text-[12vw] leading-[0.85] font-bold tracking-tighter"
-            >
-              DEFINE
-              <br />
-              <span className="italic font-light text-white/50">YOUR</span> LEGACY
-            </motion.h1>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 2.8, duration: 0.8 }}
-              className="mt-8 md:mt-10 space-y-2 text-base md:text-xl font-medium tracking-widest text-white/90"
-            >
-              <p>日々の努力が、確かな未来を築く。</p>
-              <p>あなたの野心を記録し、</p>
-              <p>理想の自分へと歩み出そう。</p>
-            </motion.div>
-          </div>
-        </section>
+        <LandingHero />
 
         <section ref={sCurveRef} className="relative min-h-[400vh] py-20 md:py-40 overflow-hidden">
 

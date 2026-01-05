@@ -30,6 +30,9 @@ model User {
   challenges        DailyChallenge[]
   badges            Badge[]
   voiceJournals     VoiceJournal[]
+  userQuests        UserQuest[]
+  userAchievements  UserAchievement[]
+  mindMaps          MindMap[]
 }
 
 model UserSettings {
@@ -259,6 +262,20 @@ model UserStats {
   // XP and Level
   totalXP Int @default(0)
   level   Int @default(1)
+  xp      Int @default(0) // Current level XP
+
+  // RPG Stats (50-100 range)
+  strength     Int @default(50) // 力: Work & Goals
+  vitality     Int @default(50) // 体力: Health
+  intelligence Int @default(50) // 知力: Learning
+  charisma     Int @default(50) // 魅力: Relationships
+  luck         Int @default(50) // 運: Finance
+  spirit       Int @default(50) // 精神: Mindfulness
+
+  // Currency
+  gold     Int @default(0)
+  crystals Int @default(0)
+  fame     Int @default(0)
 
   // Streak
   currentStreak  Int       @default(0)
@@ -271,10 +288,113 @@ model UserStats {
   totalMeetings Int @default(0)
   totalGoals    Int @default(0)
 
+  // Last update timestamp for cache invalidation
+  lastXPUpdate DateTime @default(now())
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([level]) // For rankings
+  @@index([totalXP]) // For rankings
+}
+
+model Quest {
+  id String @id @default(cuid())
+
+  // Basic Info
+  type        String // "daily", "weekly", "main", "event"
+  category    String // "goals", "health", "learning", etc.
+  title       String
+  description String @db.Text
+  icon        String @default("⚔️")
+
+  // Difficulty (1-5 stars)
+  difficulty Int @default(1)
+
+  // Requirements
+  requirement Json // {type: "journal", count: 1}
+  minLevel    Int  @default(1)
+
+  // Rewards
+  xpReward    Int
+  goldReward  Int  @default(0)
+  statRewards Json // {strength: 5, vitality: 3}
+
+  // Status
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userQuests UserQuest[]
+
+  @@index([type, isActive])
+  @@index([category])
+}
+
+model UserQuest {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questId String
+  quest   Quest  @relation(fields: [questId], references: [id], onDelete: Cascade)
+
+  // Progress
+  progress    Int       @default(0)
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+
+  // For daily/weekly reset
+  lastResetAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, questId])
+  @@index([userId, isCompleted])
+  @@index([isCompleted, lastResetAt]) // For reset queries
+}
+
+model Achievement {
+  id String @id @default(cuid())
+
+  // Basic Info
+  key         String @unique // "early_bird_30", "goal_master_50"
+  title       String
+  description String @db.Text
+  icon        String // Emoji or icon name
+  rarity      String @default("common") // common, rare, epic, legendary
+
+  // Requirements
+  requirement Json // {type: "streak", days: 30}
+
+  // Rewards
+  xpReward    Int   @default(0)
+  statRewards Json? // {strength: 10}
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  userAchievements UserAchievement[]
+
+  @@index([rarity])
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  unlockedAt DateTime @default(now())
+  isEquipped Boolean  @default(false) // Display on profile
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([userId, isEquipped])
 }
 
 model DailyChallenge {
@@ -334,4 +454,18 @@ model VoiceJournal {
   @@index([userId])
   @@index([userId, createdAt])
   @@index([sentiment])
+}
+
+model MindMap {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  data      Json // Nodes and Edges
+  coaching  Json // Observation, Question, Action
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
 }

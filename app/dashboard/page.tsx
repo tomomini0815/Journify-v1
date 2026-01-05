@@ -271,17 +271,21 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
 
             <div className="space-y-3">
                 {recentJournals.map((journal) => (
-                    <div
-                        key={journal.id}
-                        className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border border-white/5"
-                    >
-                        <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-medium">{journal.title}</h4>
-                            <span className="text-2xl">{getMoodEmoji(journal.mood)}</span>
+                    <Link href={`/journal/${journal.id}`} key={journal.id} className="block group">
+                        <div
+                            className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border border-white/5 group-hover:border-emerald-500/30"
+                        >
+                            <div className="flex items-center justify-between mb-1">
+                                <h4 className="font-medium">{journal.title}</h4>
+                                <span className="text-2xl">{getMoodEmoji(journal.mood)}</span>
+                            </div>
+                            <p className="text-white/60 text-sm">{new Date(journal.createdAt).toISOString().split('T')[0]}</p>
                         </div>
-                        <p className="text-white/60 text-sm">{new Date(journal.createdAt).toISOString().split('T')[0]}</p>
-                    </div>
+                    </Link>
                 ))}
+                {recentJournals.length === 0 && (
+                    <p className="text-center text-white/40 text-sm py-4">まだジャーナルがありません</p>
+                )}
             </div>
         </div>
     )
@@ -364,6 +368,8 @@ export default async function DashboardPage() {
             {/* Welcome Section */}
             <DashboardGreeting />
 
+
+
             {/* Voice Recording Section with Tab Switcher */}
             <Suspense fallback={null}>
                 <VoiceRecordingSectionWrapper userId={user.id} />
@@ -390,57 +396,34 @@ export default async function DashboardPage() {
                 <DailyChallenges />
             </div>
 
-            {/* Year in Review Banner */}
+
+            {/* LifeQuest Adventure Link */}
             <div className="mb-8">
-                <Link href="/year-in-review" className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500/20 to-indigo-500/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-amber-500/10">
-                    <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-8 transition-colors group-hover:bg-[#1a1a1a]/60">
-                        {/* Background effects */}
-                        <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-amber-500/20 blur-3xl transition-all group-hover:bg-amber-500/30" />
-                        <div className="absolute -right-16 -bottom-16 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl transition-all group-hover:bg-indigo-500/30" />
+                <Link
+                    href="/dashboard/adventure"
+                    className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 border border-white/10 p-1 transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-cyan-500/10"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                        <div className="relative z-10 flex flex-col gap-2">
-                            <div className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40">
-                                    📊
-                                </span>
-                                <h3 className="text-2xl font-bold text-white">これまでの統計詳細</h3>
+                    <div className="relative flex items-center justify-between p-6">
+                        <div className="flex items-center gap-4">
+                            <div className="relative w-16 h-16 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden">
+                                <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">🚀</span>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 to-transparent" />
                             </div>
-                            <p className="max-w-xl text-white/60">
-                                この1年間の成長を振り返りましょう。あなたの記録、達成、そして歩んできた道のりを美しく可視化します。
-                            </p>
-                        </div>
-
-                        <div className="relative z-10 hidden items-center gap-2 rounded-full bg-white/10 px-6 py-3 font-medium text-white ring-1 ring-white/10 transition-all group-hover:bg-white/20 group-hover:ring-white/20 sm:flex">
-                            <span>振り返る</span>
-                            <span className="transition-transform group-hover:translate-x-1">→</span>
-                        </div>
-                    </div>
-                </Link>
-            </div>
-
-            {/* Story Navigation Banner */}
-            <div className="mb-8">
-                <Link href="/story" className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500/20 to-indigo-500/20 p-[1px] transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-amber-500/10">
-                    <div className="relative flex items-center justify-between overflow-hidden rounded-[23px] bg-[#1a1a1a]/80 backdrop-blur-xl p-8 transition-colors group-hover:bg-[#1a1a1a]/60">
-                        {/* Background effects */}
-                        <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-amber-500/20 blur-3xl transition-all group-hover:bg-amber-500/30" />
-                        <div className="absolute -right-16 -bottom-16 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl transition-all group-hover:bg-indigo-500/30" />
-
-                        <div className="relative z-10 flex flex-col gap-2">
-                            <div className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40">
-                                    ✨
-                                </span>
-                                <h3 className="text-2xl font-bold text-white">Your Epic Story</h3>
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                                    ADVENTURE MODE
+                                    <span className="text-xs font-mono bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">NEW</span>
+                                </h3>
+                                <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
+                                    ゲーム化された世界でタスクをこなし、アバターを育てよう
+                                </p>
                             </div>
-                            <p className="max-w-xl text-white/60">
-                                あなたの一週間は、ひとつの物語です。AIが記録を紡ぎ、あなたを主人公にした英雄譚を作成します。
-                            </p>
                         </div>
 
-                        <div className="relative z-10 hidden items-center gap-2 rounded-full bg-white/10 px-6 py-3 font-medium text-white ring-1 ring-white/10 transition-all group-hover:bg-white/20 group-hover:ring-white/20 sm:flex">
-                            <span>物語を読む</span>
-                            <span className="transition-transform group-hover:translate-x-1">→</span>
+                        <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:border-cyan-500/50 group-hover:text-cyan-300 transition-all">
+                            →
                         </div>
                     </div>
                 </Link>

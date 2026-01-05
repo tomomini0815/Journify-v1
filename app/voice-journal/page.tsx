@@ -13,6 +13,9 @@ interface VoiceJournal {
     sentiment: string;
     tags: string[];
     createdAt: string;
+    moodCategory?: string;
+    moodDetail?: string;
+    aiCoaching?: string;
 }
 
 export default function VoiceJournalPage() {
@@ -91,8 +94,8 @@ export default function VoiceJournalPage() {
                     <button
                         onClick={() => setSelectedSentiment(null)}
                         className={`px-4 py-2 rounded-full transition-all ${selectedSentiment === null
-                                ? "bg-white/20 text-white"
-                                : "bg-white/5 text-white/60 hover:bg-white/10"
+                            ? "bg-white/20 text-white"
+                            : "bg-white/5 text-white/60 hover:bg-white/10"
                             }`}
                     >
                         すべて
@@ -100,8 +103,8 @@ export default function VoiceJournalPage() {
                     <button
                         onClick={() => setSelectedSentiment("positive")}
                         className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 ${selectedSentiment === "positive"
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                : "bg-white/5 text-white/60 hover:bg-white/10"
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-white/5 text-white/60 hover:bg-white/10"
                             }`}
                     >
                         <Heart className="w-4 h-4" />
@@ -110,8 +113,8 @@ export default function VoiceJournalPage() {
                     <button
                         onClick={() => setSelectedSentiment("neutral")}
                         className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 ${selectedSentiment === "neutral"
-                                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                                : "bg-white/5 text-white/60 hover:bg-white/10"
+                            ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                            : "bg-white/5 text-white/60 hover:bg-white/10"
                             }`}
                     >
                         <Meh className="w-4 h-4" />
@@ -120,8 +123,8 @@ export default function VoiceJournalPage() {
                     <button
                         onClick={() => setSelectedSentiment("negative")}
                         className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 ${selectedSentiment === "negative"
-                                ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                                : "bg-white/5 text-white/60 hover:bg-white/10"
+                            ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                            : "bg-white/5 text-white/60 hover:bg-white/10"
                             }`}
                     >
                         <Frown className="w-4 h-4" />
@@ -157,21 +160,46 @@ export default function VoiceJournalPage() {
                                 className={`rounded-2xl bg-gradient-to-br ${getSentimentColor(journal.sentiment)} border p-6 backdrop-blur-xl`}
                             >
                                 <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        {getSentimentIcon(journal.sentiment)}
-                                        <span className="text-white/60 text-sm">
-                                            {new Date(journal.createdAt).toLocaleString("ja-JP")}
-                                        </span>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            {getSentimentIcon(journal.sentiment)}
+                                            <span className="text-white/60 text-sm">
+                                                {new Date(journal.createdAt).toLocaleString("ja-JP")}
+                                            </span>
+                                        </div>
+                                        {/* Display Mood Category & Detail if available */}
+                                        {journal.moodCategory && (
+                                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10">
+                                                <span className="text-xs text-white/80">{journal.moodCategory}</span>
+                                                {journal.moodDetail && (
+                                                    <>
+                                                        <span className="text-white/20">|</span>
+                                                        <span className="text-xs font-bold text-white">{journal.moodDetail}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
+                                {/* AI Coaching Section */}
+                                {journal.aiCoaching && (
+                                    <div className="mb-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-xl">🧞‍♂️</span>
+                                            <h3 className="text-purple-300 font-bold text-sm">Jojo's Coaching</h3>
+                                        </div>
+                                        <p className="text-white/90 text-sm leading-relaxed">{journal.aiCoaching}</p>
+                                    </div>
+                                )}
+
                                 <div className="mb-4">
-                                    <h3 className="text-white font-semibold mb-2">要約</h3>
+                                    <h3 className="text-white/60 text-xs font-semibold mb-1 uppercase tracking-wider">要約</h3>
                                     <p className="text-white/80">{journal.aiSummary}</p>
                                 </div>
 
                                 <div className="mb-4">
-                                    <h3 className="text-white font-semibold mb-2">文字起こし</h3>
+                                    <h3 className="text-white/60 text-xs font-semibold mb-1 uppercase tracking-wider">文字起こし</h3>
                                     <p className="text-white/60 text-sm">{journal.transcript}</p>
                                 </div>
 

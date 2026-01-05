@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { JournalEditor } from "@/components/JournalEditor"
 import { Button } from "@/components/ui/button"
@@ -9,9 +9,13 @@ import { Input } from "@/components/ui/input"
 import { motion } from "framer-motion"
 import { Save, X, Tag } from "lucide-react"
 import Link from "next/link"
+import VoiceJournalRecorder from "@/components/VoiceJournalRecorder"
 
 export default function NewJournalPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const mode = searchParams.get('mode')
+
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
     const [tags, setTags] = useState<string[]>([])
@@ -134,8 +138,16 @@ export default function NewJournalPage() {
         other: {
             name: "🌟 その他",
             tags: ["日常", "振り返り", "決断", "変化", "挑戦"]
+        },
+        parenting: {
+            name: "👶 子育て・家族",
+            tags: ["反抗期", "学校", "習い事", "子供の成長", "育児の悩み", "家族の時間", "パートナー"]
         }
     }
+
+    // Update tags for Emotions and Health
+    tagCategories.emotions.tags = [...tagCategories.emotions.tags, "イライラ", "モヤモヤ", "孤独感", "焦り", "自己嫌悪"];
+    tagCategories.health.tags = [...tagCategories.health.tags, "疲労", "頭痛", "体調不良", "寝不足"];
 
     const toggleTag = (tag: string) => {
         if (tags.includes(tag)) {
@@ -171,8 +183,12 @@ export default function NewJournalPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-[28px] font-bold">新しいジャーナル</h1>
-                    <p className="text-white/60 mt-1">あなたの思考と感情を記録する</p>
+                    <h1 className="text-[28px] font-bold">
+                        {mode === 'voice' ? '音声ジャーナル' : '新しいジャーナル'}
+                    </h1>
+                    <p className="text-white/60 mt-1">
+                        {mode === 'voice' ? '声を録音して、思いを記録する' : 'あなたの思考と感情を記録する'}
+                    </p>
                 </motion.div>
 
                 <div className="flex gap-2">
@@ -182,14 +198,16 @@ export default function NewJournalPage() {
                             キャンセル
                         </Button>
                     </Link>
-                    <Button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl"
-                    >
-                        <Save className="w-4 h-4 mr-2" />
-                        {isSaving ? "保存中..." : "保存"}
-                    </Button>
+                    {mode !== 'voice' && (
+                        <Button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl"
+                        >
+                            <Save className="w-4 h-4 mr-2" />
+                            {isSaving ? "保存中..." : "保存"}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -200,25 +218,39 @@ export default function NewJournalPage() {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* 左側: ジャーナル入力 */}
+                {/* 左側: ジャーナル入力 or 音声録音 */}
                 <div className="lg:col-span-2 space-y-6">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
-                    >
-                        <Input
-                            type="text"
-                            placeholder="タイトルを入力..."
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="mb-4 bg-white/5 border-white/10 text-xl font-semibold rounded-xl"
-                        />
-                        <JournalEditor content={content} onChange={setContent} />
-                    </motion.div>
+                    {mode === 'voice' ? (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.1 }}
+                        >
+                            <VoiceJournalRecorder
+                                mood={mood}
+                                tags={tags}
+                                onComplete={() => router.push('/journal?tab=voice')}
+                            />
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.1 }}
+                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
+                        >
+                            <Input
+                                type="text"
+                                placeholder="タイトルを入力..."
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className="mb-4 bg-white/5 border-white/10 text-xl font-semibold rounded-xl"
+                            />
+                            <JournalEditor content={content} onChange={setContent} />
+                        </motion.div>
+                    )}
 
-                    {/* タグ */}
+                    {/* タグ (共通表示) */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -319,6 +351,7 @@ export default function NewJournalPage() {
                             </div>
                         )}
                     </motion.div>
+
                 </div>
 
                 {/* 右側: 気分・活動追跡 */}

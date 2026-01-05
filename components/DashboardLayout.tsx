@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase, ChevronDown, Heart } from "lucide-react"
+import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase, ChevronDown, Heart, BarChart2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface DashboardLayoutProps {
@@ -17,6 +17,7 @@ const defaultNavigation = [
     { name: "目標", href: "/goals", icon: Target },
     { name: "タスク", href: "/tasks", icon: CheckSquare },
     { name: "プロジェクト", href: "/projects", icon: Briefcase },
+    { name: "統計詳細", href: "/year-in-review", icon: BarChart2 },
     { name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
     { name: "プロフィール", href: "/profile", icon: User },
 ]

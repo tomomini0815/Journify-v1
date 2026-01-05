@@ -741,7 +741,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 ...prev,
                 title: transcribeData.title || prev.title,
                 content: transcribeData.content,
-                audioUrl: uploadData.filename, // Store filename for reference
+                audioUrl: uploadData.url, // Store full URL for playback
                 transcript: transcribeData.transcript
             }))
 

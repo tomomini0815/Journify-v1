@@ -4,10 +4,9 @@ import { DashboardLayout } from "@/components/DashboardLayout"
 import { motion } from "framer-motion"
 import { ArrowLeft, Edit2, Save, X, Trash2, Mic } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { MOOD_OPTIONS } from "@/lib/moodUtils"
 
 interface VoiceJournal {
     id: string
@@ -30,7 +29,12 @@ export default function VoiceJournalDetailClient({ voiceJournal }: VoiceJournalD
     const router = useRouter()
     const [isEditing, setIsEditing] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isListening, setIsListening] = useState(false)
+
+    // Speech Recognition Refs
+    const recognitionRef = useRef<any>(null)
 
     const [editedTranscript, setEditedTranscript] = useState(voiceJournal.transcript)
     const [editedMood, setEditedMood] = useState<number | null>(voiceJournal.mood)
@@ -72,6 +76,65 @@ export default function VoiceJournalDetailClient({ voiceJournal }: VoiceJournalD
         other: {
             name: "🌟 その他",
             tags: ["日常", "振り返り", "決断", "変化", "挑戦"]
+        },
+        parenting: {
+            name: "👶 子育て・家族",
+            tags: ["反抗期", "学校", "習い事", "子供の成長", "育児の悩み", "家族の時間", "パートナー"]
+        }
+    }
+
+    // Update tags for Emotions and Health
+    tagCategories.emotions.tags = [...tagCategories.emotions.tags, "イライラ", "モヤモヤ", "孤独感", "焦り", "自己嫌悪"];
+    tagCategories.health.tags = [...tagCategories.health.tags, "疲労", "頭痛", "体調不良", "寝不足"];
+
+    // Initialize Speech Recognition
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition()
+                recognition.continuous = true
+                recognition.interimResults = true
+                recognition.lang = "ja-JP"
+
+                recognition.onresult = (event: any) => {
+                    let finalTranscript = ""
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript
+                        }
+                    }
+
+                    if (finalTranscript) {
+                        setEditedTranscript(prev => {
+                            // Add space if needed (though JP usually doesn't need spaces, but for safety/separation)
+                            // For Japanese, simple concatenation is usually fine.
+                            // Ensure we don't double append if react strict mode runs weirdly, but functional update is safe.
+                            return prev + finalTranscript
+                        })
+                    }
+                }
+
+                recognition.onend = () => {
+                    setIsListening(false)
+                }
+
+                recognitionRef.current = recognition
+            }
+        }
+    }, [])
+
+    const toggleListening = () => {
+        if (isListening) {
+            recognitionRef.current?.stop()
+            setIsListening(false)
+        } else {
+            try {
+                recognitionRef.current?.start()
+                setIsListening(true)
+            } catch (error) {
+                console.error("Failed to start recording:", error)
+            }
         }
     }
 
@@ -156,6 +219,8 @@ export default function VoiceJournalDetailClient({ voiceJournal }: VoiceJournalD
         }
     }
 
+
+
     return (
         <DashboardLayout>
             {/* Header */}
@@ -217,7 +282,8 @@ export default function VoiceJournalDetailClient({ voiceJournal }: VoiceJournalD
 
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-12 h-12 bg-gradient-to-br from-cyan-600 to-emerald-500 rounded-full flex items-center justify-center">
-                            <Mic className="w-6 h-6 text-white" />
+                            {/* <Mic className="w-6 h-6 text-white" /> */}{/* Moved to edit area */}
+                            <span className="text-2xl">🎙️</span>
                         </div>
                         <div>
                             <h1 className="text-[28px] font-bold">音声ジャーナル</h1>
@@ -265,21 +331,31 @@ export default function VoiceJournalDetailClient({ voiceJournal }: VoiceJournalD
                             )}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-5 gap-3">
-                            {MOOD_OPTIONS.map((mood) => (
-                                <motion.button
-                                    key={mood.value}
-                                    onClick={() => setEditedMood(mood.value)}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className={`p-4 rounded-2xl transition-all ${editedMood === mood.value
-                                        ? 'bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 border-2 border-cyan-400'
-                                        : 'bg-white/5 hover:bg-white/10 border border-white/10'
+                        <div className="flex gap-2">
+                            {[
+                                { value: 1, emoji: '🤬', label: '激怒' },
+                                { value: 2, emoji: '😞', label: '憂鬱' },
+                                { value: 3, emoji: '😫', label: 'イライラ' },
+                                { value: 4, emoji: '😢', label: '悲しい' },
+                                { value: 5, emoji: '😐', label: '普通' },
+                                { value: 6, emoji: '🙂', label: 'まあまあ' },
+                                { value: 7, emoji: '😊', label: '幸せ' },
+                                { value: 8, emoji: '😄', label: 'とても幸せ' },
+                                { value: 9, emoji: '🤩', label: 'ワクワク' },
+                                { value: 10, emoji: '🥰', label: '感謝' }
+                            ].map((item) => (
+                                <button
+                                    key={item.value}
+                                    onClick={() => setEditedMood(item.value)}
+                                    title={item.label}
+                                    className={`w-10 h-10 rounded-full font-bold flex flex-col items-center justify-center transition-all ${editedMood === item.value
+                                        ? 'bg-emerald-500 text-white scale-110 shadow-lg shadow-emerald-500/20'
+                                        : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'
                                         }`}
                                 >
-                                    <div className="text-4xl mb-2">{mood.emoji}</div>
-                                    <div className="text-white/80 text-xs font-medium">{mood.label}</div>
-                                </motion.button>
+                                    <span className="text-lg leading-none">{item.emoji}</span>
+                                    {/* <span className="text-[8px] leading-none mt-0.5">{item.label}</span> */}
+                                </button>
                             ))}
                         </div>
                     )}
@@ -293,12 +369,24 @@ export default function VoiceJournalDetailClient({ voiceJournal }: VoiceJournalD
                             {voiceJournal.transcript}
                         </p>
                     ) : (
-                        <textarea
-                            value={editedTranscript}
-                            onChange={(e) => setEditedTranscript(e.target.value)}
-                            className="w-full min-h-[200px] bg-white/5 border border-white/10 rounded-xl p-4 text-white resize-y focus:outline-none focus:border-cyan-400"
-                            placeholder="文字起こしを編集..."
-                        />
+                        <div className="relative">
+                            <textarea
+                                value={editedTranscript}
+                                onChange={(e) => setEditedTranscript(e.target.value)}
+                                className="w-full min-h-[200px] bg-white/5 border border-white/10 rounded-xl p-4 text-white resize-y focus:outline-none focus:border-cyan-400 pr-12"
+                                placeholder="文字起こしを編集..."
+                            />
+                            <button
+                                onClick={toggleListening}
+                                title={isListening ? "音声入力を停止" : "音声で追記"}
+                                className={`absolute right-3 top-3 p-2 rounded-full border transition-all ${isListening
+                                    ? "bg-red-500/20 border-red-500/50 text-red-400 animate-pulse"
+                                    : "bg-white/10 border-white/10 text-white/60 hover:bg-cyan-500/20 hover:text-cyan-400 hover:border-cyan-500/50"
+                                    }`}
+                            >
+                                <Mic className={`w-5 h-5 ${isListening ? "fill-current" : ""}`} />
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -432,6 +520,6 @@ export default function VoiceJournalDetailClient({ voiceJournal }: VoiceJournalD
                     </div>
                 )}
             </motion.div>
-        </DashboardLayout>
+        </DashboardLayout >
     )
 }

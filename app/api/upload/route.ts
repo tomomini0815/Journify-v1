@@ -28,8 +28,9 @@ export async function POST(req: NextRequest) {
 
         const filename = `${uuidv4()}-${file.name.replace(/\s/g, "-")}`;
 
-        // Use /tmp for Vercel serverless (read-only file system elsewhere)
-        const uploadDir = path.join(os.tmpdir(), "uploads");
+        // Use public/uploads for local development persistence
+        // In production/Vercel, you'd typically use S3/Blob storage, but for this local app, public folder works best.
+        const uploadDir = path.join(process.cwd(), "public", "uploads");
 
         console.log(`Upload directory: ${uploadDir}`);
         console.log(`Target filename: ${filename}`);
@@ -52,14 +53,15 @@ export async function POST(req: NextRequest) {
             throw new Error(`Failed to write file: ${writeError.message}`);
         }
 
-        // Return the absolute file path (for server-side processing)
-        // Not a public URL since /tmp is not accessible via HTTP
-        console.log(`Upload successful, path: ${filepath}`);
+        // Return the absolute file path (for server-side processing) AND the public URL
+        const publicUrl = `/uploads/${filename}`;
+        console.log(`Upload successful, path: ${filepath}, url: ${publicUrl}`);
 
         return NextResponse.json({
             success: true,
-            filepath, // Absolute path for server-side use
-            filename, // Just the filename
+            filepath, // Absolute path for server-side AI processing
+            url: publicUrl, // Public URL for frontend playback
+            filename,
             name: file.name,
             size: file.size,
             type: file.type
