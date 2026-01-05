@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { JournalEditor } from "@/components/JournalEditor"
@@ -11,7 +11,7 @@ import { Save, X, Tag } from "lucide-react"
 import Link from "next/link"
 import VoiceJournalRecorder from "@/components/VoiceJournalRecorder"
 
-export default function NewJournalPage() {
+function NewJournalContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const mode = searchParams.get('mode')
@@ -512,5 +512,13 @@ export default function NewJournalPage() {
                 </div>
             </div>
         </DashboardLayout>
+    )
+}
+
+export default function NewJournalPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center">Loading...</div>}>
+            <NewJournalContent />
+        </Suspense>
     )
 }
