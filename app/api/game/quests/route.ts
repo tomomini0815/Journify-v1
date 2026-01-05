@@ -42,7 +42,7 @@ export async function GET(req: Request) {
                     data: {
                         ...questData,
                         updatedAt: new Date()
-                    }
+                    } as any
                 })
             }
 
