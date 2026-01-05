@@ -51,7 +51,7 @@ export async function GET(req: Request) {
         })
 
         const goalCount = await prisma.goal.count({
-            where: { userId: user.id, completed: true }
+            where: { userId: user.id, progress: 100 }
         })
 
         const taskCount = await prisma.task.count({
