@@ -143,7 +143,7 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
             const response = await fetch('/api/mindmap/save', {
                 method: 'POST',
                 body: JSON.stringify({
-                    userId: 'demo-user', // Should be dynamic
+                    userId: 'demo-user', // Should be dynamic, will be ignored by server if proper auth used
                     title: saveTitle,
                     nodes: nodes,
                     edges: edges,
@@ -151,8 +151,19 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
                 }),
                 headers: { 'Content-Type': 'application/json' }
             });
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
+
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error("Failed to parse response:", text);
+                throw new Error(`Server response was not valid JSON: ${text.slice(0, 100)}...`);
+            }
+
+            if (!response.ok || data.error) {
+                throw new Error(data.error || `Server error: ${response.status}`);
+            }
 
             setSaveSuccess(true);
             setTimeout(() => {
@@ -160,9 +171,9 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
                 setShowSaveDialog(false);
             }, 2000);
             alert("保存しました");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Save failed", error);
-            alert("保存に失敗しました");
+            alert(`保存に失敗しました: ${error.message}`);
         } finally {
             setIsSaving(false);
         }
@@ -230,9 +241,13 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
                 console.warn("No nodes/edges in response");
                 alert(`データの形式が不正です: ${JSON.stringify(data)}`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Generator failed", error);
-            alert(`生成に失敗しました: ${error}`);
+            if (error.message.includes("429") || error.message.includes("Quota")) {
+                alert("生成リクエストの上限に達しました。約1分後に再試行してください。");
+            } else {
+                alert(`生成に失敗しました: ${error.message}`);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -316,9 +331,13 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
                 setIsCoachingOpen(true); // Ensure panel is open to show new advice
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Expansion failed", error);
-            alert(`拡張に失敗しました: ${error}`);
+            if (error.message.includes("429") || error.message.includes("Quota")) {
+                alert("生成リクエストの上限に達しました。約1分後に再試行してください。");
+            } else {
+                alert(`拡張に失敗しました: ${error.message}`);
+            }
         } finally {
             setIsLoading(false);
         }

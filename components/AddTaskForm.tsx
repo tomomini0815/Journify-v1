@@ -40,14 +40,14 @@ export function AddTaskForm({
             {/* Main Input Row: Text/Date + Button */}
             <div className={`flex flex-col md:flex-row items-stretch ${isMobile ? 'gap-2' : 'gap-3'} w-full`}>
                 {/* Merged Input Container */}
-                <div className={`flex-1 flex flex-col md:flex-row items-center bg-black/20 border border-white/10 rounded-2xl transition-all focus-within:bg-black/40 focus-within:border-emerald-500/50 group px-4 overflow-hidden ${isMobile ? 'py-2 gap-2' : 'h-11'}`}>
+                <div className={`flex-1 flex flex-col md:flex-row items-center bg-white/5 border border-white/20 rounded-2xl transition-all focus-within:bg-white/10 focus-within:border-emerald-500/50 focus-within:shadow-lg focus-within:shadow-emerald-500/10 group px-4 overflow-hidden ${isMobile ? 'py-2 gap-2' : 'h-11'}`}>
                     {/* Text Input */}
                     <input
                         type="text"
                         value={newTask}
                         onChange={(e) => setNewTask(e.target.value)}
                         placeholder="新しいタスクを入力..."
-                        className="flex-1 bg-transparent border-none outline-none text-white placeholder:text-white/30 font-medium h-10 md:h-full min-w-0 w-full md:w-auto"
+                        className="flex-1 bg-transparent border-none outline-none text-white placeholder:text-white/50 font-medium h-10 md:h-full min-w-0 w-full md:w-auto"
                         autoFocus={isMobile}
                     />
 
