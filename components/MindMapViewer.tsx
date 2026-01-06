@@ -244,7 +244,7 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
         } catch (error: any) {
             console.error("Generator failed", error);
             if (error.message.includes("429") || error.message.includes("Quota")) {
-                alert("生成リクエストの上限に達しました。約1分後に再試行してください。");
+                alert("生成リクエストの上限（Free Tier制限）に達しました。（1日の上限数を超えた可能性があります）。プランの制限をご確認ください。");
             } else {
                 alert(`生成に失敗しました: ${error.message}`);
             }
@@ -334,7 +334,7 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
         } catch (error: any) {
             console.error("Expansion failed", error);
             if (error.message.includes("429") || error.message.includes("Quota")) {
-                alert("生成リクエストの上限に達しました。約1分後に再試行してください。");
+                alert("生成リクエストの上限（Free Tier制限）に達しました。（1日の上限数を超えた可能性があります）。プランの制限をご確認ください。");
             } else {
                 alert(`拡張に失敗しました: ${error.message}`);
             }
