@@ -162,7 +162,10 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
             }
 
             if (!response.ok || data.error) {
-                throw new Error(data.error || `Server error: ${response.status}`);
+                if (response.status === 504) {
+                    throw new Error("サーバーの応答がタイムアウトしました。データベースが起動中の可能性があります。もう一度試してください。");
+                }
+                throw new Error(data.error || `Server error: ${response.status} ${response.statusText}`);
             }
 
             setSaveSuccess(true);
@@ -173,7 +176,12 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
             alert("保存しました");
         } catch (error: any) {
             console.error("Save failed", error);
-            alert(`保存に失敗しました: ${error.message}`);
+            // Check for specific JSON syntax error which usually implies HTML response (likely 404, 500, 504)
+            if (error.message.includes("valid JSON")) {
+                alert(`保存に失敗しました: サーバーエラーが発生しました。(詳細: ${error.message})\nデータベースがスリープしている可能性があります。少し待ってから再試行してください。`);
+            } else {
+                alert(`保存に失敗しました: ${error.message}`);
+            }
         } finally {
             setIsSaving(false);
         }
