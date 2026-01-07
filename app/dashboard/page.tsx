@@ -387,7 +387,7 @@ async function TodayTasksSection({ userId }: { userId: string }) {
                     <p className="text-white/60 text-sm">優先的に取り組むこと</p>
                 </div>
                 <Link
-                    href="/projects" // Assuming tasks are related to projects or a tasks page
+                    href="/tasks"
                     prefetch={true}
                     className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
