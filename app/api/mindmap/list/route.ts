@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
                 id: true,
                 title: true,
                 createdAt: true,
-                coaching: true // Optional preview
+                coaching: true, // Optional preview
+                data: true
             }
         });
 
