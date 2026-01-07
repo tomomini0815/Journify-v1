@@ -330,93 +330,48 @@ async function GoalProgressSection({ userId }: { userId: string }) {
     )
 }
 
-const getCachedTodayTasks = unstable_cache(
+const getCachedDashboardTasks = unstable_cache(
     async (userId: string) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const nextMonth = new Date(today);
+        nextMonth.setMonth(nextMonth.getMonth() + 2); // Fetch plenty of tasks
 
         return await prisma.task.findMany({
             where: {
                 userId,
                 completed: false,
                 OR: [
-                    { scheduledDate: { gte: today, lt: tomorrow } },
-                    { scheduledDate: null } // Optional: Include unscheduled tasks? Maybe not. Let's stick to today.
+                    {
+                        scheduledDate: {
+                            lt: nextMonth
+                        }
+                    },
+                    { scheduledDate: null }
                 ]
             },
-            orderBy: { priority: 'desc' },
-            take: 5
+            orderBy: { scheduledDate: 'asc' },
+            take: 50 // Limit total fetched tasks
         });
     },
-    ['dashboard-today-tasks'],
+    ['dashboard-tasks-list'],
     { revalidate: 60, tags: ['dashboard', 'tasks'] }
 )
 
-async function TodayTasksSection({ userId }: { userId: string }) {
-    // We strictly filter for tasks scheduled today (or overdue? let's stick to strict today for "Today's Tasks")
-    // Use the cached function but modify query slightly if needed.
-    // Actually, let's redefine the query inside to be precise about "Today" in user's timezone? 
-    // Server time might be diff. For simplicity, we use server time 'today'.
+import DashboardTaskWidget from "@/components/DashboardTaskWidget"
 
-    // Better query: Tasks that are NOT completed AND (scheduled today OR overdue?)
-    // User asked for "Today's" tasks.
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+async function TasksSection({ userId }: { userId: string }) {
+    const tasks = await getCachedDashboardTasks(userId);
 
-    const tasks = await prisma.task.findMany({
-        where: {
-            userId,
-            completed: false,
-            scheduledDate: {
-                lt: tomorrow // Includes today and overdue
-            }
-        },
-        orderBy: { scheduledDate: 'asc' },
-        take: 5
-    });
+    // Serialize for client component
+    const serializedTasks = tasks.map(t => ({
+        ...t,
+        scheduledDate: t.scheduledDate ? t.scheduledDate.toISOString() : null,
+        createdAt: t.createdAt.toISOString(),
+        updatedAt: t.updatedAt.toISOString(),
+    }));
 
-    return (
-        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h3 className="text-xl font-bold mb-1">今日のタスク</h3>
-                    <p className="text-white/60 text-sm">優先的に取り組むこと</p>
-                </div>
-                <Link
-                    href="/tasks"
-                    prefetch={true}
-                    className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
-                >
-                    すべて表示 →
-                </Link>
-            </div>
-
-            <div className="space-y-3">
-                {tasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                        <div className={`w-3 h-3 rounded-full ${task.priority === 'high' ? 'bg-red-500' :
-                            task.priority === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
-                            }`} />
-                        <div className="flex-1 min-w-0">
-                            <h4 className="font-medium truncate">{task.text}</h4>
-                            {task.scheduledDate && (
-                                <p className="text-xs text-white/40">
-                                    {new Date(task.scheduledDate) < today ? '期限切れ' : '今日'}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                ))}
-                {tasks.length === 0 && (
-                    <p className="text-center text-white/40 text-sm py-4">今日のタスクはありません 🎉</p>
-                )}
-            </div>
-        </div>
-    )
+    return <DashboardTaskWidget tasks={serializedTasks} />
 }
 
 const getCachedUserProjects = unstable_cache(
@@ -483,7 +438,7 @@ export default async function DashboardPage() {
                     <GoalProgressSection userId={user.id} />
                 </Suspense>
                 <Suspense fallback={<div className="h-48 bg-white/5 rounded-3xl animate-pulse" />}>
-                    <TodayTasksSection userId={user.id} />
+                    <TasksSection userId={user.id} />
                 </Suspense>
                 <DailyChallenges />
             </div>
