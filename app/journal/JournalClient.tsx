@@ -621,8 +621,18 @@ function SavedMindMapsList({ onSelectMap }: { onSelectMap: (map: any) => void })
         const fetchMaps = async () => {
             const res = await fetch('/api/mindmap/list');
             if (res.ok) {
-                const data = await res.json();
-                setSavedMaps(data);
+                try {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        setSavedMaps(data);
+                    } else {
+                        console.error("Invalid mind map data:", data);
+                        setSavedMaps([]);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse mind map list:", e);
+                    setSavedMaps([]);
+                }
             }
         };
         fetchMaps();
