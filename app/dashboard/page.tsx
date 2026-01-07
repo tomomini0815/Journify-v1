@@ -330,6 +330,95 @@ async function GoalProgressSection({ userId }: { userId: string }) {
     )
 }
 
+const getCachedTodayTasks = unstable_cache(
+    async (userId: string) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        return await prisma.task.findMany({
+            where: {
+                userId,
+                completed: false,
+                OR: [
+                    { scheduledDate: { gte: today, lt: tomorrow } },
+                    { scheduledDate: null } // Optional: Include unscheduled tasks? Maybe not. Let's stick to today.
+                ]
+            },
+            orderBy: { priority: 'desc' },
+            take: 5
+        });
+    },
+    ['dashboard-today-tasks'],
+    { revalidate: 60, tags: ['dashboard', 'tasks'] }
+)
+
+async function TodayTasksSection({ userId }: { userId: string }) {
+    // We strictly filter for tasks scheduled today (or overdue? let's stick to strict today for "Today's Tasks")
+    // Use the cached function but modify query slightly if needed.
+    // Actually, let's redefine the query inside to be precise about "Today" in user's timezone? 
+    // Server time might be diff. For simplicity, we use server time 'today'.
+
+    // Better query: Tasks that are NOT completed AND (scheduled today OR overdue?)
+    // User asked for "Today's" tasks.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const tasks = await prisma.task.findMany({
+        where: {
+            userId,
+            completed: false,
+            scheduledDate: {
+                lt: tomorrow // Includes today and overdue
+            }
+        },
+        orderBy: { scheduledDate: 'asc' },
+        take: 5
+    });
+
+    return (
+        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h3 className="text-xl font-bold mb-1">今日のタスク</h3>
+                    <p className="text-white/60 text-sm">優先的に取り組むこと</p>
+                </div>
+                <Link
+                    href="/projects" // Assuming tasks are related to projects or a tasks page
+                    prefetch={true}
+                    className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                    すべて表示 →
+                </Link>
+            </div>
+
+            <div className="space-y-3">
+                {tasks.map((task) => (
+                    <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div className={`w-3 h-3 rounded-full ${task.priority === 'high' ? 'bg-red-500' :
+                            task.priority === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`} />
+                        <div className="flex-1 min-w-0">
+                            <h4 className="font-medium truncate">{task.text}</h4>
+                            {task.scheduledDate && (
+                                <p className="text-xs text-white/40">
+                                    {new Date(task.scheduledDate) < today ? '期限切れ' : '今日'}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                ))}
+                {tasks.length === 0 && (
+                    <p className="text-center text-white/40 text-sm py-4">今日のタスクはありません 🎉</p>
+                )}
+            </div>
+        </div>
+    )
+}
+
 const getCachedUserProjects = unstable_cache(
     async (userId: string) => {
         return await prisma.project.findMany({
@@ -386,12 +475,15 @@ export default async function DashboardPage() {
             </Suspense>
 
             {/* Recent Journals, Goals, and Daily Challenges */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                 <Suspense fallback={<RecentJournalsSkeleton />}>
                     <RecentJournalsSection userId={user.id} />
                 </Suspense>
                 <Suspense fallback={<GoalProgressSkeleton />}>
                     <GoalProgressSection userId={user.id} />
+                </Suspense>
+                <Suspense fallback={<div className="h-48 bg-white/5 rounded-3xl animate-pulse" />}>
+                    <TodayTasksSection userId={user.id} />
                 </Suspense>
                 <DailyChallenges />
             </div>
@@ -431,6 +523,6 @@ export default async function DashboardPage() {
 
             {/* Jojo AI Mascot */}
             <Jojo userId={user.id} />
-        </DashboardLayout>
+        </DashboardLayout >
     )
 }
