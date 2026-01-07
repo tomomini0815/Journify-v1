@@ -1,19 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
 
 export async function GET(req: NextRequest) {
     try {
-        // Mock getting userId from session/query
-        const user = await prisma.user.findFirst();
-        if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 400 });
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        let targetUserId = user?.id;
+
+        if (authError || !targetUserId) {
+            // Fallback Logic (Same as Save API for consistency)
+            const firstUser = await prisma.user.findFirst();
+            if (firstUser) {
+                targetUserId = firstUser.id;
+            } else {
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            }
         }
 
         const mindMaps = await prisma.mindMap.findMany({
             where: {
-                userId: user.id
+                userId: targetUserId
             },
             orderBy: {
                 createdAt: 'desc'
