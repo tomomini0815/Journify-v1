@@ -221,11 +221,13 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
         setIsLoading(true);
         setCurrentTopic(focusTopic || null);
         setIsCoachingOpen(false);
+        setDirection('TB'); // Force Vertical on new generation
 
         try {
             const data = await fetchMindMapData(focusTopic, 'expansion');
 
             if (data.nodes && data.edges) {
+                // Force TB layout
                 const layouted = getLayoutedElements(
                     data.nodes.map((n: any) => ({
                         ...n,
@@ -238,7 +240,7 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
                         animated: true,
                         style: { stroke: '#475569' }
                     })),
-                    direction
+                    'TB' // Explicitly pass TB
                 );
 
                 setNodes(layouted.nodes);
