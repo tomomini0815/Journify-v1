@@ -387,7 +387,6 @@ export default function StatisticsPage() {
                         <div className="h-[200px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={data.monthlyActivity}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                                     <XAxis dataKey="month" stroke="#666" fontSize={10} tickLine={false} axisLine={false} dy={5} />
                                     <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} dx={-5} />
                                     <Tooltip
@@ -417,35 +416,56 @@ export default function StatisticsPage() {
                             <Star className="w-4 h-4 text-emerald-500" />
                             活動ウェイト
                         </h3>
-                        <div className="h-[200px] w-full flex items-center justify-center">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={activityBreakdown}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                        stroke="none"
-                                    >
-                                        {activityBreakdown.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: '#1a1a1a',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                                            color: '#fff',
-                                            fontSize: '12px'
-                                        }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+                            <div className="h-[200px] w-[200px] relative">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={activityBreakdown}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            stroke="none"
+                                        >
+                                            {activityBreakdown.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: '#1a1a1a',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                                                color: '#fff',
+                                                fontSize: '12px'
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="text-center">
+                                        <p className="text-2xl font-bold text-white">{data.stats.totalJournals + data.stats.totalTasks + data.stats.totalMeetings}</p>
+                                        <p className="text-[10px] text-white/40">Total</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Custom Legend */}
+                            <div className="flex flex-col gap-3 min-w-[120px]">
+                                {activityBreakdown.map((item, index) => (
+                                    <div key={item.name} className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                        <div>
+                                            <p className="text-xs text-white/80">{item.name}</p>
+                                            <p className="text-[10px] text-white/40">{item.value} 件</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </motion.div>
                 </div>
