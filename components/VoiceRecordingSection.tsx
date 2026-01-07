@@ -235,16 +235,16 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 {activeTab === "journal" ? (
                     <VoiceJournalRecorder compact={true} />
                 ) : (
-                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-900/40 via-cyan-900/30 to-teal-800/40 p-5 border border-cyan-500/20 backdrop-blur-xl">
-                        {/* Background glow */}
-                        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
-                        <div className="absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl" />
+                    <div className="relative overflow-hidden rounded-3xl bg-[#0F172A] border border-white/5 p-6 shadow-2xl">
+                        {/* Background ambient glow - Blue/Cyan theme for Meetings */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -z-10" />
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
 
                         <div className="relative z-10 flex items-center gap-6">
 
                             {/* Left Side: Info & Controls */}
                             <div className="flex-1">
-                                <h3 className="text-lg font-bold text-white mb-1">議事録を録音して要約</h3>
+                                <h3 className="text-xl font-bold text-white mb-1">議事録を録音して要約</h3>
 
                                 {/* Project Selection */}
                                 <div className="max-w-xs mb-3">
@@ -355,9 +355,9 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         <button
                                             onClick={isRecording ? stopRecording : startRecording}
                                             disabled={isProcessing}
-                                            className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-105 ${isRecording
+                                            className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 ${isRecording
                                                 ? "bg-red-500 hover:bg-red-600 shadow-red-500/40"
-                                                : "bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-cyan-500/40"
+                                                : "bg-gradient-to-r from-cyan-500 to-blue-500 shadow-cyan-500/20"
                                                 } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                                         >
                                             {isRecording ? (
