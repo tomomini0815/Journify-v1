@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Sparkles, Calendar, Target, Palette, Share2, ArrowLeft, TrendingUp, Zap, BookOpen, Star, Crown, History, Feather } from "lucide-react";
+import { Sparkles, Calendar, Target, Palette, Share2, ArrowLeft, TrendingUp, Zap, BookOpen, Star, Crown, History, Feather, Lightbulb } from "lucide-react";
 import Link from "next/link";
 
 interface YearInReviewData {
@@ -25,6 +25,7 @@ interface YearInReviewData {
         memberSince: string;
     };
     monthlyActivity: Array<{ month: string; activity: number }>;
+    aiAdvice?: string[];
 }
 
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'];
@@ -156,63 +157,93 @@ export default function StatisticsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] py-12 px-4 selection:bg-emerald-500/30">
-            <div className="max-w-6xl mx-auto">
+        <div className="min-h-screen bg-[#0a0a0a] py-8 px-4 selection:bg-emerald-500/30">
+            <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-12"
+                    className="mb-8"
                 >
-                    <Link href="/dashboard" className="inline-flex items-center text-white/60 hover:text-white mb-8 transition-colors">
+                    <Link href="/dashboard" className="inline-flex items-center text-white/60 hover:text-white mb-6 transition-colors">
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         ダッシュボードに戻る
                     </Link>
 
                     <div className="text-center relative">
                         {/* Decorative background glow */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/20 rounded-full blur-[100px] pointer-events-none" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none" />
 
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ delay: 0.2 }}
-                            className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md"
+                            className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md"
                         >
-                            <Crown className="w-4 h-4 text-emerald-400" />
-                            <span className="text-emerald-400 text-sm font-medium">LIFETIME STATISTICS</span>
+                            <Crown className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400 text-xs font-medium">LIFETIME STATISTICS</span>
                         </motion.div>
 
-                        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-emerald-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">
+                        <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-emerald-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">
                             あなたの軌跡
                         </h1>
-                        <p className="text-white/60 text-lg max-w-2xl mx-auto">
+                        <p className="text-white/60 text-sm md:text-base max-w-xl mx-auto">
                             {new Date(data.stats.memberSince).toLocaleDateString()}から始まった、あなたの成長と活動の全記録です。
                         </p>
                     </div>
                 </motion.div>
 
-                {/* Hero Stats Grid - More dynamic layout */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
+                {/* AI Coaching Section (New) */}
+                {data.aiAdvice && data.aiAdvice.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 p-6"
+                    >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl" />
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 rounded-xl bg-indigo-500/20 shrink-0">
+                                <Lightbulb className="w-6 h-6 text-indigo-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                                    Journify AI Coach
+                                </h3>
+                                <p className="text-white/60 text-xs mb-4">あなたのデータに基づいたパーソナライズドアドバイス</p>
+                                <div className="grid gap-3">
+                                    {data.aiAdvice.map((advice, i) => (
+                                        <div key={i} className="flex gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />
+                                            <p className="text-white/90 text-sm leading-relaxed">{advice}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+
+                {/* Hero Stats Grid - Slimmer Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
                     {/* Main Card: Record Days */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="md:col-span-8 relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500/10 to-teal-900/10 border border-emerald-500/20 p-8 flex flex-col justify-between min-h-[240px]"
+                        className="md:col-span-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/5 to-teal-900/5 border border-emerald-500/20 p-6 flex flex-col justify-between min-h-[180px]"
                     >
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                         <div>
-                            <div className="flex items-center gap-2 text-emerald-400 mb-2">
-                                <History className="w-5 h-5" />
-                                <span className="font-bold tracking-wider text-sm">TOTAL DAYS</span>
+                            <div className="flex items-center gap-2 text-emerald-400 mb-1">
+                                <History className="w-4 h-4" />
+                                <span className="font-bold tracking-wider text-xs">TOTAL DAYS / 総日数を記録</span>
                             </div>
-                            <h3 className="text-white/60 text-lg mb-1">これまでの総記録日数</h3>
                         </div>
-                        <div className="mt-4">
-                            <p className="text-7xl md:text-8xl font-black text-white tracking-tight leading-none">
+                        <div className="mt-2">
+                            <p className="text-5xl md:text-7xl font-black text-white tracking-tight leading-none">
                                 {animatedValues.totalRecordDays}
-                                <span className="text-2xl md:text-3xl font-medium text-emerald-500/60 ml-2">Days</span>
+                                <span className="text-xl md:text-2xl font-medium text-emerald-500/60 ml-2">Days</span>
                             </p>
                         </div>
                     </motion.div>
@@ -222,37 +253,36 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="md:col-span-4 relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-900/10 border border-indigo-500/20 p-8 flex flex-col justify-between"
+                        className="md:col-span-4 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/5 to-purple-900/5 border border-indigo-500/20 p-6 flex flex-col justify-between"
                     >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl" />
                         <div>
-                            <div className="flex items-center gap-2 text-indigo-400 mb-2">
-                                <Feather className="w-5 h-5" />
-                                <span className="font-bold tracking-wider text-sm">TOTAL WORDS</span>
+                            <div className="flex items-center gap-2 text-indigo-400 mb-1">
+                                <Feather className="w-4 h-4" />
+                                <span className="font-bold tracking-wider text-xs">TOTAL WORDS / 総文字数</span>
                             </div>
-                            <h3 className="text-white/60 text-sm">綴られた想いの数</h3>
                         </div>
-                        <div className="mt-4">
-                            <p className="text-4xl font-bold text-white mb-1">
+                        <div className="mt-2">
+                            <p className="text-3xl font-bold text-white mb-1">
                                 {animatedValues.totalCharacters.toLocaleString()}
                             </p>
-                            <p className="text-white/40 text-xs">文字</p>
+                            <p className="text-white/40 text-xs">Characters</p>
                         </div>
                     </motion.div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     {/* Goals */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="rounded-3xl bg-white/5 border border-white/10 p-6 backdrop-blur-sm hover:bg-white/10 transition-colors"
+                        className="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-sm hover:bg-white/10 transition-colors"
                     >
-                        <Target className="w-8 h-8 text-blue-400 mb-4" />
-                        <p className="text-white/40 text-xs font-bold tracking-wider mb-1">GOALS COMPLETED</p>
-                        <p className="text-4xl font-bold text-white mb-2">{animatedValues.completedGoals}</p>
-                        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                        <Target className="w-6 h-6 text-blue-400 mb-3" />
+                        <p className="text-white/40 text-[10px] font-bold tracking-wider mb-1">GOALS COMPLETED / 達成ゴール</p>
+                        <p className="text-3xl font-bold text-white mb-2">{animatedValues.completedGoals}</p>
+                        <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
                             <div className="h-full bg-blue-500 w-full" />
                         </div>
                     </motion.div>
@@ -262,15 +292,15 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="rounded-3xl bg-white/5 border border-white/10 p-6 backdrop-blur-sm hover:bg-white/10 transition-colors"
+                        className="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-sm hover:bg-white/10 transition-colors"
                     >
-                        <TrendingUp className="w-8 h-8 text-purple-400 mb-4" />
-                        <p className="text-white/40 text-xs font-bold tracking-wider mb-1">TASK COMPLETION</p>
+                        <TrendingUp className="w-6 h-6 text-purple-400 mb-3" />
+                        <p className="text-white/40 text-[10px] font-bold tracking-wider mb-1">TASK DOING / タスク消化率</p>
                         <div className="flex items-baseline gap-2">
-                            <p className="text-4xl font-bold text-white mb-2">{completionRate}%</p>
-                            <span className="text-sm text-white/40">Rate</span>
+                            <p className="text-3xl font-bold text-white mb-2">{completionRate}%</p>
+                            <span className="text-xs text-white/40">Done</span>
                         </div>
-                        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                        <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
                             <div className="h-full bg-purple-500 transition-all duration-1000" style={{ width: `${completionRate}%` }} />
                         </div>
                     </motion.div>
@@ -280,97 +310,98 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="rounded-3xl bg-white/5 border border-white/10 p-6 backdrop-blur-sm hover:bg-white/10 transition-colors"
+                        className="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-sm hover:bg-white/10 transition-colors"
                     >
-                        <BookOpen className="w-8 h-8 text-amber-400 mb-4" />
-                        <p className="text-white/40 text-xs font-bold tracking-wider mb-1">TOTAL JOURNALS</p>
-                        <p className="text-4xl font-bold text-white mb-2">{animatedValues.totalJournals}</p>
-                        <p className="text-white/40 text-xs">Entries recorded</p>
+                        <BookOpen className="w-6 h-6 text-amber-400 mb-3" />
+                        <p className="text-white/40 text-[10px] font-bold tracking-wider mb-1">TOTAL JOURNALS / ジャーナル数</p>
+                        <p className="text-3xl font-bold text-white mb-2">{animatedValues.totalJournals}</p>
+                        <p className="text-white/40 text-[10px]">Entries recorded</p>
                     </motion.div>
                 </div>
 
 
-                {/* Insights Section */}
+                {/* Insights Section - Slimmer */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
                 >
                     {/* Most Productive Month */}
-                    <div className="rounded-3xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 p-6 backdrop-blur-xl">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-                                <Zap className="w-5 h-5" />
+                    <div className="rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/10 p-5 backdrop-blur-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                                <Zap className="w-4 h-4" />
                             </div>
-                            <h3 className="text-white font-bold text-lg">活動ピーク（月）</h3>
+                            <h3 className="text-white font-bold text-sm">活動ピーク（月）</h3>
                         </div>
-                        <div className="text-center py-4">
-                            <p className="text-5xl font-black text-white mb-2">{data.mostProductiveMonth}</p>
-                            <p className="text-white/60 text-sm">累計 {data.mostProductiveMonthActivity} 件のアクティビティ</p>
+                        <div className="text-center py-2">
+                            <p className="text-4xl font-black text-white mb-1">{data.mostProductiveMonth}</p>
+                            <p className="text-white/60 text-xs">{data.mostProductiveMonthActivity} Act.</p>
                         </div>
                     </div>
 
                     {/* Most Productive Day */}
-                    <div className="rounded-3xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 p-6 backdrop-blur-xl">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-orange-500/20 text-orange-400">
-                                <Calendar className="w-5 h-5" />
+                    <div className="rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/10 p-5 backdrop-blur-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-1.5 rounded-lg bg-orange-500/20 text-orange-400">
+                                <Calendar className="w-4 h-4" />
                             </div>
-                            <h3 className="text-white font-bold text-lg">活動ピーク（曜日）</h3>
+                            <h3 className="text-white font-bold text-sm">活動ピーク（曜日）</h3>
                         </div>
-                        <div className="text-center py-4">
-                            <p className="text-5xl font-black text-white mb-2">{data.mostProductiveDay}</p>
-                            <p className="text-white/60 text-sm">最も活動的な曜日</p>
+                        <div className="text-center py-2">
+                            <p className="text-4xl font-black text-white mb-1">{data.mostProductiveDay}</p>
+                            <p className="text-white/60 text-xs">Best Day</p>
                         </div>
                     </div>
 
                     {/* Theme Color */}
-                    <div className="rounded-3xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 p-6 backdrop-blur-xl relative overflow-hidden">
-                        <div className="flex items-center gap-3 mb-6 relative z-10">
-                            <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
-                                <Palette className="w-5 h-5" />
+                    <div className="rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/10 p-5 backdrop-blur-xl relative overflow-hidden">
+                        <div className="flex items-center gap-2 mb-4 relative z-10">
+                            <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
+                                <Palette className="w-4 h-4" />
                             </div>
-                            <h3 className="text-white font-bold text-lg">オーラカラー</h3>
+                            <h3 className="text-white font-bold text-sm">オーラカラー</h3>
                         </div>
                         <div className="relative z-10">
-                            <div className="text-2xl font-bold text-white mb-2">{data.themeColor.split('（')[0]}</div>
-                            <p className="text-white/60 text-xs">{data.themeColor.split('（')[1]?.replace('）', '') || ''}</p>
+                            <div className="text-xl font-bold text-white mb-1">{data.themeColor.split('（')[0]}</div>
+                            <p className="text-white/60 text-[10px]">{data.themeColor.split('（')[1]?.replace('）', '') || ''}</p>
                         </div>
                         {/* Color splash bg */}
-                        <div className={`absolute -right-4 -bottom-4 w-32 h-32 rounded-full blur-2xl opacity-50 bg-gradient-to-tr from-transparent to-current text-white`} style={{ color: data.themeColor.includes('青') ? '#3b82f6' : data.themeColor.includes('緑') ? '#10b981' : data.themeColor.includes('黄') ? '#eab308' : '#a855f7' }} />
+                        <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full blur-2xl opacity-40 bg-gradient-to-tr from-transparent to-current text-white`} style={{ color: data.themeColor.includes('青') ? '#3b82f6' : data.themeColor.includes('緑') ? '#10b981' : data.themeColor.includes('黄') ? '#eab308' : '#a855f7' }} />
                     </div>
                 </motion.div>
 
                 {/* Charts Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-12">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.7 }}
-                        className="rounded-3xl bg-[#111] border border-white/5 p-8"
+                        className="rounded-2xl bg-[#111] border border-white/5 p-6"
                     >
-                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-emerald-500" />
                             月別アクティビティ推移
                         </h3>
-                        <div className="h-[300px] w-full">
+                        <div className="h-[200px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={data.monthlyActivity}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                                    <XAxis dataKey="month" stroke="#666" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                                    <YAxis stroke="#666" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
+                                    <XAxis dataKey="month" stroke="#666" fontSize={10} tickLine={false} axisLine={false} dy={5} />
+                                    <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} dx={-5} />
                                     <Tooltip
                                         contentStyle={{
                                             backgroundColor: '#1a1a1a',
                                             border: 'none',
                                             borderRadius: '8px',
                                             boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                                            color: '#fff'
+                                            color: '#fff',
+                                            fontSize: '12px'
                                         }}
                                         cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                                     />
-                                    <Bar dataKey="activity" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                    <Bar dataKey="activity" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={30} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -380,21 +411,21 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.7 }}
-                        className="rounded-3xl bg-[#111] border border-white/5 p-8"
+                        className="rounded-2xl bg-[#111] border border-white/5 p-6"
                     >
-                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <Star className="w-5 h-5 text-emerald-500" />
+                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                            <Star className="w-4 h-4 text-emerald-500" />
                             活動ウェイト
                         </h3>
-                        <div className="h-[300px] w-full flex items-center justify-center">
+                        <div className="h-[200px] w-full flex items-center justify-center">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
                                         data={activityBreakdown}
                                         cx="50%"
                                         cy="50%"
-                                        innerRadius={80}
-                                        outerRadius={110}
+                                        innerRadius={60}
+                                        outerRadius={80}
                                         paddingAngle={5}
                                         dataKey="value"
                                         stroke="none"
@@ -409,7 +440,8 @@ export default function StatisticsPage() {
                                             border: 'none',
                                             borderRadius: '8px',
                                             boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                                            color: '#fff'
+                                            color: '#fff',
+                                            fontSize: '12px'
                                         }}
                                     />
                                 </PieChart>
@@ -427,9 +459,9 @@ export default function StatisticsPage() {
                 >
                     <button
                         onClick={handleShare}
-                        className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-black font-bold text-lg hover:scale-105 transition-transform"
+                        className="group relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white text-black font-bold text-sm hover:scale-105 transition-transform"
                     >
-                        <Share2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                        <Share2 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
                         統計をシェアする
                     </button>
                 </motion.div>

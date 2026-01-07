@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PrismaClient } from "@prisma/client";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const prisma = new PrismaClient();
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
 export async function GET(req: Request) {
     const supabase = await createClient();
@@ -26,7 +28,7 @@ export async function GET(req: Request) {
             }),
             prisma.task.findMany({
                 where: { userId: user.id },
-                select: { createdAt: true, completed: true, updatedAt: true }
+                select: { createdAt: true, completed: true, updatedAt: true, priority: true }
             }),
             prisma.meetingLog.findMany({
                 where: { project: { userId: user.id } },
@@ -137,6 +139,52 @@ export async function GET(req: Request) {
             memberSince: userProfile?.createdAt
         };
 
+        // --- AI Coaching Generation ---
+        let aiAdvice: string[] = [];
+        if (process.env.GOOGLE_API_KEY) {
+            try {
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                const prompt = `
+                User Statistics Analysis for Productivity Coaching:
+                - Total Active Days: ${totalRecordDays}
+                - Total Words Written: ${totalCharacters}
+                - Goals Completed: ${completedGoals}
+                - Most Productive Day: ${dayNames[mostProductiveDayIndex]}
+                - Most Productive Month: ${monthNames[mostProductiveMonth.month]}
+                - Task Completion Rate: ${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
+                - Average Mood (1-10): ${avgMood.toFixed(1)}
+                - Most Used Emoji: ${mostUsedEmoji}
+
+                Based on this data, provide 3 short, specific, and actionable coaching tips (bullet points) in a friendly, encouraging Japanese tone.
+                Focus on strengths and one area for improvement.
+                Format: JSON array of strings. Example: ["Tip 1", "Tip 2", "Tip 3"]
+                Do not include markdown blocks like \`\`\`json. Just the raw array.
+                `;
+
+                const result = await model.generateContent(prompt);
+                const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+                try {
+                    aiAdvice = JSON.parse(text);
+                } catch (e) {
+                    console.error("Failed to parse AI advice JSON, falling back to text split", text);
+                    aiAdvice = text.split('\n').filter(line => line.trim().length > 0).slice(0, 3);
+                }
+            } catch (e) {
+                console.error("AI Generation failed:", e);
+                aiAdvice = [
+                    "継続は力なり！毎日の記録があなたの大きな財産になっています。",
+                    "調子の良い日は、新しいことに挑戦するチャンスです。",
+                    "疲れた時は無理せず休むことも、長期的な成功の秘訣です。"
+                ];
+            }
+        } else {
+            aiAdvice = [
+                "APIキーが設定されていないため、一般的なアドバイスを表示しています。",
+                "継続は力なり！毎日の記録があなたの大きな財産になっています。",
+                "バランスの取れた生活を心がけましょう。"
+            ];
+        }
+
         return NextResponse.json({
             year: "All Time",
             totalRecordDays,
@@ -147,6 +195,7 @@ export async function GET(req: Request) {
             mostUsedEmoji,
             themeColor,
             stats,
+            aiAdvice, // Added field
             monthlyActivity: Object.entries(monthlyActivity).map(([month, count]) => ({
                 month: monthNames[parseInt(month)],
                 activity: count
