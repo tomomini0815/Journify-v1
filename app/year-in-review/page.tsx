@@ -90,7 +90,7 @@ export default function StatisticsPage() {
 
     const fetchStats = async () => {
         try {
-            const res = await fetch("/api/stats/year-in-review");
+            const res = await fetch("/api/stats/year-in-review", { cache: 'no-store' });
             if (res.ok) {
                 const result = await res.json();
                 setData(result);

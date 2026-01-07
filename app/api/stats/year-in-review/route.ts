@@ -6,6 +6,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const prisma = new PrismaClient();
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
