@@ -378,7 +378,7 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.7 }}
-                        className="rounded-2xl bg-[#111] border border-white/5 p-6"
+                        className="rounded-2xl bg-[#111] p-6"
                     >
                         <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                             <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -410,7 +410,7 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.7 }}
-                        className="rounded-2xl bg-[#111] border border-white/5 p-6"
+                        className="rounded-2xl bg-[#111] p-6"
                     >
                         <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                             <Star className="w-4 h-4 text-emerald-500" />
