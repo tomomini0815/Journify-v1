@@ -206,7 +206,8 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                             }`}
                     >
                         <PenTool className="w-4 h-4" />
-                        テキストジャーナル
+                        <span className="hidden md:inline">テキストジャーナル</span>
+                        <span className="md:hidden">テキスト</span>
                     </button>
                     <button
                         onClick={() => setActiveTab("voice")}
@@ -216,7 +217,8 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                             }`}
                     >
                         <Mic className="w-4 h-4" />
-                        音声ジャーナル
+                        <span className="hidden md:inline">音声ジャーナル</span>
+                        <span className="md:hidden">音声</span>
                     </button>
                     <button
                         onClick={() => setActiveTab("mindmap")}
@@ -226,7 +228,8 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                             }`}
                     >
                         <BrainCircuit className="w-4 h-4" />
-                        AIマインドマップ
+                        <span className="hidden md:inline">AIマインドマップ</span>
+                        <span className="md:hidden">AIマップ</span>
                     </button>
                 </div>
 
