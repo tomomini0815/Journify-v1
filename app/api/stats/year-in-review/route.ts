@@ -154,9 +154,16 @@ export async function GET(req: Request) {
                 - Task Completion Rate: ${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
                 - Average Mood (1-10): ${avgMood.toFixed(1)}
                 - Most Used Emoji: ${mostUsedEmoji}
+                - Activity Breakdown: Journals(${stats.totalJournals}), Tasks(${stats.totalTasks}), Meetings(${stats.totalMeetings})
 
-                Based on this data, provide 3 short, specific, and actionable coaching tips (bullet points) in a friendly, encouraging Japanese tone.
-                Focus on strengths and one area for improvement.
+                Based on this specific data, provide 3 highly specific, actionable, and data-driven coaching tips (bullet points) in Japanese.
+                
+                Guidelines:
+                1. **Be Specific:** Don't just say "Keep it up". Say "You are most productive on Fridays, so schedule complex tasks then." or "Your task completion rate is 60%, try breaking down tasks to improve this."
+                2. **Use Data:** Explicitly mention the numbers or trends in the advice (e.g., "You've written ${totalCharacters} characters...").
+                3. **Action-Oriented:** Give a concrete next step.
+                4. **Tone:** Professional yet encouraging productivity coach.
+                
                 Format: JSON array of strings. Example: ["Tip 1", "Tip 2", "Tip 3"]
                 Do not include markdown blocks like \`\`\`json. Just the raw array.
                 `;
