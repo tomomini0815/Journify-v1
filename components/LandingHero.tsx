@@ -6,13 +6,13 @@ import Link from "next/link"
 import { ArrowRight, Sparkles } from "lucide-react"
 import MagneticButton from "@/components/MagneticButton"
 
-// Use locally available artifact images for the gallery
+// Use images from the public folder
 const IMAGES = [
-    "C:/Users/userv/.gemini/antigravity/brain/4a2fd526-4b66-4247-957e-683971035ecc/dashboard_hero_image_1767510956377.png",
-    "C:/Users/userv/.gemini/antigravity/brain/4a2fd526-4b66-4247-957e-683971035ecc/dashboard_top_1767576244616.png",
-    "C:/Users/userv/.gemini/antigravity/brain/4a2fd526-4b66-4247-957e-683971035ecc/dashboard_bottom_jojo_1767576259305.png",
-    "C:/Users/userv/.gemini/antigravity/brain/4a2fd526-4b66-4247-957e-683971035ecc/dashboard_voice_journal_1767577060811.png",
-    "C:/Users/userv/.gemini/antigravity/brain/4a2fd526-4b66-4247-957e-683971035ecc/journal_page_verification_1767581856023.png",
+    "/images/dashboard_hero.png",
+    "/images/dashboard_top.png",
+    "/images/dashboard_jojo.png",
+    "/images/dashboard_voice.png",
+    "/images/journal_page.png",
 ]
 
 export default function LandingHero() {
