@@ -11,15 +11,14 @@ interface DashboardLayoutProps {
     children: ReactNode
 }
 
-const defaultNavigation = [
-    { name: "ダッシュボード", href: "/dashboard", icon: Home },
-    { name: "ジャーナル", href: "/journal", icon: BookOpen },
-    { name: "目標", href: "/goals", icon: Target },
-    { name: "タスク", href: "/tasks", icon: CheckSquare },
-    { name: "プロジェクト", href: "/projects", icon: Briefcase },
-    { name: "統計詳細", href: "/year-in-review", icon: BarChart2 },
-    { name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
-    { name: "プロフィール", href: "/profile", icon: User },
+{ name: "ダッシュボード", href: "/dashboard", icon: Home },
+{ name: "ジャーナル", href: "/journal", icon: BookOpen },
+{ name: "目標", href: "/goals", icon: Target },
+{ name: "タスク", href: "/tasks", icon: CheckSquare },
+{ name: "プロジェクト", href: "/projects", icon: Briefcase },
+{ name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
+{ name: "統計詳細", href: "/year-in-review", icon: BarChart2 },
+{ name: "プロフィール", href: "/profile", icon: User },
 ]
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
