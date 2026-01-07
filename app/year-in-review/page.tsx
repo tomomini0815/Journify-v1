@@ -157,7 +157,7 @@ export default function StatisticsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] py-8 px-4 selection:bg-emerald-500/30">
+        <div className="min-h-screen bg-[#0a0a0a] py-8 px-4">
             <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <motion.div
@@ -177,13 +177,13 @@ export default function StatisticsPage() {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ delay: 0.2 }}
-                            className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md"
+                            className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full bg-emerald-500/10 backdrop-blur-md"
                         >
                             <Crown className="w-3 h-3 text-emerald-400" />
                             <span className="text-emerald-400 text-xs font-medium">LIFETIME STATISTICS</span>
                         </motion.div>
 
-                        <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-emerald-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">
+                        <h1 className="text-3xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 drop-shadow-sm">
                             あなたの軌跡
                         </h1>
                         <p className="text-white/60 text-sm md:text-base max-w-xl mx-auto">
@@ -382,7 +382,6 @@ export default function StatisticsPage() {
                         <div className="h-[200px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={data.monthlyActivity}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                                     <XAxis dataKey="month" stroke="#666" fontSize={10} tickLine={false} axisLine={false} dy={5} />
                                     <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} dx={-5} />
                                     <Tooltip
