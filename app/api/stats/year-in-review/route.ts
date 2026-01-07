@@ -145,28 +145,29 @@ export async function GET(req: Request) {
             try {
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
                 const prompt = `
-                User Statistics Analysis for Productivity Coaching:
-                - Total Active Days: ${totalRecordDays}
-                - Total Words Written: ${totalCharacters}
-                - Goals Completed: ${completedGoals}
-                - Most Productive Day: ${dayNames[mostProductiveDayIndex]}
-                - Most Productive Month: ${monthNames[mostProductiveMonth.month]}
-                - Task Completion Rate: ${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
-                - Average Mood (1-10): ${avgMood.toFixed(1)}
-                - Most Used Emoji: ${mostUsedEmoji}
-                - Activity Breakdown: Journals(${stats.totalJournals}), Tasks(${stats.totalTasks}), Meetings(${stats.totalMeetings})
+User Statistics Analysis for Productivity Coaching:
+- Total Active Days: ${totalRecordDays}
+- Total Words Written: ${totalCharacters}
+- Goals Completed: ${completedGoals}
+- Most Productive Day: ${dayNames[mostProductiveDayIndex]}
+- Most Productive Month: ${monthNames[mostProductiveMonth.month]}
+- Task Completion Rate: ${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
+- Average Mood (1-10): ${avgMood.toFixed(1)}
+- Most Used Emoji: ${mostUsedEmoji}
+- Activity Breakdown: Journals(${stats.totalJournals}), Tasks(${stats.totalTasks}), Meetings(${stats.totalMeetings})
 
-                Based on this specific data, provide 3 highly specific, actionable, and data-driven coaching tips (bullet points) in Japanese.
-                
-                Guidelines:
-                1. **Be Specific:** Don't just say "Keep it up". Say "You are most productive on Fridays, so schedule complex tasks then." or "Your task completion rate is 60%, try breaking down tasks to improve this."
-                2. **Use Data:** Explicitly mention the numbers or trends in the advice (e.g., "You've written ${totalCharacters} characters...").
-                3. **Action-Oriented:** Give a concrete next step.
-                4. **Tone:** Professional yet encouraging productivity coach.
-                
-                Format: JSON array of strings. Example: ["Tip 1", "Tip 2", "Tip 3"]
-                Do not include markdown blocks like \`\`\`json. Just the raw array.
-                `;
+Based on this specific data, provide 3 **ultra-specific**, **hard-hitting**, and **actionable** coaching tips in Japanese.
+Imagine you are a top-tier productivity consultant analyzing their performance.
+
+Guidelines:
+1. **MANDATORY**: Each tip MUST cite a specific number or data point from above. (e.g., "Since your completion rate is 60%...", "You wrote ${totalCharacters} chars, which means...")
+2. **No Generic Advice**: Do NOT say "Keep working hard". Say "Your most productive day is Friday, so move your hardest tasks to Friday morning."
+3. **Concrete Challenge**: Include one specific "Challenge" for next week based on their weak point.
+4. **Tone**: Professional, analytical, but motivating.
+
+Format: JSON array of strings. Example: ["Tip 1 with number", "Tip 2 with data", "Challenge: ..."]
+Do not include markdown blocks.
+`;
 
                 const result = await model.generateContent(prompt);
                 const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();

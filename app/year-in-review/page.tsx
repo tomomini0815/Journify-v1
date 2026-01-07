@@ -230,7 +230,7 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="md:col-span-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/5 to-teal-900/5 border border-emerald-500/20 p-6 flex flex-col justify-between min-h-[180px]"
+                        className="md:col-span-8 relative overflow-hidden rounded-2xl bg-[#111] border border-white/10 p-6 flex flex-col justify-between min-h-[180px]"
                     >
                         <div>
                             <div className="flex items-center gap-2 text-emerald-400 mb-1">
@@ -251,7 +251,7 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="md:col-span-4 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/5 to-purple-900/5 border border-indigo-500/20 p-6 flex flex-col justify-between"
+                        className="md:col-span-4 relative overflow-hidden rounded-2xl bg-[#111] border border-white/10 p-6 flex flex-col justify-between"
                     >
                         <div>
                             <div className="flex items-center gap-2 text-indigo-400 mb-1">
@@ -274,7 +274,7 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-sm hover:bg-white/10 transition-colors"
+                        className="rounded-2xl bg-[#111] border border-white/10 p-5 transition-colors"
                     >
                         <Target className="w-6 h-6 text-blue-400 mb-3" />
                         <p className="text-white/40 text-[10px] font-bold tracking-wider mb-1">GOALS COMPLETED / 達成ゴール</p>
@@ -289,7 +289,7 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-sm hover:bg-white/10 transition-colors"
+                        className="rounded-2xl bg-[#111] border border-white/10 p-5 transition-colors"
                     >
                         <TrendingUp className="w-6 h-6 text-purple-400 mb-3" />
                         <p className="text-white/40 text-[10px] font-bold tracking-wider mb-1">TASK DOING / タスク消化率</p>
@@ -307,7 +307,7 @@ export default function StatisticsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-sm hover:bg-white/10 transition-colors"
+                        className="rounded-2xl bg-[#111] border border-white/10 p-5 transition-colors"
                     >
                         <BookOpen className="w-6 h-6 text-amber-400 mb-3" />
                         <p className="text-white/40 text-[10px] font-bold tracking-wider mb-1">TOTAL JOURNALS / ジャーナル数</p>
@@ -325,7 +325,7 @@ export default function StatisticsPage() {
                     className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
                 >
                     {/* Most Productive Month */}
-                    <div className="rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/10 p-5 backdrop-blur-xl">
+                    <div className="rounded-2xl bg-[#111] border border-white/10 p-5">
                         <div className="flex items-center gap-2 mb-4">
                             <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
                                 <Zap className="w-4 h-4" />
@@ -339,7 +339,7 @@ export default function StatisticsPage() {
                     </div>
 
                     {/* Most Productive Day */}
-                    <div className="rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/10 p-5 backdrop-blur-xl">
+                    <div className="rounded-2xl bg-[#111] border border-white/10 p-5">
                         <div className="flex items-center gap-2 mb-4">
                             <div className="p-1.5 rounded-lg bg-orange-500/20 text-orange-400">
                                 <Calendar className="w-4 h-4" />
@@ -353,7 +353,7 @@ export default function StatisticsPage() {
                     </div>
 
                     {/* Theme Color */}
-                    <div className="rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/10 p-5 backdrop-blur-xl relative overflow-hidden">
+                    <div className="rounded-2xl bg-[#111] border border-white/10 p-5 relative overflow-hidden">
                         <div className="flex items-center gap-2 mb-4 relative z-10">
                             <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
                                 <Palette className="w-4 h-4" />
