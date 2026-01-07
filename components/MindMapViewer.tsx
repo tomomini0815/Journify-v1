@@ -158,7 +158,8 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
                 data = JSON.parse(text);
             } catch (e) {
                 console.error("Failed to parse response:", text);
-                throw new Error(`Server response was not valid JSON: ${text.slice(0, 100)}...`);
+                console.error("Response data:", { status: response.status, statusText: response.statusText, url: response.url });
+                throw new Error(`Server response was not valid JSON (Status: ${response.status} ${response.statusText}): ${text.slice(0, 100)}...`);
             }
 
             if (!response.ok || data.error) {
