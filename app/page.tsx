@@ -16,6 +16,8 @@ const InfiniteGallery = dynamic(() => import("@/components/ui/3d-gallery-photogr
   loading: () => <div className="h-screen w-full bg-black flex items-center justify-center"><p className="text-white">Loading gallery...</p></div>
 })
 
+import { GradientLampEffects } from "@/components/ui/gradient-lamp"
+
 const useParallax = (value: MotionValue<number>, distance: number) => {
   return useTransform(value, [0, 1], [-distance, distance])
 }
@@ -296,7 +298,7 @@ export default function LandingPage() {
           </div>
         </nav>
 
-        {/* Hero Section - 3D Aspirational Gallery */}
+        {/* Hero Section - 3D Aspirational Gallery with Gradient Lamp Effects */}
         <section ref={heroRef} className="relative h-screen w-full overflow-hidden bg-black">
           <InfiniteGallery
             images={[
@@ -305,7 +307,6 @@ export default function LandingPage() {
               { src: "https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=1200&q=80", alt: "Asian Creative" },
               { src: "/images/aspirations/fitness_achievement_1767788069659.png", alt: "Fitness Achievement" },
               { src: "/images/aspirations/asian_zen_journaling.png", alt: "Asian Zen Journaling" },
-              { src: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=1200&q=80", alt: "Asian Professional Success" },
               { src: "/images/aspirations/family_happiness_1767788085723.png", alt: "Family Happiness" },
               { src: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80", alt: "Asian Students" },
               { src: "/images/aspirations/travel_adventure_1767788105321.png", alt: "Travel Adventure" },
@@ -329,6 +330,9 @@ export default function LandingPage() {
             visibleCount={16}
             className="h-screen w-full rounded-lg overflow-hidden"
           />
+
+          {/* Gradient Lamp Effects Layer */}
+          <GradientLampEffects className="z-5 opacity-60" />
 
           <motion.div
             style={{ opacity: heroTextOpacity }}
