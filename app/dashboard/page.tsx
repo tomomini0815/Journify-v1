@@ -364,11 +364,11 @@ async function TasksSection({ userId }: { userId: string }) {
     const tasks = await getCachedDashboardTasks(userId);
 
     // Serialize for client component
-    const serializedTasks = tasks.map(t => ({
+    const serializedTasks = tasks.map((t: any) => ({
         ...t,
-        scheduledDate: t.scheduledDate ? t.scheduledDate.toISOString() : null,
-        createdAt: t.createdAt.toISOString(),
-        updatedAt: t.updatedAt.toISOString(),
+        scheduledDate: t.scheduledDate ? (typeof t.scheduledDate === 'string' ? t.scheduledDate : t.scheduledDate.toISOString()) : null,
+        createdAt: typeof t.createdAt === 'string' ? t.createdAt : t.createdAt.toISOString(),
+        updatedAt: typeof t.updatedAt === 'string' ? t.updatedAt : t.updatedAt.toISOString(),
     }));
 
     return <DashboardTaskWidget tasks={serializedTasks} />
