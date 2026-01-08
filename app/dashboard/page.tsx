@@ -232,7 +232,7 @@ async function ChartsSection({ userId }: { userId: string }) {
         // Show empty state if no data
         if (happinessData.length === 0 && lifeBalanceData.every(d => d.value === 0)) {
             return (
-                <div className="p-8 text-center bg-white/5 rounded-3xl border border-white/10">
+                <div className="p-8 text-center bg-white/5 rounded-3xl border border-white/10 mb-8">
                     <p className="text-white/60 mb-2">まだデータがありません</p>
                     <p className="text-sm text-white/40">ジャーナルを記録すると、ここにチャートが表示されます</p>
                 </div>

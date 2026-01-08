@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase, ChevronDown, Heart, BarChart2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import NotificationBell from "@/components/NotificationBell"
 
 interface DashboardLayoutProps {
     children: ReactNode
@@ -214,12 +215,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <Link href="/">
                         <h1 className="text-xl font-bold tracking-tighter">Journify</h1>
                     </Link>
-                    <button
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                    >
-                        <Menu className="w-6 h-6" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <NotificationBell />
+                        <button
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -307,6 +311,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Main content */}
             <main className="md:pl-64 pt-16 md:pt-0 flex-1">
+                {/* Main Content Header with Notification - Desktop Only */}
+                <div className="hidden md:block sticky top-0 z-20 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/10">
+                    <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-end">
+                        <NotificationBell />
+                    </div>
+                </div>
                 <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-8">
                     {children}
                 </div>

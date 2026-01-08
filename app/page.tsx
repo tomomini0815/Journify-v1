@@ -325,6 +325,9 @@ export default function LandingPage() {
               { src: "/images/aspirations/garden_sanctuary_1767788256210.png", alt: "Garden Sanctuary" },
               { src: "/images/aspirations/sports_victory_1767788275979.png", alt: "Sports Victory" },
               { src: "/images/aspirations/music_performance_1767788293706.png", alt: "Music Performance" },
+              { src: "/images/success/success_4.png", alt: "達成の瞬間" },
+              { src: "/images/success/success_5.png", alt: "心の平和と成功" },
+              { src: "/images/success/success_11.png", alt: "家族の幸せ" },
             ]}
             speed={1.0}
             visibleCount={16}

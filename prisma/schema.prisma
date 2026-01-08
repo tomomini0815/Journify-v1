@@ -33,6 +33,7 @@ model User {
   userQuests        UserQuest[]
   userAchievements  UserAchievement[]
   mindMaps          MindMap[]
+  notifications     Notification[]
 }
 
 model UserSettings {
@@ -469,3 +470,21 @@ model MindMap {
   @@index([userId])
   @@index([createdAt])
 }
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      String   // "goal_reminder", "task_reminder", "goal_overdue", "task_overdue"
+  title     String
+  message   String   @db.Text
+  actionUrl String?  // Link to the goal/task page
+  
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
