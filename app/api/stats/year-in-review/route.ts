@@ -143,24 +143,60 @@ export async function GET(req: Request) {
 
         // --- AI Coaching Generation ---
         let aiAdvice: string[] = [];
+
+        // Fetch additional context (Life Balance) needed for both AI and Fallback
+        const lifeBalanceEntries = await prisma.lifeBalanceEntry.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            take: 20
+        });
+
+        // Calculate Life Balance Highs/Lows
+        const balanceMap: Record<string, number> = {};
+        lifeBalanceEntries.forEach(e => {
+            if (!balanceMap[e.category]) balanceMap[e.category] = e.score;
+        });
+        const balanceSorted = Object.entries(balanceMap).sort(([, a], [, b]) => b - a);
+        const strongestArea = balanceSorted[0] ? `${balanceSorted[0][0]} (${balanceSorted[0][1]}/10)` : "データなし";
+        const weakestArea = balanceSorted.length > 0 ? `${balanceSorted[balanceSorted.length - 1][0]} (${balanceSorted[balanceSorted.length - 1][1]}/10)` : null;
+
+        // Dynamic Rule-Based Fallback Generator
+        const generateSmartMyAdvice = () => {
+            const tips = [];
+
+            // 1. Consistency / Momentum
+            if (totalRecordDays < 10) {
+                tips.push(`🚀 まだ始まったばかりです！まずは10日間の記録を目指して、「習慣化」の第一歩を踏み出しましょう。`);
+            } else if (totalRecordDays >= 30) {
+                tips.push(`🔥 素晴らしい継続力です。${totalRecordDays}日間の記録は、あなたの誠実さの証です。この調子で！`);
+            } else {
+                tips.push(`📅 継続は力なり。${totalRecordDays}日間の記録が溜まってきました。振り返りを行うのに良い時期です。`);
+            }
+
+            // 2. Productivity / Action
+            const rate = stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0;
+            if (rate > 80) {
+                tips.push(`⚡ 実行力が非常に高いです（完了率 ${rate}%）。次は「重要だが緊急でない」タスクに時間を割いてみましょう。`);
+            } else if (rate < 40 && stats.totalTasks > 5) {
+                tips.push(`🔍 タスク完了率が${rate}%です。欲張りすぎていませんか？ 1日の「最優先タスク」を1つに絞ってみましょう。`);
+            } else {
+                tips.push(`⚖️ バランスの取れた活動ができています。${dayNames[mostProductiveDayIndex]}曜日が最もはかどるようなので、重いタスクはこの日に。`);
+            }
+
+            // 3. Balance / Mood / Focus
+            if (avgMood >= 7.5) {
+                tips.push(`🌟 メンタル状態が非常に良好です（平均 ${avgMood.toFixed(1)}）。この「好調の要因」をジャーナルに書き留めておきましょう。`);
+            } else if (avgMood <= 4.5) {
+                tips.push(`💙 少しお疲れのようです（平均 ${avgMood.toFixed(1)}）。「${monthNames[mostProductiveMonth.month]}」に頑張りすぎた反動かもしれません。休息も仕事のうちです。`);
+            } else {
+                tips.push(`🧘 安定したメンタルバランスです。ライフバランスの「${weakestArea || '未入力項目'}」に少し意識を向けると、さらに充実するでしょう。`);
+            }
+
+            return tips;
+        };
+
         if (process.env.GOOGLE_API_KEY) {
             try {
-                // Fetch additional context for AI
-                const lifeBalanceEntries = await prisma.lifeBalanceEntry.findMany({
-                    where: { userId: user.id },
-                    orderBy: { createdAt: 'desc' },
-                    take: 20 // Analyze recent balance
-                });
-
-                // Calculate Life Balance Highs/Lows
-                const balanceMap: Record<string, number> = {};
-                lifeBalanceEntries.forEach(e => {
-                    if (!balanceMap[e.category]) balanceMap[e.category] = e.score;
-                });
-                const balanceSorted = Object.entries(balanceMap).sort(([, a], [, b]) => b - a);
-                const strongestArea = balanceSorted[0] ? `${balanceSorted[0][0]} (${balanceSorted[0][1]}/10)` : "N/A";
-                const weakestArea = balanceSorted.length > 0 ? `${balanceSorted[balanceSorted.length - 1][0]} (${balanceSorted[balanceSorted.length - 1][1]}/10)` : "N/A";
-
                 // Fetch Recent Goal Titles
                 const recentGoals = await prisma.goal.findMany({
                     where: { userId: user.id, progress: 100 },
@@ -170,55 +206,49 @@ export async function GET(req: Request) {
                 });
                 const goalTitles = recentGoals.map(g => g.title).join(", ");
 
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                // Use gemini-1.5-flash for speed and reliability
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                 const prompt = `
-User Statistics Analysis for Productivity Coaching:
+You are an expert productivity coach. Analyze the user's "Year in Review" stats and give 3 specific, data-driven advice tips in Japanese.
+
+User Data:
 - Total Active Days: ${totalRecordDays}
-- Goals Completed: ${completedGoals} (Recent: ${goalTitles || "None"})
-- Life Balance: Strongest in ${strongestArea}, Weakest in ${weakestArea}
-- Most Productive Day: ${dayNames[mostProductiveDayIndex]}
-- Most Productive Month: ${monthNames[mostProductiveMonth.month]}
-- Task Completion Rate: ${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
-- Average Mood (1-10): ${avgMood.toFixed(1)}
-- Activity Breakdown: Journals(${stats.totalJournals}), Tasks(${stats.totalTasks}), Meetings(${stats.totalMeetings})
+- Completed Goals: ${completedGoals} (Recent: ${goalTitles || "None"})
+- Life Balance: Strongest=${strongestArea}, Weakest=${weakestArea || "N/A"}
+- Most Productive: ${dayNames[mostProductiveDayIndex]}, ${monthNames[mostProductiveMonth.month]}
+- Task Completion: ${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
+- Average Mood: ${avgMood.toFixed(1)}/10
 
-Based on this specific data, provide 3 **ultra-specific**, **hard-hitting**, and **actionable** coaching tips in Japanese.
-Imagine you are a top-tier productivity and life coach analyzing their detailed performance review.
-
-Guidelines:
-1. **DATA DRIVEN**: Each tip MUST cite a specific number or insight from the data above.
-   - Bad: "Improve your work-life balance."
-   - Good: "Your 'Physical Health' score is only 3/10. Schedule 15 mins of exercise on your most productive day (${dayNames[mostProductiveDayIndex]})."
-2. **CONTEXT AWARE**: Use the Goal titles or Life Balance areas to make it personal.
-   - Example: "You crushed '${recentGoals[0]?.title || 'goals'}', but your task completion is low. Focus on...",
-3. **CONCRETE CHALLENGE**: The 3rd tip MUST be a specific "Next Week's Challenge".
-4. **Tone**: Professional, analytical, encouraging, but direct. No fluff.
-
-Format: JSON array of strings. Example: ["Tip 1...", "Tip 2...", "Challenge: ..."]
+Requirements:
+1. **Specific & Actionable**: Use the numbers above. specific advice only.
+2. **Japanese**: Natural, professional, encouraging tone.
+3. **Format**: Valid JSON array of 3 strings. NO markdown code blocks.
+Example: ["Tip 1...", "Tip 2...", "Challenge: ..."]
 `;
 
                 const result = await model.generateContent(prompt);
                 const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+
                 try {
                     aiAdvice = JSON.parse(text);
+                    // Validate it's an array
+                    if (!Array.isArray(aiAdvice) || aiAdvice.length === 0) throw new Error("Invalid AI response format");
                 } catch (e) {
-                    console.error("Failed to parse AI advice JSON, falling back to text split", text);
-                    aiAdvice = text.split('\n').filter(line => line.trim().length > 0).slice(0, 3);
+                    console.error("Failed to parse AI advice JSON:", text);
+                    // Fallback to split if it looks like a list
+                    if (text.includes('\n')) {
+                        aiAdvice = text.split('\n').filter(line => line.length > 10).slice(0, 3);
+                    } else {
+                        throw e; // Use smart fallback
+                    }
                 }
             } catch (e) {
-                console.error("AI Generation failed:", e);
-                aiAdvice = [
-                    "継続は力なり！毎日の記録があなたの大きな財産になっています。",
-                    "調子の良い日は、新しいことに挑戦するチャンスです。",
-                    "自己分析を続け、バランスの取れた生活を目指しましょう。"
-                ];
+                console.error("AI Generation failed, using smart fallback:", e);
+                aiAdvice = generateSmartMyAdvice();
             }
         } else {
-            aiAdvice = [
-                "APIキーが設定されていないため、一般的なアドバイスを表示しています。",
-                "継続は力なり！毎日の記録があなたの大きな財産になっています。",
-                "バランスの取れた生活を心がけましょう。"
-            ];
+            // No API key, use smart fallback
+            aiAdvice = generateSmartMyAdvice();
         }
 
         return NextResponse.json({

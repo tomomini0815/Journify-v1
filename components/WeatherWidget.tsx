@@ -26,7 +26,16 @@ export function WeatherWidget() {
     const [showPermissionModal, setShowPermissionModal] = useState(false)
 
     useEffect(() => {
-        checkLocationPermission()
+        // Check localStorage first
+        const storedPermission = localStorage.getItem('weather_permission')
+        if (storedPermission === 'granted') {
+            fetchWeather()
+        } else if (storedPermission === 'denied') {
+            // Do nothing, respect user's choice
+        } else {
+            // No preference stored, check browser permission
+            checkLocationPermission()
+        }
     }, [])
 
     const checkLocationPermission = async () => {
@@ -37,6 +46,7 @@ export function WeatherWidget() {
                 const result = await navigator.permissions.query({ name: 'geolocation' })
                 if (result.state === 'granted') {
                     fetchWeather()
+                    localStorage.setItem('weather_permission', 'granted')
                 } else if (result.state === 'prompt') {
                     setShowPermissionModal(true)
                 }
@@ -79,16 +89,22 @@ export function WeatherWidget() {
             }
         }, (error) => {
             console.log("Geolocation permission denied or error", error)
+            // If actual geolocation faills (e.g. user allowed in app but blocked in browser later), reset
+            if (error.code === error.PERMISSION_DENIED) {
+                localStorage.setItem('weather_permission', 'denied')
+            }
         })
     }
 
     const handleAllowLocation = () => {
         setShowPermissionModal(false)
+        localStorage.setItem('weather_permission', 'granted')
         fetchWeather()
     }
 
     const handleDenyLocation = () => {
         setShowPermissionModal(false)
+        localStorage.setItem('weather_permission', 'denied')
     }
 
     const getWeatherIcon = (code: number, className = "w-5 h-5") => {
@@ -125,6 +141,7 @@ export function WeatherWidget() {
                 className="relative z-50"
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={() => setIsHovering(false)}
+                onClick={() => setIsHovering(!isHovering)}
             >
                 <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
