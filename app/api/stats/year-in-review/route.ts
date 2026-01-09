@@ -145,30 +145,56 @@ export async function GET(req: Request) {
         let aiAdvice: string[] = [];
         if (process.env.GOOGLE_API_KEY) {
             try {
+                // Fetch additional context for AI
+                const lifeBalanceEntries = await prisma.lifeBalanceEntry.findMany({
+                    where: { userId: user.id },
+                    orderBy: { createdAt: 'desc' },
+                    take: 20 // Analyze recent balance
+                });
+
+                // Calculate Life Balance Highs/Lows
+                const balanceMap: Record<string, number> = {};
+                lifeBalanceEntries.forEach(e => {
+                    if (!balanceMap[e.category]) balanceMap[e.category] = e.score;
+                });
+                const balanceSorted = Object.entries(balanceMap).sort(([, a], [, b]) => b - a);
+                const strongestArea = balanceSorted[0] ? `${balanceSorted[0][0]} (${balanceSorted[0][1]}/10)` : "N/A";
+                const weakestArea = balanceSorted.length > 0 ? `${balanceSorted[balanceSorted.length - 1][0]} (${balanceSorted[balanceSorted.length - 1][1]}/10)` : "N/A";
+
+                // Fetch Recent Goal Titles
+                const recentGoals = await prisma.goal.findMany({
+                    where: { userId: user.id, progress: 100 },
+                    orderBy: { updatedAt: 'desc' },
+                    take: 3,
+                    select: { title: true }
+                });
+                const goalTitles = recentGoals.map(g => g.title).join(", ");
+
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
                 const prompt = `
 User Statistics Analysis for Productivity Coaching:
 - Total Active Days: ${totalRecordDays}
-- Total Words Written: ${totalCharacters}
-- Goals Completed: ${completedGoals}
+- Goals Completed: ${completedGoals} (Recent: ${goalTitles || "None"})
+- Life Balance: Strongest in ${strongestArea}, Weakest in ${weakestArea}
 - Most Productive Day: ${dayNames[mostProductiveDayIndex]}
 - Most Productive Month: ${monthNames[mostProductiveMonth.month]}
 - Task Completion Rate: ${stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
 - Average Mood (1-10): ${avgMood.toFixed(1)}
-- Most Used Emoji: ${mostUsedEmoji}
 - Activity Breakdown: Journals(${stats.totalJournals}), Tasks(${stats.totalTasks}), Meetings(${stats.totalMeetings})
 
 Based on this specific data, provide 3 **ultra-specific**, **hard-hitting**, and **actionable** coaching tips in Japanese.
-Imagine you are a top-tier productivity consultant analyzing their performance.
+Imagine you are a top-tier productivity and life coach analyzing their detailed performance review.
 
 Guidelines:
-1. **MANDATORY**: Each tip MUST cite a specific number or data point from above. (e.g., "Since your completion rate is 60%...", "You wrote ${totalCharacters} chars, which means...")
-2. **No Generic Advice**: Do NOT say "Keep working hard". Say "Your most productive day is Friday, so move your hardest tasks to Friday morning."
-3. **Concrete Challenge**: Include one specific "Challenge" for next week based on their weak point.
-4. **Tone**: Professional, analytical, but motivating.
+1. **DATA DRIVEN**: Each tip MUST cite a specific number or insight from the data above.
+   - Bad: "Improve your work-life balance."
+   - Good: "Your 'Physical Health' score is only 3/10. Schedule 15 mins of exercise on your most productive day (${dayNames[mostProductiveDayIndex]})."
+2. **CONTEXT AWARE**: Use the Goal titles or Life Balance areas to make it personal.
+   - Example: "You crushed '${recentGoals[0]?.title || 'goals'}', but your task completion is low. Focus on...",
+3. **CONCRETE CHALLENGE**: The 3rd tip MUST be a specific "Next Week's Challenge".
+4. **Tone**: Professional, analytical, encouraging, but direct. No fluff.
 
-Format: JSON array of strings. Example: ["Tip 1 with number", "Tip 2 with data", "Challenge: ..."]
-Do not include markdown blocks.
+Format: JSON array of strings. Example: ["Tip 1...", "Tip 2...", "Challenge: ..."]
 `;
 
                 const result = await model.generateContent(prompt);
@@ -184,7 +210,7 @@ Do not include markdown blocks.
                 aiAdvice = [
                     "継続は力なり！毎日の記録があなたの大きな財産になっています。",
                     "調子の良い日は、新しいことに挑戦するチャンスです。",
-                    "疲れた時は無理せず休むことも、長期的な成功の秘訣です。"
+                    "自己分析を続け、バランスの取れた生活を目指しましょう。"
                 ];
             }
         } else {

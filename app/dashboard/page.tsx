@@ -461,10 +461,10 @@ export default async function DashboardPage() {
                             <div>
                                 <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
                                     ADVENTURE MODE
-                                    <span className="text-xs font-mono bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">NEW</span>
+                                    <span className="text-xs font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">BETA</span>
                                 </h3>
                                 <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
-                                    ゲーム化された世界でタスクをこなし、アバターを育てよう
+                                    ゲーム化された世界でタスクをこなし、アバターを育てよう（現在ベータ版として開発中）
                                 </p>
                             </div>
                         </div>

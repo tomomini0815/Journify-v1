@@ -91,12 +91,13 @@ export default function AdventurePage() {
                             : 'bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300'
                             }`}>
                             {isSolarpunk ? 'SKY SANCTUARY' : 'CELESTIAL VOYAGE'}
+                            <span className="ml-4 align-middle text-sm uppercase tracking-wider font-bold border rounded px-2 py-1 align-middle opacity-60">Beta</span>
                         </h1>
                         <p className={`font-medium text-sm md:text-base max-w-2xl tracking-wide md:ml-1 ${isSolarpunk ? 'text-slate-500' : 'text-indigo-200/60'
                             }`}>
                             {isSolarpunk
-                                ? 'Cultivate your floating island. Complete tasks to let nature bloom.'
-                                : 'Navigate the cosmos. Complete tasks to fuel your warp drive.'}
+                                ? 'Cultivate your floating island. Complete tasks to let nature bloom. （現在ベータ版として機能拡張中です）'
+                                : 'Navigate the cosmos. Complete tasks to fuel your warp drive. （現在ベータ版として機能拡張中です）'}
                         </p>
                     </motion.div>
                 </AnimatePresence>

@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase, ChevronDown, Heart, BarChart2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import NotificationBell from "@/components/NotificationBell"
+import { WeatherWidget } from "@/components/WeatherWidget"
 
 interface DashboardLayoutProps {
     children: ReactNode
@@ -216,6 +217,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         <h1 className="text-xl font-bold tracking-tighter">Journify</h1>
                     </Link>
                     <div className="flex items-center gap-2">
+                        <WeatherWidget />
                         <NotificationBell />
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -313,7 +315,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <main className="md:pl-64 pt-16 md:pt-0 flex-1">
                 {/* Main Content Header with Notification - Desktop Only */}
                 <div className="hidden md:block sticky top-0 z-20 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/10">
-                    <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-end">
+                    <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-end gap-4">
+                        <WeatherWidget />
                         <NotificationBell />
                     </div>
                 </div>
