@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma'
 // POST: Play with companion
 export async function POST(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const supabase = await createClient()
@@ -15,7 +15,7 @@ export async function POST(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const companionId = params.id
+        const { id: companionId } = await params
 
         // Fetch user companion
         const userCompanion = await prisma.userCompanion.findFirst({

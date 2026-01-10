@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma'
 // PATCH: Activate/deactivate companion
 export async function PATCH(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const supabase = await createClient()
@@ -15,7 +15,7 @@ export async function PATCH(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const companionId = params.id
+        const { id: companionId } = await params
 
         // Verify ownership
         const userCompanion = await prisma.userCompanion.findFirst({

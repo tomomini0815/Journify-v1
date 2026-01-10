@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma'
 // POST: Feed companion
 export async function POST(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const supabase = await createClient()
@@ -16,7 +16,7 @@ export async function POST(
         }
 
         const { foodType } = await request.json()
-        const companionId = params.id
+        const { id: companionId } = await params
 
         // Fetch user companion
         const userCompanion = await prisma.userCompanion.findFirst({
