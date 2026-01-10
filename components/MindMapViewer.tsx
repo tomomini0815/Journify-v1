@@ -394,7 +394,7 @@ export default function MindMapViewer({ initialData }: { initialData?: any }) {
 
             {/* Empty State / Start Screen */}
             {!hasGenerated && !isLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-[#0B1121]/80 backdrop-blur-sm p-4">
+                <div className="absolute inset-0 flex flex-col items-center justify-start pt-32 z-10 bg-[#0B1121]/80 backdrop-blur-sm p-4">
                     <BrainCircuit className="w-16 h-16 text-emerald-500 mb-4 opacity-50" />
                     <h3 className="text-xl font-bold text-white mb-2">AIマインドマップ</h3>
                     <p className="text-white/60 mb-6 text-center max-w-md text-sm">

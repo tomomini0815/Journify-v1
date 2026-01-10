@@ -21,7 +21,7 @@ const defaultNavigation = [
     { name: "プロジェクト", href: "/projects", icon: Briefcase },
     { name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
     { name: "統計詳細", href: "/year-in-review", icon: BarChart2 },
-    { name: "プロフィール", href: "/profile", icon: User },
+    { name: "アカウント設定", href: "/profile", icon: User },
     { name: "お問い合わせ", href: "/feedback", icon: MessageSquarePlus },
 ]
 
@@ -47,9 +47,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     useEffect(() => {
         const updateNavigationFromStorage = () => {
             if (typeof window !== 'undefined') {
-                // Projects is now always visible in defaultNavigation
-                // This function kept for potential future conditional navigation items
-                setNavigation(defaultNavigation)
+                const enableProjects = localStorage.getItem('enableProjects') === 'true'
+
+                console.log('[DashboardLayout] Updating navigation...')
+                console.log('[DashboardLayout] enableProjects from localStorage:', enableProjects)
+                console.log('[DashboardLayout] localStorage value:', localStorage.getItem('enableProjects'))
+
+                // Filter navigation based on enableProjects setting
+                const filteredNavigation = defaultNavigation.filter(item => {
+                    if (item.href === '/projects') {
+                        console.log('[DashboardLayout] Filtering projects item, enabled:', enableProjects)
+                        return enableProjects
+                    }
+                    return true
+                })
+
+                console.log('[DashboardLayout] Filtered navigation items:', filteredNavigation.map(n => n.name))
+                setNavigation(filteredNavigation)
             }
         }
 
@@ -68,6 +82,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                 if (res.ok) {
                     const settings = await res.json()
+                    console.log('[DashboardLayout] Fetched settings from API:', settings)
                     if (typeof window !== 'undefined') {
                         localStorage.setItem('enableProjects', String(settings.enableProjects || false))
                         updateNavigationFromStorage()
@@ -81,6 +96,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         // Listen for storage changes from other tabs/windows
         const handleStorageChange = (e: StorageEvent) => {
+            console.log('[DashboardLayout] Storage event received:', e.key, e.newValue)
             if (e.key === 'enableProjects') {
                 updateNavigationFromStorage()
             }
@@ -88,13 +104,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         // Listen for custom events
         const handleCustomEvent = () => {
+            console.log('[DashboardLayout] projectSettingsChanged event received')
             updateNavigationFromStorage()
         }
 
+        console.log('[DashboardLayout] Registering event listeners')
         window.addEventListener('storage', handleStorageChange)
         window.addEventListener('projectSettingsChanged', handleCustomEvent)
 
         return () => {
+            console.log('[DashboardLayout] Removing event listeners')
             window.removeEventListener('storage', handleStorageChange)
             window.removeEventListener('projectSettingsChanged', handleCustomEvent)
         }

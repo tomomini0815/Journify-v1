@@ -7,6 +7,7 @@ import { Image as ImageIcon, List, MessageSquare, Mail, Plus, X, Trash2, Upload,
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { UnifiedTabs } from "@/components/ui/unified-tabs"
 
 type Tab = "collage" | "dreams" | "affirmations" | "letter"
 
@@ -244,23 +245,12 @@ export default function VisionBoardPage() {
             </motion.div>
 
             {/* Tabs */}
-            <div className="flex flex-wrap gap-2 mb-8 bg-black/20 p-1 rounded-xl backdrop-blur-md border border-white/5">
-                {tabs.map((tab) => {
-                    const Icon = tab.icon
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-                                ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white border border-emerald-500/30"
-                                : "text-white/60 hover:text-white hover:bg-white/5"
-                                }`}
-                        >
-                            <Icon className="w-4 h-4" />
-                            <span className="hidden sm:inline">{tab.name}</span>
-                        </button>
-                    )
-                })}
+            <div className="mb-8 border-b border-white/10">
+                <UnifiedTabs
+                    tabs={tabs.map(t => ({ id: t.id, label: t.name, icon: t.icon }))}
+                    activeTab={activeTab}
+                    onChange={(id) => setActiveTab(id as Tab)}
+                />
             </div>
 
             {/* Tab Content */}

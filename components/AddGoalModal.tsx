@@ -114,19 +114,26 @@ export function AddGoalModal({ isOpen, onClose, onAdd }: AddGoalModalProps) {
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">優先度</label>
                                     <div className="flex gap-2">
-                                        {[{ id: "low", label: "低" }, { id: "medium", label: "中" }, { id: "high", label: "高" }].map((p) => (
-                                            <button
-                                                key={p.id}
-                                                type="button"
-                                                onClick={() => setPriority(p.id)}
-                                                className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${priority === p.id
-                                                    ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/20"
-                                                    : "bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"
-                                                    }`}
-                                            >
-                                                {p.label}
-                                            </button>
-                                        ))}
+                                        {[{ id: "low", label: "低" }, { id: "medium", label: "中" }, { id: "high", label: "高" }].map((p) => {
+                                            let activeClass = ""
+                                            if (p.id === "low") activeClass = "bg-green-500/20 text-green-400 border border-green-500/50 shadow-[0_0_15px_rgba(74,222,128,0.2)]"
+                                            if (p.id === "medium") activeClass = "bg-orange-500/20 text-orange-400 border border-orange-500/50 shadow-[0_0_15px_rgba(251,146,60,0.2)]"
+                                            if (p.id === "high") activeClass = "bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_15px_rgba(248,113,113,0.2)]"
+
+                                            return (
+                                                <button
+                                                    key={p.id}
+                                                    type="button"
+                                                    onClick={() => setPriority(p.id)}
+                                                    className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${priority === p.id
+                                                        ? activeClass
+                                                        : "bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"
+                                                        }`}
+                                                >
+                                                    {p.label}
+                                                </button>
+                                            )
+                                        })}
                                     </div>
                                 </div>
 

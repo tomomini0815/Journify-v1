@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Plus, CheckCircle2, Circle, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AddGoalModal } from "@/components/AddGoalModal"
+import { UnifiedTabs } from "@/components/ui/unified-tabs"
 
 interface Goal {
     id: string
@@ -141,6 +142,19 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                 </Button>
             </div>
 
+            {/* Timeframe Tabs */}
+            <div className="mb-8 border-b border-white/10">
+                <UnifiedTabs
+                    tabs={[
+                        { id: 'short', label: '短期目標', count: goals.filter(g => g.timeframe === 'short').length },
+                        { id: 'mid', label: '中期目標', count: goals.filter(g => g.timeframe === 'mid').length },
+                        { id: 'long', label: '長期目標', count: goals.filter(g => g.timeframe === 'long').length }
+                    ]}
+                    activeTab={activeTab}
+                    onChange={(id) => setActiveTab(id as 'short' | 'mid' | 'long')}
+                />
+            </div>
+
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-8">
                 <motion.div
@@ -174,42 +188,6 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                         {filteredGoals.filter(g => g.progress < 100).length}
                     </p>
                 </motion.div>
-            </div>
-
-            {/* Timeframe Tabs */}
-            <div className="mb-8">
-                <div className="flex gap-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-1">
-                    <button
-                        onClick={() => setActiveTab('short')}
-                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'short'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg shadow-emerald-500/20'
-                            : 'text-white/60 hover:text-emerald-300 hover:bg-emerald-500/10'
-                            }`}
-                    >
-                        短期目標
-                        <span className="ml-2 text-xs opacity-75">({goals.filter(g => g.timeframe === 'short').length})</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('mid')}
-                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'mid'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg shadow-emerald-500/20'
-                            : 'text-white/60 hover:text-emerald-300 hover:bg-emerald-500/10'
-                            }`}
-                    >
-                        中期目標
-                        <span className="ml-2 text-xs opacity-75">({goals.filter(g => g.timeframe === 'mid').length})</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('long')}
-                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'long'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg shadow-emerald-500/20'
-                            : 'text-white/60 hover:text-emerald-300 hover:bg-emerald-500/10'
-                            }`}
-                    >
-                        長期目標
-                        <span className="ml-2 text-xs opacity-75">({goals.filter(g => g.timeframe === 'long').length})</span>
-                    </button>
-                </div>
             </div>
 
             {/* Goals List */}

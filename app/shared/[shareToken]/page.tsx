@@ -6,6 +6,7 @@ import { Calendar, Clock, CheckSquare, List, BarChart3, Flag, MessageSquare, Sen
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { isHoliday } from "@/lib/holidays"
+import { UnifiedTabs } from "@/components/ui/unified-tabs"
 
 type Milestone = {
     id: string
@@ -235,39 +236,18 @@ export default function SharedProjectPage() {
                 {/* Main Content */}
                 <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden min-h-[600px] flex flex-col relative">
                     {/* Tabs */}
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setActiveTab('list')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${activeTab === 'list'
-                                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
-                                    : 'text-white/60 hover:bg-white/5'
-                                    }`}
-                            >
-                                <List className="w-4 h-4" />
-                                <span>リスト</span>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('timeline')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${activeTab === 'timeline'
-                                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
-                                    : 'text-white/60 hover:bg-white/5'
-                                    }`}
-                            >
-                                <BarChart3 className="w-4 h-4" />
-                                <span>タイムライン</span>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('comments')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${activeTab === 'comments'
-                                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'
-                                    : 'text-white/60 hover:bg-white/5'
-                                    }`}
-                            >
-                                <MessageSquare className="w-4 h-4" />
-                                <span>コメント</span>
-                            </button>
-                        </div>
+                    <div className="border-b border-white/10 bg-[#1a1a1a]">
+                        <UnifiedTabs
+                            tabs={[
+                                { id: 'list', label: 'リスト', icon: List },
+                                { id: 'timeline', label: 'タイムライン', icon: BarChart3 },
+                                { id: 'comments', label: 'コメント', icon: MessageSquare }
+                            ]}
+                            activeTab={activeTab}
+                            onChange={(id) => setActiveTab(id as 'list' | 'timeline' | 'comments')}
+                            variant="indigo"
+                            className="px-6"
+                        />
                     </div>
 
                     {/* List View */}

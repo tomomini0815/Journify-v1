@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X, ChevronDown } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
 import { AddTaskForm } from "@/components/AddTaskForm"
+import { UnifiedTabs } from "@/components/ui/unified-tabs"
 
 type Task = {
     id: string
@@ -487,31 +488,17 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 </div>
 
                 {/* Tabs & View Toggle Row */}
-                < div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-0 gap-4 md:gap-0" >
-                    <div className="flex gap-1 overflow-x-auto w-full md:w-auto no-scrollbar">
-                        {(['today', 'week', 'month', 'all'] as const).map((scope) => (
-                            <button
-                                key={scope}
-                                onClick={() => setActiveScope(scope)}
-                                className={`px-4 md:px-6 py-3 font-medium transition-all relative whitespace-nowrap ${activeScope === scope
-                                    ? 'text-emerald-400'
-                                    : 'text-white/40 hover:text-white/60'
-                                    }`}
-                            >
-                                {scope === 'today' && '今日のタスク'}
-                                {scope === 'week' && '一週間のタスク'}
-                                {scope === 'month' && '今月のタスク'}
-                                {scope === 'all' && 'すべてのタスク'}
-
-                                {activeScope === scope && (
-                                    <motion.div
-                                        layoutId="activeTabIndicator"
-                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400"
-                                    />
-                                )}
-                            </button>
-                        ))}
-                    </div>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-0 gap-4 md:gap-0">
+                    <UnifiedTabs
+                        tabs={[
+                            { id: 'today', label: '今日', count: tasks.filter(t => t.scheduledDate && isToday(new Date(t.scheduledDate))).length },
+                            { id: 'week', label: '1週間', count: tasks.filter(t => t.scheduledDate && isThisWeek(new Date(t.scheduledDate))).length },
+                            { id: 'month', label: '今月', count: tasks.filter(t => t.scheduledDate && isThisMonth(new Date(t.scheduledDate))).length },
+                            { id: 'all', label: '全て', count: tasks.length }
+                        ]}
+                        activeTab={activeScope}
+                        onChange={(id) => setActiveScope(id as 'today' | 'week' | 'month' | 'all')}
+                    />
 
                     <div className="flex gap-2 pb-2 w-full md:w-auto items-center justify-end hidden md:flex">
                         <button

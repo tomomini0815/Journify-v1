@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { User, Mail, Bell, Lock, Palette, Globe, Save, Camera, Briefcase, Calendar } from "lucide-react"
+import { User, Mail, Bell, Lock, Palette, Globe, Save, Camera, Briefcase, Calendar, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
+
+import { createClient } from "@/lib/supabase/client"
 
 interface ProfileClientProps {
     initialData: {
@@ -14,6 +16,7 @@ interface ProfileClientProps {
         emailUpdates: boolean
         language: string
         enableProjects: boolean
+        showJojo: boolean
         stats: {
             journalCount: number
             streak: number
@@ -32,9 +35,97 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
     const [emailUpdates, setEmailUpdates] = useState(initialData.emailUpdates)
     const [language, setLanguage] = useState(initialData.language)
     const [enableProjects, setEnableProjects] = useState(initialData.enableProjects)
+    const [showJojo, setShowJojo] = useState(initialData.showJojo)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState("")
     const [success, setSuccess] = useState("")
+
+    // Sync state with initialData on updates (e.g. after router.refresh())
+    useEffect(() => {
+        setName(initialData.name)
+        setBio(initialData.bio)
+        setNotifications(initialData.notifications)
+        setEmailUpdates(initialData.emailUpdates)
+        setLanguage(initialData.language)
+        setEnableProjects(initialData.enableProjects)
+        setShowJojo(initialData.showJojo)
+    }, [initialData])
+
+    const [showPasswordModal, setShowPasswordModal] = useState(false)
+    const [newPassword, setNewPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+
+    const handlePasswordChange = async () => {
+        if (newPassword !== confirmPassword) {
+            setError("パスワードが一致しません")
+            return
+        }
+        if (newPassword.length < 6) {
+            setError("パスワードは6文字以上で設定してください")
+            return
+        }
+        setIsSaving(true)
+        setError("")
+
+        try {
+            const supabase = createClient()
+            const { error } = await supabase.auth.updateUser({ password: newPassword })
+
+            if (error) {
+                throw error
+            }
+
+            setSuccess("パスワードを変更しました")
+            setShowPasswordModal(false)
+            setNewPassword("")
+            setConfirmPassword("")
+        } catch (err: any) {
+            console.error("Password update error:", err)
+            setError(err.message || "パスワードの更新に失敗しました")
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleJojoToggle = async (newValue: boolean) => {
+        setShowJojo(newValue)
+        setError("")
+        setSuccess("")
+
+        try {
+            // Save to API
+            const res = await fetch("/api/user/settings", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ showJojo: newValue })
+            })
+
+            if (!res.ok) {
+                throw new Error("設定の保存に失敗しました")
+            }
+
+            setSuccess("設定を保存しました")
+
+            // Auto-dismiss success message after 3 seconds
+            setTimeout(() => {
+                setSuccess("")
+            }, 3000)
+
+            // Refresh server data
+            router.refresh()
+        } catch (error) {
+            console.error("Failed to update Jojo settings:", error)
+            setError("設定の保存に失敗しました")
+
+            // Auto-dismiss error message after 3 seconds
+            setTimeout(() => {
+                setError("")
+            }, 3000)
+
+            // Revert on error
+            setShowJojo(!newValue)
+        }
+    }
 
     const handleProjectToggle = async (newValue: boolean) => {
         setEnableProjects(newValue)
@@ -55,20 +146,51 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
 
             // Update localStorage
             if (typeof window !== 'undefined') {
+                const oldValue = localStorage.getItem('enableProjects')
+                console.log('[ProfileClient] Setting enableProjects in localStorage:', newValue)
                 localStorage.setItem('enableProjects', String(newValue))
-                // Dispatch event for immediate update
-                window.dispatchEvent(new Event('projectSettingsChanged'))
+                console.log('[ProfileClient] localStorage after set:', localStorage.getItem('enableProjects'))
+
+                // Dispatch custom event with the new value
+                console.log('[ProfileClient] Dispatching projectSettingsChanged event')
+                window.dispatchEvent(new CustomEvent('projectSettingsChanged', {
+                    detail: { enableProjects: newValue }
+                }))
+
+                // Also manually trigger storage event for same-window updates
+                // (storage events don't fire in the same window that made the change)
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'enableProjects',
+                    newValue: String(newValue),
+                    oldValue: oldValue,
+                    storageArea: localStorage,
+                    url: window.location.href
+                }))
             }
 
             setSuccess(newValue ? "プロジェクト機能を有効にしました" : "プロジェクト機能を無効にしました")
 
-            // Reload page to ensure navigation updates
+            // Auto-dismiss success message after 3 seconds
             setTimeout(() => {
-                window.location.reload()
-            }, 1000)
+                setSuccess("")
+            }, 3000)
+
+            // Refresh server data
+            router.refresh()
+
+            // Dispatch event for other components
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('projectSettingsChanged'))
+            }
         } catch (error) {
             console.error("Failed to update project settings:", error)
             setError("プロジェクト設定の保存に失敗しました")
+
+            // Auto-dismiss error message after 3 seconds
+            setTimeout(() => {
+                setError("")
+            }, 3000)
+
             // Revert on error
             setEnableProjects(!newValue)
         }
@@ -103,6 +225,11 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
 
             setSuccess("プロフィールを保存しました")
 
+            // Auto-dismiss success message after 3 seconds
+            setTimeout(() => {
+                setSuccess("")
+            }, 3000)
+
             // Refresh to show updated data
             setTimeout(() => {
                 router.refresh()
@@ -110,6 +237,11 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
         } catch (err: any) {
             console.error("Profile save error:", err)
             setError(err.message || "保存中にエラーが発生しました")
+
+            // Auto-dismiss error message after 3 seconds
+            setTimeout(() => {
+                setError("")
+            }, 3000)
         } finally {
             setIsSaving(false)
         }
@@ -123,31 +255,9 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-8"
             >
-                <h1 className="text-[28px] font-bold mb-2">プロフィール</h1>
+                <h1 className="text-[28px] font-bold mb-2">アカウント設定</h1>
                 <p className="text-white/60">アカウント情報と設定を管理</p>
             </motion.div>
-
-            {/* Error Message */}
-            {error && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-2xl text-red-200"
-                >
-                    {error}
-                </motion.div>
-            )}
-
-            {/* Success Message */}
-            {success && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-6 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-2xl text-emerald-200"
-                >
-                    {success}
-                </motion.div>
-            )}
 
             {/* Profile Picture Section */}
             <motion.div
@@ -210,18 +320,6 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/60 cursor-not-allowed"
                         />
                     </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-white/60 mb-2">
-                            自己紹介
-                        </label>
-                        <textarea
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            rows={3}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors resize-none"
-                        />
-                    </div>
                 </div>
             </motion.div>
 
@@ -262,7 +360,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                         <div className="flex items-center gap-3">
                             <Mail className="w-5 h-5 text-white/60" />
                             <div>
-                                <p className="font-medium">メール通知</p>
+                                <p className="font-medium">メール通知 <span className="text-xs text-amber-400">(近日実装予定)</span></p>
                                 <p className="text-sm text-white/60">週次レポートを受け取る</p>
                             </div>
                         </div>
@@ -274,22 +372,6 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                                 className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${emailUpdates ? "translate-x-7" : "translate-x-1"}`}
                             />
                         </button>
-                    </div>
-
-                    <div className="p-4 bg-white/5 rounded-xl">
-                        <div className="flex items-center gap-3 mb-3">
-                            <Globe className="w-5 h-5 text-white/60" />
-                            <p className="font-medium">言語</p>
-                        </div>
-                        <select
-                            value={language}
-                            onChange={(e) => setLanguage(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                        >
-                            <option value="ja">日本語</option>
-                            <option value="en">English</option>
-                            <option value="zh">中文</option>
-                        </select>
                     </div>
                 </div>
             </motion.div>
@@ -326,6 +408,24 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                             />
                         </button>
                     </div>
+
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                        <div className="flex items-center gap-3">
+                            <Sparkles className="w-5 h-5 text-white/60" />
+                            <div>
+                                <p className="font-medium">Jojo (AIマスコット)</p>
+                                <p className="text-sm text-white/60">ダッシュボードにマスコットを表示する</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => handleJojoToggle(!showJojo)}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${showJojo ? "bg-emerald-500" : "bg-white/20"}`}
+                        >
+                            <div
+                                className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${showJojo ? "translate-x-7" : "translate-x-1"}`}
+                            />
+                        </button>
+                    </div>
                 </div>
             </motion.div>
 
@@ -343,7 +443,10 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                     <h3 className="text-xl font-bold">セキュリティ</h3>
                 </div>
 
-                <button className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-left">
+                <button
+                    onClick={() => setShowPasswordModal(true)}
+                    className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-left"
+                >
                     <p className="font-medium mb-1">パスワードを変更</p>
                     <p className="text-sm text-white/60">アカウントのセキュリティを強化</p>
                 </button>
@@ -388,8 +491,31 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="flex justify-end gap-4"
+                className="flex items-center justify-between gap-4"
             >
+                {/* Error/Success Messages on the left */}
+                <div className="flex-1">
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-sm"
+                        >
+                            {error}
+                        </motion.div>
+                    )}
+                    {success && (
+                        <motion.div
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/50 rounded-xl text-emerald-200 text-sm"
+                        >
+                            {success}
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Save button on the right */}
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
@@ -399,6 +525,65 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                     {isSaving ? "保存中..." : "変更を保存"}
                 </button>
             </motion.div>
+            {/* Password Change Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+                    >
+                        <h3 className="text-xl font-bold text-white mb-4">パスワードの変更</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-white/60 mb-2">
+                                    新しいパスワード
+                                </label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                        placeholder="6文字以上"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-white/60 mb-2">
+                                    パスワードの確認
+                                </label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                        placeholder="もう一度入力"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex gap-3 justify-end mt-6">
+                            <button
+                                onClick={() => setShowPasswordModal(false)}
+                                className="px-4 py-2 text-white/60 hover:text-white text-sm transition-colors"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={handlePasswordChange}
+                                disabled={isSaving || !newPassword}
+                                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSaving ? "更新中..." : "変更する"}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     )
 }

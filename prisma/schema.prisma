@@ -41,6 +41,7 @@ model UserSettings {
   id             String  @id @default(uuid())
   userId         String  @unique
   enableProjects Boolean @default(false)
+  showJojo       Boolean @default(true)
   user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

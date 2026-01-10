@@ -386,6 +386,17 @@ const getCachedUserProjects = unstable_cache(
     { revalidate: 60, tags: ['dashboard', 'projects'] }
 )
 
+const getCachedUserSettings = unstable_cache(
+    async (userId: string) => {
+        return await prisma.userSettings.findUnique({
+            where: { userId },
+            select: { showJojo: true }
+        })
+    },
+    ['dashboard-user-settings'],
+    { revalidate: 60, tags: ['dashboard', 'settings', 'profile'] }
+)
+
 import VoiceRecordingSection from "@/components/VoiceRecordingSection"
 
 async function VoiceRecordingSectionWrapper({ userId }: { userId: string }) {
@@ -406,6 +417,8 @@ export default async function DashboardPage() {
     if (!user) {
         return null // Middleware will redirect
     }
+
+    const settings = await getCachedUserSettings(user.id)
 
     return (
         <DashboardLayout>
@@ -477,7 +490,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Jojo AI Mascot */}
-            <Jojo userId={user.id} />
+            {(settings?.showJojo ?? true) && <Jojo userId={user.id} />}
         </DashboardLayout >
     )
 }

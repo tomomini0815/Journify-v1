@@ -24,7 +24,7 @@ const getCachedProfileData = unstable_cache(
             }),
             prisma.userSettings.findUnique({
                 where: { userId },
-                select: { enableProjects: true }
+                select: { enableProjects: true, showJojo: true }
             }),
             prisma.journalEntry.count({
                 where: { userId }
@@ -111,6 +111,7 @@ export default async function ProfilePage() {
             emailUpdates: (profile?.preferences as any)?.emailUpdates ?? false,
             language: (profile?.preferences as any)?.language || "ja",
             enableProjects: settings?.enableProjects ?? false,
+            showJojo: settings?.showJojo ?? true,
             stats: {
                 journalCount,
                 streak,
@@ -137,6 +138,7 @@ export default async function ProfilePage() {
                     emailUpdates: false,
                     language: "ja",
                     enableProjects: false,
+                    showJojo: true,
                     stats: {
                         journalCount: 0,
                         streak: 0,

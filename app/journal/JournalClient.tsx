@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import MindMapViewer from "@/components/MindMapViewer"
+import { UnifiedTabs } from "@/components/ui/unified-tabs"
 
 interface Journal {
     id: string
@@ -197,40 +198,43 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                 className="flex flex-col gap-4 mb-8"
             >
                 {/* Tabs */}
-                <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/10">
-                    <button
-                        onClick={() => setActiveTab("written")}
-                        className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === "written"
-                            ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg"
-                            : "text-white/60 hover:text-white hover:bg-white/5"
-                            }`}
-                    >
-                        <PenTool className="w-4 h-4" />
-                        <span className="hidden md:inline">テキストジャーナル</span>
-                        <span className="md:hidden">テキスト</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("voice")}
-                        className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === "voice"
-                            ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-white shadow-lg"
-                            : "text-white/60 hover:text-white hover:bg-white/5"
-                            }`}
-                    >
-                        <Mic className="w-4 h-4" />
-                        <span className="hidden md:inline">音声ジャーナル</span>
-                        <span className="md:hidden">音声</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("mindmap")}
-                        className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === "mindmap"
-                            ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/20"
-                            : "text-white/60 hover:text-white hover:bg-white/5"
-                            }`}
-                    >
-                        <BrainCircuit className="w-4 h-4" />
-                        <span className="hidden md:inline">AIマインドマップ</span>
-                        <span className="md:hidden">AIマップ</span>
-                    </button>
+                <div className="border-b border-white/10 mb-4">
+                    <UnifiedTabs
+                        tabs={[
+                            {
+                                id: "written",
+                                label: (
+                                    <>
+                                        <span className="hidden md:inline">テキストジャーナル</span>
+                                        <span className="md:hidden">テキスト</span>
+                                    </>
+                                ),
+                                icon: PenTool
+                            },
+                            {
+                                id: "voice",
+                                label: (
+                                    <>
+                                        <span className="hidden md:inline">音声ジャーナル</span>
+                                        <span className="md:hidden">音声</span>
+                                    </>
+                                ),
+                                icon: Mic
+                            },
+                            {
+                                id: "mindmap",
+                                label: (
+                                    <>
+                                        <span className="hidden md:inline">AIマインドマップ</span>
+                                        <span className="md:hidden">マインドマップ</span>
+                                    </>
+                                ),
+                                icon: BrainCircuit
+                            }
+                        ]}
+                        activeTab={activeTab}
+                        onChange={(id) => setActiveTab(id as "written" | "voice" | "mindmap")}
+                    />
                 </div>
 
                 {activeTab !== "mindmap" && (

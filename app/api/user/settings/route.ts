@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
+import { revalidateTag } from "next/cache"
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +28,8 @@ export async function GET() {
                 settings = await prisma.userSettings.create({
                     data: {
                         userId: user.id,
-                        enableProjects: false
+                        enableProjects: false,
+                        showJojo: true
                     }
                 })
                 console.log("Created default settings:", settings)
@@ -39,7 +41,8 @@ export async function GET() {
             console.error("Database error, returning default settings:", dbError)
             return NextResponse.json({
                 userId: user.id,
-                enableProjects: false
+                enableProjects: false,
+                showJojo: true
             })
         }
     } catch (error) {
@@ -47,7 +50,8 @@ export async function GET() {
         // Return default settings instead of error
         return NextResponse.json({
             userId: "unknown",
-            enableProjects: false
+            enableProjects: false,
+            showJojo: true
         })
     }
 }
@@ -65,26 +69,26 @@ export async function PATCH(req: Request) {
         }
 
         const body = await req.json()
-        const { enableProjects } = body
+        const { enableProjects, showJojo } = body
 
-        if (typeof enableProjects !== 'boolean') {
-            return NextResponse.json(
-                { error: "enableProjects must be a boolean" },
-                { status: 400 }
-            )
-        }
+        const updateData: any = {}
+        if (enableProjects !== undefined) updateData.enableProjects = enableProjects
+        if (showJojo !== undefined) updateData.showJojo = showJojo
 
-        console.log(`PATCH /api/user/settings for ${user.id}: enableProjects=${enableProjects}`)
+        console.log(`PATCH /api/user/settings for ${user.id}:`, updateData)
 
         const settings = await prisma.userSettings.upsert({
             where: { userId: user.id },
-            update: { enableProjects },
+            update: updateData,
             create: {
                 userId: user.id,
-                enableProjects
+                enableProjects: enableProjects ?? false,
+                showJojo: showJojo ?? true
             }
         })
         console.log("Updated settings:", settings)
+
+        revalidateTag('profile')
 
         return NextResponse.json(settings)
     } catch (error) {
