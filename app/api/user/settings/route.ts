@@ -88,7 +88,7 @@ export async function PATCH(req: Request) {
         })
         console.log("Updated settings:", settings)
 
-        revalidateTag('profile')
+        revalidateTag('profile', 'max')
 
         return NextResponse.json(settings)
     } catch (error) {
