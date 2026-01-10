@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase, ChevronDown, Heart, BarChart2 } from "lucide-react"
+import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Briefcase, ChevronDown, Heart, BarChart2, MessageSquarePlus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import NotificationBell from "@/components/NotificationBell"
 import { WeatherWidget } from "@/components/WeatherWidget"
@@ -22,6 +22,7 @@ const defaultNavigation = [
     { name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
     { name: "統計詳細", href: "/year-in-review", icon: BarChart2 },
     { name: "プロフィール", href: "/profile", icon: User },
+    { name: "お問い合わせ", href: "/feedback", icon: MessageSquarePlus },
 ]
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {

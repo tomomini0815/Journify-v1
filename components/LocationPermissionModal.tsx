@@ -33,7 +33,7 @@ export function LocationPermissionModal({ isOpen, onClose, onAllow }: LocationPe
                         className="fixed inset-0 z-50 flex items-center justify-center p-4"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="bg-[#1a1a1a]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden">
+                        <div className="bg-[#1a1a1a]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[85vh] overflow-y-auto">
                             {/* Background Elements */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
                             <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -ml-16 -mb-16" />

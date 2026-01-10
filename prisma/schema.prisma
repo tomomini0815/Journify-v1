@@ -34,6 +34,7 @@ model User {
   userAchievements  UserAchievement[]
   mindMaps          MindMap[]
   notifications     Notification[]
+  feedback          Feedback[]
 }
 
 model UserSettings {
@@ -488,3 +489,19 @@ model Notification {
   @@index([userId, createdAt])
 }
 
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "inquiry", "improvement", "opinion", "bug_report"
+  category  String?  // Sub-category
+  affectedPage String? // Page where issue occurred
+  content   String   @db.Text
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
