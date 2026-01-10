@@ -24,6 +24,8 @@ interface UserDecoration {
     quantity: number
 }
 
+import { AdventureGuide } from '@/components/AdventureGuide'
+
 export default function DecorationShop() {
     const [decorations, setDecorations] = useState<Decoration[]>([])
     const [userDecorations, setUserDecorations] = useState<Record<string, number>>({})
@@ -139,8 +141,8 @@ export default function DecorationShop() {
                                     key={cat}
                                     onClick={() => setFilterCategory(cat)}
                                     className={`px-4 py-2 rounded-xl text-sm font-bold capitalize whitespace-nowrap transition-colors ${filterCategory === cat
-                                            ? 'bg-amber-500 text-black'
-                                            : 'bg-white/5 hover:bg-white/10 text-white/60'
+                                        ? 'bg-amber-500 text-black'
+                                        : 'bg-white/5 hover:bg-white/10 text-white/60'
                                         }`}
                                 >
                                     {cat}
@@ -181,6 +183,7 @@ export default function DecorationShop() {
                     </div>
                 )}
             </div>
+            <AdventureGuide />
         </DashboardLayout>
     )
 }

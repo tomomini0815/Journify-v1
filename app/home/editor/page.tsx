@@ -33,6 +33,8 @@ interface UserDecoration {
     }
 }
 
+import { AdventureGuide } from '@/components/AdventureGuide'
+
 export default function HomeEditor() {
     const [placedItems, setPlacedItems] = useState<PlacedItem[]>([])
     const [inventory, setInventory] = useState<UserDecoration[]>([])
@@ -198,7 +200,7 @@ export default function HomeEditor() {
                     <div className="w-80 bg-slate-900/80 backdrop-blur-xl border-l border-white/10 p-4 overflow-y-auto rounded-xl">
                         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
                             <Plus size={20} className="text-amber-400" />
-                            Inventory
+                            インベントリ
                         </h2>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -219,6 +221,7 @@ export default function HomeEditor() {
                     </div>
                 </div>
             </div>
+            <AdventureGuide />
         </DashboardLayout>
     )
 }

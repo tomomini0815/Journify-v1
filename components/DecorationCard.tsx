@@ -49,7 +49,7 @@ export function DecorationCard({ decoration, userQuantity = 0, onBuy, isBuying =
             {/* Owned Badge */}
             {userQuantity > 0 && (
                 <div className="absolute top-2 right-2 px-2 py-1 bg-white/20 rounded-md text-xs font-bold flex items-center gap-1">
-                    <span>Owns:</span>
+                    <span>所持:</span>
                     <span className="text-emerald-400">{userQuantity}</span>
                 </div>
             )}
@@ -92,7 +92,7 @@ export function DecorationCard({ decoration, userQuantity = 0, onBuy, isBuying =
                     disabled={isBuying}
                     className="px-4 py-2 bg-white/10 hover:bg-white/20 active:scale-95 transition-all rounded-lg text-sm font-bold disabled:opacity-50"
                 >
-                    {isBuying ? '...' : 'Buy'}
+                    {isBuying ? '...' : '購入'}
                 </button>
             </div>
         </motion.div>

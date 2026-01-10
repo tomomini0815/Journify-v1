@@ -134,12 +134,12 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-2xl text-white/60 mb-4">Companion not found</p>
+                    <p className="text-2xl text-white/60 mb-4">仲間が見つかりません</p>
                     <button
                         onClick={() => router.push('/companions')}
                         className="px-6 py-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
                     >
-                        Back to Companions
+                        一覧に戻る
                     </button>
                 </div>
             </div>
@@ -158,7 +158,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                     className="mb-6 flex items-center gap-2 text-white/60 hover:text-white transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5" />
-                    Back to Companions
+                    一覧に戻る
                 </button>
 
                 {/* Message */}
@@ -222,7 +222,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                                 <Heart className="w-5 h-5 text-pink-400" />
                                 <div className="flex-1">
                                     <div className="flex justify-between text-sm mb-1">
-                                        <span>Happiness</span>
+                                        <span>幸福度</span>
                                         <span>{companion.happiness}/100</span>
                                     </div>
                                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -238,7 +238,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                                 <Zap className="w-5 h-5 text-yellow-400" />
                                 <div className="flex-1">
                                     <div className="flex justify-between text-sm mb-1">
-                                        <span>Energy</span>
+                                        <span>エネルギー</span>
                                         <span>{companion.energy}/100</span>
                                     </div>
                                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -254,7 +254,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                                 <Star className="w-5 h-5 text-blue-400" />
                                 <div className="flex-1">
                                     <div className="flex justify-between text-sm mb-1">
-                                        <span>Loyalty</span>
+                                        <span>忠誠度</span>
                                         <span>{companion.loyalty}/100</span>
                                     </div>
                                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -278,7 +278,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                                 <Cookie className="w-5 h-5" />
-                                Feed
+                                おやつをあげる
                             </h2>
                             <div className="grid grid-cols-3 gap-3">
                                 <button
@@ -287,7 +287,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                                     className="p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50"
                                 >
                                     <div className="text-2xl mb-2">🍪</div>
-                                    <div className="text-xs">Treat</div>
+                                    <div className="text-xs">スナック</div>
                                     <div className="text-xs text-white/60">+5 ❤️ +3 ⚡</div>
                                 </button>
                                 <button
@@ -296,7 +296,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                                     className="p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50"
                                 >
                                     <div className="text-2xl mb-2">🍖</div>
-                                    <div className="text-xs">Meal</div>
+                                    <div className="text-xs">ごはん</div>
                                     <div className="text-xs text-white/60">+10 ❤️ +10 ⚡</div>
                                 </button>
                                 <button
@@ -305,7 +305,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                                     className="p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50"
                                 >
                                     <div className="text-2xl mb-2">🍰</div>
-                                    <div className="text-xs">Deluxe</div>
+                                    <div className="text-xs">ごちそう</div>
                                     <div className="text-xs text-white/60">+20 ❤️ +20 ⚡</div>
                                 </button>
                             </div>
@@ -315,7 +315,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                                 <Sparkles className="w-5 h-5" />
-                                Play
+                                遊ぶ
                             </h2>
                             <button
                                 onClick={handlePlay}
@@ -326,14 +326,14 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                                     <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                                 ) : (
                                     <>
-                                        Play Together
+                                        一緒に遊ぶ
                                         <div className="text-xs font-normal mt-1">+5 ⭐ +10 EXP -10 ⚡</div>
                                     </>
                                 )}
                             </button>
                             {companion.energy < 10 && (
                                 <p className="text-xs text-amber-400 mt-2 text-center">
-                                    Too tired! Feed your companion first.
+                                    疲れすぎています！先にごはんをあげましょう。
                                 </p>
                             )}
                         </div>
@@ -341,7 +341,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                         {/* Activate Section */}
                         {!companion.isActive && (
                             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-                                <h2 className="text-xl font-bold mb-4">Set as Active</h2>
+                                <h2 className="text-xl font-bold mb-4">アクティブにする</h2>
                                 <button
                                     onClick={handleActivate}
                                     disabled={actionLoading}
@@ -350,11 +350,11 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                                     {actionLoading ? (
                                         <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                                     ) : (
-                                        'Activate Companion'
+                                        'パートナーに設定'
                                     )}
                                 </button>
                                 <p className="text-xs text-white/60 mt-2 text-center">
-                                    Active companions appear on your dashboard
+                                    アクティブなコンパニオンはダッシュボードに表示されます
                                 </p>
                             </div>
                         )}
@@ -362,8 +362,8 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                         {companion.isActive && (
                             <div className="bg-emerald-500/20 border border-emerald-500/50 rounded-2xl p-6 text-center">
                                 <Star className="w-8 h-8 mx-auto mb-2 text-emerald-400" />
-                                <p className="font-bold">Active Companion</p>
-                                <p className="text-sm text-white/60">Displayed on your dashboard</p>
+                                <p className="font-bold">アクティブ中</p>
+                                <p className="text-sm text-white/60">現在ダッシュボードに表示されています</p>
                             </div>
                         )}
                     </motion.div>

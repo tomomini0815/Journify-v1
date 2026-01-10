@@ -25,6 +25,8 @@ interface UserCompanion {
     }
 }
 
+import { AdventureGuide } from '@/components/AdventureGuide'
+
 export default function CompanionsClient() {
     const [companions, setCompanions] = useState<UserCompanion[]>([])
     const [loading, setLoading] = useState(true)
@@ -65,10 +67,10 @@ export default function CompanionsClient() {
                 className="mb-8"
             >
                 <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                    My Companions
+                    マイ・コンパニオン
                 </h1>
                 <p className="text-white/60">
-                    {companions.length} companion{companions.length !== 1 ? 's' : ''} collected
+                    {companions.length} 体の仲間と出会いました
                 </p>
             </motion.div>
 
@@ -79,13 +81,13 @@ export default function CompanionsClient() {
                     animate={{ opacity: 1 }}
                     className="text-center py-20"
                 >
-                    <p className="text-2xl text-white/40 mb-4">No companions yet</p>
-                    <p className="text-white/60 mb-6">Summon your first companion from the gacha!</p>
+                    <p className="text-2xl text-white/40 mb-4">まだ仲間がいません</p>
+                    <p className="text-white/60 mb-6">ガチャで最初の仲間を召喚しましょう！</p>
                     <button
                         onClick={() => router.push('/dashboard')}
                         className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-bold hover:scale-105 transition-transform"
                     >
-                        Go to Dashboard
+                        ダッシュボードへ戻る
                     </button>
                 </motion.div>
             ) : (
@@ -117,6 +119,8 @@ export default function CompanionsClient() {
                     ))}
                 </div>
             )}
+
+            <AdventureGuide />
         </div>
     )
 }
