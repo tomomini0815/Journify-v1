@@ -9,6 +9,7 @@ import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 import { DashboardGreeting } from "@/components/DashboardGreeting"
 import Jojo from "@/components/Jojo"
 import DailyChallenges from "@/components/DailyChallenges"
+import { ActiveCompanionDisplay } from "@/components/ActiveCompanionDisplay"
 
 // Revalidate every 60 seconds
 export const revalidate = 60

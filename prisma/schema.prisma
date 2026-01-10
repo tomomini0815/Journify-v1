@@ -35,6 +35,13 @@ model User {
   mindMaps          MindMap[]
   notifications     Notification[]
   feedback          Feedback[]
+  userCompanions    UserCompanion[]
+  fishCatches       FishCatch[]
+  userFishingStats  UserFishingStats?
+  userPlants        UserPlant[]
+  userGardenStats   UserGardenStats?
+  userDecorations   UserDecoration[]
+  userHomeLayout    UserHomeLayout?
 }
 
 model UserSettings {
@@ -505,4 +512,177 @@ model Feedback {
   @@index([userId])
   @@index([type])
   @@index([status])
+}
+
+// ============================================
+// ADVENTURE MODE: Pet Collection & Mini-Games
+// ============================================
+
+// Companion System (Pets)
+model Companion {
+  id          String   @id @default(cuid())
+  name        String
+  species     String
+  rarity      String
+  description String   @db.Text
+  imageUrl    String
+  baseStats   Json
+  skills      Json
+  theme       String   @default("space")
+  createdAt   DateTime @default(now())
+  
+  userCompanions UserCompanion[]
+}
+
+model UserCompanion {
+  id           String   @id @default(cuid())
+  userId       String
+  companionId  String
+  nickname     String?
+  level        Int      @default(1)
+  experience   Int      @default(0)
+  happiness    Int      @default(50)
+  energy       Int      @default(50)
+  loyalty      Int      @default(0)
+  isActive     Boolean  @default(false)
+  acquiredAt   DateTime @default(now())
+  lastFedAt    DateTime?
+  lastPlayedAt DateTime?
+  
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companion Companion @relation(fields: [companionId], references: [id])
+  
+  @@unique([userId, companionId])
+  @@index([userId])
+  @@index([isActive])
+}
+
+// Home Decoration System
+model HomeDecoration {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  theme       String
+  imageUrl    String
+  rarity      String
+  price       Int
+  unlockLevel Int      @default(1)
+  description String?
+  createdAt   DateTime @default(now())
+  
+  userDecorations UserDecoration[]
+}
+
+model UserDecoration {
+  id           String   @id @default(cuid())
+  userId       String
+  decorationId String
+  quantity     Int      @default(1)
+  acquiredAt   DateTime @default(now())
+  
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decoration HomeDecoration @relation(fields: [decorationId], references: [id])
+  
+  @@unique([userId, decorationId])
+  @@index([userId])
+}
+
+model UserHomeLayout {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  theme       String   @default("space")
+  layout      Json
+  updatedAt   DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Fishing Mini-Game
+model Fish {
+  id          String @id @default(cuid())
+  name        String
+  species     String
+  rarity      String
+  imageUrl    String
+  minSize     Int
+  maxSize     Int
+  description String @db.Text
+  habitat     String
+  
+  catches FishCatch[]
+}
+
+model FishCatch {
+  id        String   @id @default(cuid())
+  userId    String
+  fishId    String
+  size      Int
+  weight    Int?
+  caughtAt  DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fish Fish @relation(fields: [fishId], references: [id])
+  
+  @@index([userId])
+  @@index([fishId])
+}
+
+model UserFishingStats {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  totalCatches    Int      @default(0)
+  biggestCatch    Int      @default(0)
+  fishingLevel    Int      @default(1)
+  fishingExp      Int      @default(0)
+  baitCount       Int      @default(10)
+  lastBaitRefill  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Gardening Mini-Game
+model Plant {
+  id           String @id @default(cuid())
+  name         String
+  species      String
+  growthTime   Int
+  imageUrl     String
+  seedCost     Int
+  harvestValue Int
+  rarity       String
+  description  String?
+  
+  userPlants UserPlant[]
+}
+
+model UserPlant {
+  id          String   @id @default(cuid())
+  userId      String
+  plantId     String
+  plotNumber  Int
+  plantedAt   DateTime
+  wateredAt   DateTime?
+  harvestedAt DateTime?
+  stage       Int      @default(0)
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plant Plant @relation(fields: [plantId], references: [id])
+  
+  @@unique([userId, plotNumber])
+  @@index([userId])
+}
+
+model UserGardenStats {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  totalHarvests  Int      @default(0)
+  gardenLevel    Int      @default(1)
+  gardenExp      Int      @default(0)
+  seedInventory  Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

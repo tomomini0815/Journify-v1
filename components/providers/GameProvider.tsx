@@ -65,15 +65,35 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const fetchData = useCallback(async () => {
         setIsLoading(true)
         try {
-            const [statsRes, questsRes, achievementsRes] = await Promise.all([
-                fetch('/api/game/stats'),
-                fetch('/api/game/quests'),
-                fetch('/api/game/achievements')
-            ])
+            // Fetch stats (required)
+            try {
+                const statsRes = await fetch('/api/game/stats')
+                if (statsRes.ok) {
+                    setStats(await statsRes.json())
+                }
+            } catch (error) {
+                console.warn('Game stats API not available:', error)
+            }
 
-            if (statsRes.ok) setStats(await statsRes.json())
-            if (questsRes.ok) setQuests(await questsRes.json())
-            if (achievementsRes.ok) setAchievements(await achievementsRes.json())
+            // Fetch quests (optional)
+            try {
+                const questsRes = await fetch('/api/game/quests')
+                if (questsRes.ok) {
+                    setQuests(await questsRes.json())
+                }
+            } catch (error) {
+                console.warn('Game quests API not available:', error)
+            }
+
+            // Fetch achievements (optional)
+            try {
+                const achievementsRes = await fetch('/api/game/achievements')
+                if (achievementsRes.ok) {
+                    setAchievements(await achievementsRes.json())
+                }
+            } catch (error) {
+                console.warn('Game achievements API not available:', error)
+            }
 
         } catch (error) {
             console.error("Failed to fetch game data", error)
@@ -87,18 +107,30 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }, [fetchData])
 
     const refreshData = async () => {
-        // Background refresh without setting full loading state if desired, 
-        // but for simplicity reusing fetchData logic or parts of it.
-        // Let's just re-fetch stats and quests as they change most often.
         try {
-            const [statsRes, questsRes] = await Promise.all([
-                fetch('/api/game/stats'),
-                fetch('/api/game/quests')
-            ])
-            if (statsRes.ok) setStats(await statsRes.json())
-            if (questsRes.ok) setQuests(await questsRes.json())
-            const achievementsRes = await fetch('/api/game/achievements')
-            if (achievementsRes.ok) setAchievements(await achievementsRes.json())
+            // Refresh stats
+            try {
+                const statsRes = await fetch('/api/game/stats')
+                if (statsRes.ok) setStats(await statsRes.json())
+            } catch (error) {
+                console.warn('Failed to refresh stats:', error)
+            }
+
+            // Refresh quests
+            try {
+                const questsRes = await fetch('/api/game/quests')
+                if (questsRes.ok) setQuests(await questsRes.json())
+            } catch (error) {
+                console.warn('Failed to refresh quests:', error)
+            }
+
+            // Refresh achievements
+            try {
+                const achievementsRes = await fetch('/api/game/achievements')
+                if (achievementsRes.ok) setAchievements(await achievementsRes.json())
+            } catch (error) {
+                console.warn('Failed to refresh achievements:', error)
+            }
         } catch (error) {
             console.error("Failed to refresh game data", error)
         }
