@@ -26,23 +26,27 @@ interface CompanionDetail {
     }
 }
 
-export default function CompanionDetailPage({ params }: { params: { id: string } }) {
+export default function CompanionDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const [companion, setCompanion] = useState<CompanionDetail | null>(null)
     const [loading, setLoading] = useState(true)
     const [actionLoading, setActionLoading] = useState(false)
     const [message, setMessage] = useState('')
+    const [companionId, setCompanionId] = useState<string | null>(null)
     const router = useRouter()
 
     useEffect(() => {
-        fetchCompanion()
+        params.then(p => {
+            setCompanionId(p.id)
+            fetchCompanion(p.id)
+        })
     }, [])
 
-    const fetchCompanion = async () => {
+    const fetchCompanion = async (id: string) => {
         try {
             const res = await fetch('/api/user/companions')
             if (res.ok) {
                 const data = await res.json()
-                const found = data.companions.find((c: any) => c.id === params.id)
+                const found = data.companions.find((c: any) => c.id === id)
                 setCompanion(found || null)
             }
         } catch (error) {
@@ -53,10 +57,10 @@ export default function CompanionDetailPage({ params }: { params: { id: string }
     }
 
     const handleFeed = async (foodType: 'treat' | 'meal' | 'deluxe') => {
-        if (!companion) return
+        if (!companion || !companionId) return
         setActionLoading(true)
         try {
-            const res = await fetch(`/api/user/companions/${companion.id}/feed`, {
+            const res = await fetch(`/api/user/companions/${companionId}/feed`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ foodType })
@@ -75,10 +79,10 @@ export default function CompanionDetailPage({ params }: { params: { id: string }
     }
 
     const handlePlay = async () => {
-        if (!companion) return
+        if (!companion || !companionId) return
         setActionLoading(true)
         try {
-            const res = await fetch(`/api/user/companions/${companion.id}/play`, {
+            const res = await fetch(`/api/user/companions/${companionId}/play`, {
                 method: 'POST'
             })
             if (res.ok) {
@@ -99,10 +103,10 @@ export default function CompanionDetailPage({ params }: { params: { id: string }
     }
 
     const handleActivate = async () => {
-        if (!companion) return
+        if (!companion || !companionId) return
         setActionLoading(true)
         try {
-            const res = await fetch(`/api/user/companions/${companion.id}/activate`, {
+            const res = await fetch(`/api/user/companions/${companionId}/activate`, {
                 method: 'PATCH'
             })
             if (res.ok) {
