@@ -35,6 +35,29 @@ interface UserDecoration {
 
 import { AdventureGuide } from '@/components/AdventureGuide'
 
+// Helper to get emoji based on name if image is not available
+const getDecorationDisplay = (name: string, imageUrl: string) => {
+    if (!imageUrl.startsWith('/images')) return imageUrl
+
+    const n = name.toLowerCase()
+    if (n.includes('chair')) return '🪑'
+    if (n.includes('table')) return '🪵'
+    if (n.includes('bed')) return '🛏️'
+    if (n.includes('bookshelf')) return '📚'
+    if (n.includes('lamp') || n.includes('light')) return '💡'
+    if (n.includes('rug')) return '🧶'
+    if (n.includes('nebula')) return '🌌'
+    if (n.includes('rocket')) return '🚀'
+    if (n.includes('planet') || n.includes('mobile')) return '🪐'
+    if (n.includes('fern') || n.includes('plant')) return '🪴'
+    if (n.includes('flower') || n.includes('vase')) return '💐'
+    if (n.includes('bench')) return '🪵'
+    if (n.includes('neon')) return '🟣'
+    if (n.includes('hologram')) return '💿'
+
+    return '📦'
+}
+
 export default function HomeEditor() {
     const [placedItems, setPlacedItems] = useState<PlacedItem[]>([])
     const [inventory, setInventory] = useState<UserDecoration[]>([])
@@ -177,7 +200,7 @@ export default function HomeEditor() {
                                     <div className="text-6xl select-none filter drop-shadow-lg transition-transform hover:scale-110">
                                         {/* Determine emoji/image based on category if URL is not real image */}
                                         {/* In real implementation, this would be <Image /> */}
-                                        {item.decoration.imageUrl.startsWith('/images') ? '📦' : item.decoration.imageUrl}
+                                        {getDecorationDisplay(item.decoration.name, item.decoration.imageUrl)}
                                     </div>
 
                                     {selectedItem === item.id && (
@@ -211,7 +234,7 @@ export default function HomeEditor() {
                                     className="p-3 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-xl transition-all text-center group"
                                 >
                                     <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
-                                        {item.decoration.imageUrl.startsWith('/images') ? '📦' : item.decoration.imageUrl}
+                                        {getDecorationDisplay(item.decoration.name, item.decoration.imageUrl)}
                                     </div>
                                     <div className="text-xs truncate text-white/70">{item.decoration.name}</div>
                                     <div className="text-xs text-emerald-400 font-mono mt-1">x{item.quantity}</div>

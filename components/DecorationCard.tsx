@@ -35,6 +35,29 @@ const rarityBorders = {
     legendary: 'border-amber-500/50'
 }
 
+// Helper to get emoji based on name if image is not available
+const getDecorationDisplay = (name: string, imageUrl: string) => {
+    if (!imageUrl.startsWith('/images')) return imageUrl
+
+    const n = name.toLowerCase()
+    if (n.includes('chair')) return '🪑'
+    if (n.includes('table')) return '🪵'
+    if (n.includes('bed')) return '🛏️'
+    if (n.includes('bookshelf')) return '📚'
+    if (n.includes('lamp') || n.includes('light')) return '💡'
+    if (n.includes('rug')) return '🧶'
+    if (n.includes('nebula')) return '🌌'
+    if (n.includes('rocket')) return '🚀'
+    if (n.includes('planet') || n.includes('mobile')) return '🪐'
+    if (n.includes('fern') || n.includes('plant')) return '🪴'
+    if (n.includes('flower') || n.includes('vase')) return '💐'
+    if (n.includes('bench')) return '🪵'
+    if (n.includes('neon')) return '🟣'
+    if (n.includes('hologram')) return '💿'
+
+    return '📦'
+}
+
 export function DecorationCard({ decoration, userQuantity = 0, onBuy, isBuying = false }: DecorationCardProps) {
     const rarityColor = rarityColors[decoration.rarity as keyof typeof rarityColors] || rarityColors.common
     const rarityBorder = rarityBorders[decoration.rarity as keyof typeof rarityBorders] || rarityBorders.common
@@ -56,12 +79,7 @@ export function DecorationCard({ decoration, userQuantity = 0, onBuy, isBuying =
 
             {/* Image Placeholder */}
             <div className="relative w-full aspect-square mb-3 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center text-4xl">
-                {/* Replace with actual Image component when URLs are real */}
-                {decoration.imageUrl.startsWith('/images') ? (
-                    <span>{decoration.name.includes('Chair') ? '🪑' : decoration.name.includes('Table') ? '🪑' : '📦'}</span>
-                ) : (
-                    <span>{decoration.imageUrl}</span>
-                )}
+                <span>{getDecorationDisplay(decoration.name, decoration.imageUrl)}</span>
             </div>
 
             {/* Info */}
