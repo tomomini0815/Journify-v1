@@ -124,7 +124,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-white" />
             </div>
         )
@@ -132,7 +132,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
 
     if (!companion) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
                 <div className="text-center">
                     <p className="text-2xl text-white/60 mb-4">仲間が見つかりません</p>
                     <button
@@ -150,7 +150,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
     const expProgress = (companion.experience / expNeeded) * 100
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
             <div className="max-w-4xl mx-auto">
                 {/* Back Button */}
                 <button
@@ -210,7 +210,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                             </div>
                             <div className="h-3 bg-white/10 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
+                                    className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all"
                                     style={{ width: `${expProgress}%` }}
                                 />
                             </div>

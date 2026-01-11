@@ -78,8 +78,16 @@ export function DecorationCard({ decoration, userQuantity = 0, onBuy, isBuying =
             )}
 
             {/* Image Placeholder */}
-            <div className="relative w-full aspect-square mb-3 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center text-4xl">
-                <span>{getDecorationDisplay(decoration.name, decoration.imageUrl)}</span>
+            <div className="relative w-full aspect-square mb-3 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center text-4xl p-2">
+                {decoration.imageUrl?.startsWith('/images') ? (
+                    <img
+                        src={decoration.imageUrl}
+                        alt={decoration.name}
+                        className="w-full h-full object-contain filter drop-shadow-md group-hover:scale-110 transition-transform duration-300"
+                    />
+                ) : (
+                    <span className="text-4xl">{getDecorationDisplay(decoration.name, decoration.imageUrl)}</span>
+                )}
             </div>
 
             {/* Info */}

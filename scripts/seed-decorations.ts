@@ -21,7 +21,19 @@ const decorations = [
 
     // Cyberpunk Theme
     { name: "Neon Sign", category: "lighting", theme: "cyberpunk", imageUrl: "/images/decorations/neon-sign.png", rarity: "rare", price: 700, description: "Buzzing neon light." },
-    { name: "Hologram Projector", category: "decoration", theme: "cyberpunk", imageUrl: "/images/decorations/hologram-projector.png", rarity: "epic", price: 1500, description: "Projects 3D images." }
+    { name: "Hologram Projector", category: "decoration", theme: "cyberpunk", imageUrl: "/images/decorations/hologram-projector.png", rarity: "epic", price: 1500, description: "Projects 3D images." },
+
+    // Clothes
+    { name: 'スペーススーツ', category: 'clothes', theme: 'space', imageUrl: '/images/decorations/space-suit.png', rarity: 'rare', price: 1500, description: '小さな宇宙飛行士のためのスーツ' },
+    { name: '魔法使いの帽子', category: 'clothes', theme: 'fantasy', imageUrl: '/images/decorations/wizard-hat.png', rarity: 'rare', price: 1200, description: '星の刺繍が入った不思議な帽子' },
+    { name: 'ピクセルサングラス', category: 'clothes', theme: 'cyberpunk', imageUrl: '/images/decorations/sunglasses.png', rarity: 'common', price: 500, description: 'クールなドット絵サングラス' },
+
+    // Snacks
+    { name: 'スタークッキー', category: 'snack', theme: 'space', imageUrl: '/images/decorations/star-cookie.png', rarity: 'common', price: 100, description: '星屑をまぶした甘いクッキー' },
+    { name: 'ムーンミルク', category: 'snack', theme: 'space', imageUrl: '/images/decorations/moon-milk.png', rarity: 'uncommon', price: 300, description: '飲むとぐっすり眠れる青いミルク' },
+
+    // Toys
+    { name: 'トイロケット', category: 'toy', theme: 'space', imageUrl: '/images/decorations/toy-rocket.png', rarity: 'common', price: 800, description: 'ふかふかのロケットのぬいぐるみ' }
 ]
 
 async function seedDecorations() {
@@ -32,7 +44,10 @@ async function seedDecorations() {
         for (const deco of decorations) {
             await prisma.homeDecoration.upsert({
                 where: { id: deco.name.toLowerCase().replace(/ /g, '-') },
-                update: {},
+                update: {
+                    ...deco,
+                    // imageUrl: `/images/decorations/${deco.name.toLowerCase().replace(/ /g, '-')}.png` // Placeholder path
+                },
                 create: {
                     id: deco.name.toLowerCase().replace(/ /g, '-'),
                     ...deco,
