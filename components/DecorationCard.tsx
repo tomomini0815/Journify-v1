@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
 
 interface DecorationCardProps {
     decoration: {
@@ -61,6 +62,7 @@ const getDecorationDisplay = (name: string, imageUrl: string) => {
 export function DecorationCard({ decoration, userQuantity = 0, onBuy, isBuying = false }: DecorationCardProps) {
     const rarityColor = rarityColors[decoration.rarity as keyof typeof rarityColors] || rarityColors.common
     const rarityBorder = rarityBorders[decoration.rarity as keyof typeof rarityBorders] || rarityBorders.common
+    const [imageError, setImageError] = useState(false)
 
     return (
         <motion.div
@@ -79,11 +81,12 @@ export function DecorationCard({ decoration, userQuantity = 0, onBuy, isBuying =
 
             {/* Image Placeholder */}
             <div className="relative w-full aspect-square mb-3 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center text-4xl p-2">
-                {decoration.imageUrl?.startsWith('/images') ? (
+                {decoration.imageUrl?.startsWith('/images') && !imageError ? (
                     <img
                         src={decoration.imageUrl}
                         alt={decoration.name}
                         className="w-full h-full object-contain filter drop-shadow-md group-hover:scale-110 transition-transform duration-300"
+                        onError={() => setImageError(true)}
                     />
                 ) : (
                     <span className="text-4xl">{getDecorationDisplay(decoration.name, decoration.imageUrl)}</span>

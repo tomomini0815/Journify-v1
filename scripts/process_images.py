@@ -17,17 +17,91 @@ files = [
 
 def remove_white_bg(img):
     img = img.convert("RGBA")
-    datas = img.getdata()
+    width, height = img.size
     
+    # Simple thresholding is risky. Let's try to make "white" transparent.
+    # A better heuristic for generated assets on white:
+    # 1. Be more strict about what is "background" vs "highlight".
+    # 2. Use flood fill from corners if possible (Pillow ImageDraw.floodfill doesn't do alpha, but we can do a mask).
+    
+    # Approach:
+    # 1. Create a binary mask where white pixels are 0, others are 1.
+    # 2. Use that to set alpha.
+    
+    datas = img.getdata()
     newData = []
+    
     for item in datas:
-        # Check if white (high RGB values)
-        if item[0] > 240 and item[1] > 240 and item[2] > 240:
+        # Check if white (high RGB values) - make threshold slightly higher to avoid cutting into light content
+        # Also check for near-white
+        if item[0] > 245 and item[1] > 245 and item[2] > 245:
             newData.append((255, 255, 255, 0))
         else:
             newData.append(item)
             
     img.putdata(newData)
+    return img
+
+    # Note: Real flood fill in pure python/pillow without scipy/cv2 is complex to impl efficiently in one go.
+    # The user complained about transparency "failed". Maybe too much was removed? Or not enough?
+    # Usually generated images have shadows that are greyish white.
+    # Let's try a different trick: Distance from white.
+    
+    # Actually, for game assets, they are usually centered.
+    # Let's try "Flood fill" simulation using ImageDraw.floodfill on a temp image to identify background.
+    
+from PIL import ImageDraw
+
+def remove_white_bg_flood(img):
+    img = img.convert("RGBA")
+    # Create a mask image for flood filling
+    # We flood fill from (0,0) on a temp image.
+    # If the corner isn't white, this fails. Assuming generated images have white backgrounds.
+    
+    # Tolerance for "whiteish"
+    TOLERANCE = 10
+    
+    # Basic pixel access
+    pixels = img.load()
+    width, height = img.size
+    
+    # Queue for BFS flood fill
+    # (x, y)
+    queue = [(0, 0), (width-1, 0), (0, height-1), (width-1, height-1)]
+    visited = set(queue)
+    
+    # We'll modify pixels in place to transparent
+    # But we need to check initial color to confirm it's background
+    
+    def is_bg_color(r, g, b, a):
+        return r > 240 and g > 240 and b > 240
+        
+    # Process queue
+    # Note: BFS might be slow for large images in pure python, but these are small icons.
+    # Let's limit iterations or use recursion carefully. 
+    # Actually, iterative is better.
+    
+    while queue:
+        x, y = queue.pop(0)
+        
+        # Check if out of bounds
+        if x < 0 or x >= width or y < 0 or y >= height:
+            continue
+            
+        r, g, b, a = pixels[x, y]
+        
+        if is_bg_color(r, g, b, a) and a != 0:
+            # Set to transparent
+            pixels[x, y] = (255, 255, 255, 0)
+            
+            # Add neighbors
+            neighbors = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+            for nx, ny in neighbors:
+                if (nx, ny) not in visited:
+                    if 0 <= nx < width and 0 <= ny < height:
+                        visited.add((nx, ny))
+                        queue.append((nx, ny))
+                        
     return img
 
 print("Processing images...")
@@ -44,7 +118,7 @@ for base_name in files:
             
             try:
                 img = Image.open(source_path)
-                img = remove_white_bg(img)
+                img = remove_white_bg_flood(img) # Use the new flood fill function
                 img.save(dest_path, "PNG")
                 print(f"Processed {filename} -> {dest_path}")
                 found = True

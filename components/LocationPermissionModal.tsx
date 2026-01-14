@@ -1,5 +1,7 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { MapPin, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,7 +13,16 @@ interface LocationPermissionModalProps {
 }
 
 export function LocationPermissionModal({ isOpen, onClose, onAllow }: LocationPermissionModalProps) {
-    return (
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+        return () => setMounted(false)
+    }, [])
+
+    if (!mounted) return null
+
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -21,7 +32,7 @@ export function LocationPermissionModal({ isOpen, onClose, onAllow }: LocationPe
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999]"
                     />
 
                     {/* Modal */}
@@ -30,7 +41,7 @@ export function LocationPermissionModal({ isOpen, onClose, onAllow }: LocationPe
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         transition={{ type: "spring", duration: 0.5 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="bg-[#1a1a1a]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[85vh] overflow-y-auto">
@@ -75,6 +86,7 @@ export function LocationPermissionModal({ isOpen, onClose, onAllow }: LocationPe
                     </motion.div>
                 </>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     )
 }

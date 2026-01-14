@@ -34,9 +34,8 @@ interface UserDecoration {
 
 // Helper to get emoji based on name if image is not available
 const getDecorationDisplay = (name: string, imageUrl: string) => {
-    if (!imageUrl.startsWith('/images')) return imageUrl
+    if (!imageUrl?.startsWith('/images')) return imageUrl
 
-    // In case the image path is broken or somehow we revert to names
     const n = name.toLowerCase()
     if (n.includes('chair')) return '🪑'
     if (n.includes('table')) return '🪵'
@@ -52,8 +51,31 @@ const getDecorationDisplay = (name: string, imageUrl: string) => {
     if (n.includes('bench')) return '🪵'
     if (n.includes('neon')) return '🟣'
     if (n.includes('hologram')) return '💿'
+    if (n.includes('スーツ') || n.includes('suit')) return '👨‍🚀'
+    if (n.includes('帽子') || n.includes('hat')) return '🎩'
+    if (n.includes('サングラス') || n.includes('glasses')) return '🕶️'
+    if (n.includes('クッキー') || n.includes('cookie')) return '🍪'
+    if (n.includes('ミルク') || n.includes('milk')) return '🥛'
 
     return '📦'
+}
+
+const DecorationImage = ({ src, name, className, fallback }: { src: string, name: string, className?: string, fallback: React.ReactNode }) => {
+    const [error, setError] = useState(false)
+
+    if (error || !src?.startsWith('/images')) {
+        return <>{fallback}</>
+    }
+
+    return (
+        <img
+            src={src}
+            alt={name}
+            className={className}
+            onError={() => setError(true)}
+            draggable={false}
+        />
+    )
 }
 
 export function HomeEditor() {
@@ -194,7 +216,13 @@ export function HomeEditor() {
                         >
                             <div className="relative group">
                                 <div className="text-6xl select-none filter drop-shadow-lg transition-transform hover:scale-110">
-                                    {item.decoration.imageUrl?.startsWith('/images') ? (
+                                    <DecorationImage
+                                        src={item.decoration.imageUrl}
+                                        name={item.decoration.name}
+                                        className="w-full h-full object-contain"
+                                        fallback={getDecorationDisplay(item.decoration.name, item.decoration.imageUrl)}
+                                    />
+                                    {/* {item.decoration.imageUrl?.startsWith('/images') ? (
                                         <div className="w-16 h-16">
                                             <img
                                                 src={item.decoration.imageUrl}
@@ -205,7 +233,7 @@ export function HomeEditor() {
                                         </div>
                                     ) : (
                                         getDecorationDisplay(item.decoration.name, item.decoration.imageUrl)
-                                    )}
+                                    )} */}
                                 </div>
 
                                 {selectedItem === item.id && (
@@ -239,15 +267,12 @@ export function HomeEditor() {
                                 className="p-3 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-xl transition-all text-center group"
                             >
                                 <div className="text-3xl mb-2 group-hover:scale-110 transition-transform flex justify-center h-10 items-center">
-                                    {item.decoration.imageUrl?.startsWith('/images') ? (
-                                        <img
-                                            src={item.decoration.imageUrl}
-                                            alt={item.decoration.name}
-                                            className="h-full w-auto object-contain"
-                                        />
-                                    ) : (
-                                        getDecorationDisplay(item.decoration.name, item.decoration.imageUrl)
-                                    )}
+                                    <DecorationImage
+                                        src={item.decoration.imageUrl}
+                                        name={item.decoration.name}
+                                        className="h-full w-auto object-contain"
+                                        fallback={getDecorationDisplay(item.decoration.name, item.decoration.imageUrl)}
+                                    />
                                 </div>
                                 <div className="text-xs truncate text-white/70">{item.decoration.name}</div>
                                 <div className="text-xs text-emerald-400 font-mono mt-1">x{item.quantity}</div>
