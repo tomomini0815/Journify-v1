@@ -339,23 +339,23 @@ export default function LandingPage() {
 
           <motion.div
             style={{ opacity: heroTextOpacity }}
-            className="h-screen inset-0 pointer-events-none absolute flex flex-col items-center justify-center pb-20 md:pb-32 text-center px-4 mix-blend-exclusion text-white z-10"
+            className="h-screen inset-0 pointer-events-none absolute flex flex-col items-center justify-center pb-12 md:pb-20 text-center px-4 mix-blend-exclusion text-white z-10"
           >
-            <div className="flex flex-col items-center gap-12 md:gap-24">
+            <div className="flex flex-col items-center gap-8 md:gap-16">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.5 }}
-                className="bg-black/20 backdrop-blur-[2px] p-8 md:p-12 rounded-[40px] border border-white/5"
+                className="bg-black/30 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl"
               >
-                <h1 className="font-serif text-6xl md:text-9xl tracking-tighter mb-4 drop-shadow-2xl">
+                <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl">
                   <span className="italic">Journify</span>
                 </h1>
-                <div className="max-w-xl mx-auto space-y-6">
-                  <p className="text-lg md:text-2xl font-light tracking-[0.2em] text-white drop-shadow-lg uppercase">
+                <div className="max-w-2xl mx-auto space-y-4">
+                  <p className="text-base md:text-xl font-light tracking-[0.15em] text-white drop-shadow-lg uppercase">
                     AIで加速する、書く瞑想と音声ジャーナル
                   </p>
-                  <p className="text-lg md:text-2xl text-white/90 leading-relaxed tracking-[0.2em] px-4 drop-shadow-md font-light">
+                  <p className="text-sm md:text-lg text-white/90 leading-relaxed tracking-[0.1em] px-2 drop-shadow-md font-light">
                     ジャーナリングは、思考を整理し、自分自身を深く知るためのパワフルな習慣です。<br className="hidden md:block" />
                     JournifyはAIの力であなたの「書く言葉」と「話す声」を成長の糧へと変え、理想の未来への歩みをサポートします。
                   </p>
