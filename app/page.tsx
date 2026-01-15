@@ -283,7 +283,7 @@ export default function LandingPage() {
 
         <nav className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 md:px-8 py-6 mix-blend-difference">
           <MagneticButton>
-            <img src="/journify-logo.png" alt="Journify" className="h-8 md:h-10 w-auto cursor-pointer" />
+            <img src="/journify-logo.png" alt="Journify" className="h-12 md:h-14 w-auto cursor-pointer" />
           </MagneticButton>
 
           <div className="flex items-center gap-4 md:gap-8 text-sm font-medium tracking-wide">
