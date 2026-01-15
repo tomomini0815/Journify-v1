@@ -339,18 +339,18 @@ export default function LandingPage() {
 
           <motion.div
             style={{ opacity: heroTextOpacity }}
-            className="h-screen inset-0 pointer-events-none absolute flex flex-col items-center justify-center pb-12 md:pb-20 text-center px-4 mix-blend-exclusion text-white z-10"
+            className="h-screen inset-0 pointer-events-none absolute flex flex-col items-center justify-center pb-12 md:pb-20 text-center px-4 text-white z-10"
           >
-            <div className="flex flex-col items-center gap-8 md:gap-16">
+            <div className="flex flex-col items-center gap-8 md:gap-16 mix-blend-exclusion">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.5 }}
                 whileHover={{ scale: 1.02 }}
-                className="relative bg-black/30 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl pointer-events-auto group cursor-pointer transition-all duration-500"
+                className="relative bg-black/30 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl pointer-events-auto group cursor-pointer transition-all duration-500 mix-blend-normal"
               >
                 {/* Large circular background on hover */}
-                <div className="absolute inset-0 -m-8 md:-m-12 bg-black/80 backdrop-blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out scale-75 group-hover:scale-100 -z-10" />
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out -z-10 transform scale-75 group-hover:scale-150" style={{ margin: '-4rem' }} />
 
                 <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl transition-all duration-500 group-hover:text-white">
                   <span className="italic">Journify</span>
