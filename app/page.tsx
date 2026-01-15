@@ -350,7 +350,7 @@ export default function LandingPage() {
                 className="relative bg-black/30 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl pointer-events-auto group cursor-pointer transition-all duration-500 mix-blend-normal"
               >
                 {/* Large circular background on hover */}
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out -z-10 transform scale-75 group-hover:scale-150" style={{ margin: '-4rem' }} />
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out -z-10 transform scale-90 group-hover:scale-100" />
 
                 <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl transition-all duration-500 group-hover:text-white">
                   <span className="italic">Journify</span>
