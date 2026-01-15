@@ -140,7 +140,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     {/* Logo */}
                     <div className="flex items-center flex-shrink-0 px-6 mb-8">
                         <Link href="/">
-                            <img src="/journify-logo.png" alt="Journify" className="h-10 w-auto" />
+                            <img src="/journify-logo.png" alt="Journify" className="h-14 w-auto" />
                         </Link>
                     </div>
 
@@ -235,7 +235,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white/5 backdrop-blur-xl border-b border-white/10">
                 <div className="flex items-center justify-between px-4 py-3">
                     <Link href="/">
-                        <img src="/journify-logo.png" alt="Journify" className="h-8 w-auto" />
+                        <img src="/journify-logo.png" alt="Journify" className="h-12 w-auto" />
                     </Link>
                     <div className="flex items-center gap-2">
                         <WeatherWidget />
