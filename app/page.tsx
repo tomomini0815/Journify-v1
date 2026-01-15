@@ -87,22 +87,22 @@ export default function LandingPage() {
 
   // S-Curve animations
   const x1 = useTransform(smoothProgress, [0.05, 0.25], ["-50%", "0%"])
-  const scale1 = useTransform(smoothProgress, [0.05, 0.12, 0.25], [0.8, 1.6, 0.8])
+  const scale1 = useTransform(smoothProgress, [0.05, 0.12, 0.25], [1.2, 1.6, 0.8])
 
   const x2 = useTransform(smoothProgress, [0.20, 0.40], ["50%", "0%"])
-  const scale2 = useTransform(smoothProgress, [0.20, 0.27, 0.40], [0.8, 1.5, 0.8])
+  const scale2 = useTransform(smoothProgress, [0.20, 0.27, 0.40], [1.2, 1.5, 0.8])
 
   const x3 = useTransform(smoothProgress, [0.35, 0.55], ["-50%", "0%"])
-  const scale3 = useTransform(smoothProgress, [0.35, 0.42, 0.55], [0.8, 1.6, 0.8])
+  const scale3 = useTransform(smoothProgress, [0.35, 0.42, 0.55], [1.2, 1.6, 0.8])
 
   const x4 = useTransform(smoothProgress, [0.50, 0.70], ["50%", "0%"])
-  const scale4 = useTransform(smoothProgress, [0.50, 0.57, 0.70], [0.8, 1.5, 0.8])
+  const scale4 = useTransform(smoothProgress, [0.50, 0.57, 0.70], [1.2, 1.5, 0.8])
 
   const x5 = useTransform(smoothProgress, [0.65, 0.85], ["-50%", "0%"])
-  const scale5 = useTransform(smoothProgress, [0.65, 0.72, 0.85], [0.8, 1.6, 0.8])
+  const scale5 = useTransform(smoothProgress, [0.65, 0.72, 0.85], [1.2, 1.6, 0.8])
 
   const x6 = useTransform(smoothProgress, [0.80, 1.0], ["50%", "0%"])
-  const scale6 = useTransform(smoothProgress, [0.80, 0.87, 1.0], [0.8, 1.5, 0.8])
+  const scale6 = useTransform(smoothProgress, [0.80, 0.87, 1.0], [1.2, 1.5, 0.8])
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000)
