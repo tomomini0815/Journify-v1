@@ -40,21 +40,11 @@ export default function LandingHero() {
             {/* 2. The Scrolling Content (Foreground) */}
             <ContainerScale className="relative z-10 text-center flex flex-col items-center justify-center p-6">
 
-                {/* Logo */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
-                    className="mb-8"
-                >
-                    <img src="/journify-logo.png" alt="Journify" className="h-16 md:h-24 w-auto mx-auto" />
-                </motion.div>
-
                 {/* Badge */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
+                    transition={{ duration: 0.6 }}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8"
                 >
                     <Sparkles className="w-4 h-4 text-amber-400" />
