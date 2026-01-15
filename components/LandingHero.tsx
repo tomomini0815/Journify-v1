@@ -47,7 +47,7 @@ export default function LandingHero() {
                     transition={{ duration: 0.6, delay: 0.1 }}
                     className="mb-8"
                 >
-                    <img src="/journify-logo.png" alt="Journify" className="h-16 md:h-20 w-auto mx-auto" />
+                    <img src="/journify-logo.png" alt="Journify" className="h-24 md:h-32 w-auto mx-auto" />
                 </motion.div>
 
                 {/* Badge */}
