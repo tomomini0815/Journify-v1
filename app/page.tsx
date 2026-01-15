@@ -346,16 +346,20 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.5 }}
-                className="bg-black/30 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl"
+                whileHover={{ scale: 1.02 }}
+                className="relative bg-black/30 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl pointer-events-auto group cursor-pointer transition-all duration-500"
               >
-                <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl">
+                {/* Large circular background on hover */}
+                <div className="absolute inset-0 -m-8 md:-m-12 bg-black/80 backdrop-blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out scale-75 group-hover:scale-100 -z-10" />
+
+                <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl transition-all duration-500 group-hover:text-white">
                   <span className="italic">Journify</span>
                 </h1>
                 <div className="max-w-2xl mx-auto space-y-4">
-                  <p className="text-base md:text-xl font-light tracking-[0.15em] text-white drop-shadow-lg uppercase">
+                  <p className="text-base md:text-xl font-light tracking-[0.15em] text-white drop-shadow-lg uppercase transition-all duration-500 group-hover:text-white">
                     AIで加速する、書く瞑想と音声ジャーナル
                   </p>
-                  <p className="text-sm md:text-lg text-white/90 leading-relaxed tracking-[0.1em] px-2 drop-shadow-md font-light">
+                  <p className="text-sm md:text-lg text-white/90 leading-relaxed tracking-[0.1em] px-2 drop-shadow-md font-light transition-all duration-500 group-hover:text-white">
                     ジャーナリングは、思考を整理し、自分自身を深く知るためのパワフルな習慣です。<br className="hidden md:block" />
                     JournifyはAIの力であなたの「書く言葉」と「話す声」を成長の糧へと変え、理想の未来への歩みをサポートします。
                   </p>
