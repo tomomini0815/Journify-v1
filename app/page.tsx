@@ -298,81 +298,42 @@ export default function LandingPage() {
           </div>
         </nav>
 
-        {/* Hero Section - 3D Aspirational Gallery with Gradient Lamp Effects */}
+        {/* Hero Section - Split Screen: Text Left, 3D Gallery Right */}
         <section ref={heroRef} className="relative h-screen w-full overflow-hidden bg-black">
-          <InfiniteGallery
-            images={[
-              { src: "/images/aspirations/success_entrepreneur_1767788052439.png", alt: "Successful Entrepreneur" },
-              { src: "/images/aspirations/asian_entrepreneur.png", alt: "Asian Entrepreneur Success" },
-              { src: "https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=1200&q=80", alt: "Asian Creative" },
-              { src: "/images/aspirations/fitness_achievement_1767788069659.png", alt: "Fitness Achievement" },
-              { src: "/images/aspirations/asian_zen_journaling.png", alt: "Asian Zen Journaling" },
-              { src: "/images/aspirations/family_happiness_1767788085723.png", alt: "Family Happiness" },
-              { src: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80", alt: "Asian Students" },
-              { src: "/images/aspirations/travel_adventure_1767788105321.png", alt: "Travel Adventure" },
-              { src: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&q=80", alt: "Collaboration" },
-              { src: "/images/aspirations/creative_studio_1767788121462.png", alt: "Creative Studio" },
-              { src: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200&q=80", alt: "Asian Tech Engineering" },
-              { src: "https://images.unsplash.com/photo-1594381898411-846e7d193883?w=1200&q=80", alt: "Asian Wellness" },
-              { src: "/images/aspirations/luxury_home_1767788139176.png", alt: "Luxury Home" },
-              { src: "/images/aspirations/graduation_success_1767788154942.png", alt: "Graduation Success" },
-              { src: "/images/aspirations/meditation_peace_1767788170234.png", alt: "Meditation & Peace" },
-              { src: "/images/aspirations/business_presentation_1767788187422.png", alt: "Business Presentation" },
-              { src: "/images/aspirations/beach_relaxation_1767788206154.png", alt: "Beach Relaxation" },
-              { src: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80", alt: "Asian Family Home" },
-              { src: "/images/aspirations/romantic_dinner_1767788222875.png", alt: "Romantic Dinner" },
-              { src: "/images/aspirations/tech_innovation_1767788240263.png", alt: "Tech Innovation" },
-              { src: "/images/aspirations/garden_sanctuary_1767788256210.png", alt: "Garden Sanctuary" },
-              { src: "/images/aspirations/sports_victory_1767788275979.png", alt: "Sports Victory" },
-              { src: "/images/aspirations/music_performance_1767788293706.png", alt: "Music Performance" },
-              { src: "/images/success/success_4.png", alt: "達成の瞬間" },
-              { src: "/images/success/success_5.png", alt: "心の平和と成功" },
-              { src: "/images/success/success_11.png", alt: "家族の幸せ" },
-            ]}
-            speed={1.0}
-            visibleCount={16}
-            className="h-screen w-full rounded-lg overflow-hidden"
-          />
-
-          {/* Gradient Lamp Effects Layer */}
-          <GradientLampEffects className="z-5 opacity-60" />
-
-          <motion.div
-            style={{ opacity: heroTextOpacity }}
-            className="h-screen inset-0 pointer-events-none absolute flex flex-col items-center justify-center pb-12 md:pb-20 text-center px-4 mix-blend-exclusion text-white z-10"
-          >
-            <div className="flex flex-col items-center gap-8 md:gap-16">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.5 }}
-                className="bg-black/30 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl"
-              >
-                <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl">
-                  <span className="italic">Journify</span>
-                </h1>
-                <div className="max-w-2xl mx-auto space-y-4">
-                  <p className="text-base md:text-xl font-light tracking-[0.15em] text-white drop-shadow-lg uppercase">
+          <div className="h-screen w-full flex flex-col md:flex-row">
+            {/* Left Side - Text Content */}
+            <motion.div
+              style={{ opacity: heroTextOpacity }}
+              className="w-full md:w-1/2 h-full flex flex-col items-start justify-center px-6 md:px-12 lg:px-16 py-20 md:py-0 relative z-20 bg-gradient-to-br from-black via-black/95 to-black/90"
+            >
+              <div className="max-w-xl space-y-6 md:space-y-8">
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 1, delay: 0.5 }}
+                >
+                  <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl tracking-tighter mb-4 text-white drop-shadow-2xl">
+                    <span className="italic">Journify</span>
+                  </h1>
+                  <p className="text-base md:text-lg font-light tracking-[0.15em] text-white/80 uppercase mb-6">
                     AIで加速する、書く瞑想と音声ジャーナル
                   </p>
-                  <p className="text-sm md:text-lg text-white/90 leading-relaxed tracking-[0.1em] px-2 drop-shadow-md font-light">
-                    ジャーナリングは、思考を整理し、自分自身を深く知るためのパワフルな習慣です。<br className="hidden md:block" />
+                  <p className="text-sm md:text-base text-white/70 leading-relaxed">
+                    ジャーナリングは、思考を整理し、自分自身を深く知るためのパワフルな習慣です。
                     JournifyはAIの力であなたの「書く言葉」と「話す声」を成長の糧へと変え、理想の未来への歩みをサポートします。
                   </p>
-                </div>
-              </motion.div>
+                </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 1.2 }}
-                className="pointer-events-auto"
-              >
-                <div className="flex flex-col md:flex-row items-center gap-6">
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 1, delay: 1.0 }}
+                  className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+                >
                   <MagneticButton>
                     <Link
                       href="/signup"
-                      className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors text-lg cursor-none shadow-xl"
+                      className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors text-base cursor-none shadow-xl"
                     >
                       無料で始める
                       <ArrowUpRight className="w-5 h-5" />
@@ -381,17 +342,57 @@ export default function LandingPage() {
                   <MagneticButton>
                     <Link
                       href="/login"
-                      className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 text-white border border-white/20 rounded-full font-medium hover:bg-white/20 transition-colors text-lg backdrop-blur-md cursor-none"
+                      className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 text-white border border-white/20 rounded-full font-medium hover:bg-white/20 transition-colors text-base backdrop-blur-md cursor-none"
                     >
                       ログイン
                     </Link>
                   </MagneticButton>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
+                </motion.div>
+              </div>
+            </motion.div>
 
-          <div className="text-center absolute bottom-10 left-0 right-0 font-mono uppercase text-[11px] font-semibold text-white/60 pointer-events-none">
+            {/* Right Side - 3D Gallery */}
+            <div className="w-full md:w-1/2 h-1/2 md:h-full relative">
+              <InfiniteGallery
+                images={[
+                  { src: "/images/aspirations/success_entrepreneur_1767788052439.png", alt: "Successful Entrepreneur" },
+                  { src: "/images/aspirations/asian_entrepreneur.png", alt: "Asian Entrepreneur Success" },
+                  { src: "https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=1200&q=80", alt: "Asian Creative" },
+                  { src: "/images/aspirations/fitness_achievement_1767788069659.png", alt: "Fitness Achievement" },
+                  { src: "/images/aspirations/asian_zen_journaling.png", alt: "Asian Zen Journaling" },
+                  { src: "/images/aspirations/family_happiness_1767788085723.png", alt: "Family Happiness" },
+                  { src: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80", alt: "Asian Students" },
+                  { src: "/images/aspirations/travel_adventure_1767788105321.png", alt: "Travel Adventure" },
+                  { src: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&q=80", alt: "Collaboration" },
+                  { src: "/images/aspirations/creative_studio_1767788121462.png", alt: "Creative Studio" },
+                  { src: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200&q=80", alt: "Asian Tech Engineering" },
+                  { src: "https://images.unsplash.com/photo-1594381898411-846e7d193883?w=1200&q=80", alt: "Asian Wellness" },
+                  { src: "/images/aspirations/luxury_home_1767788139176.png", alt: "Luxury Home" },
+                  { src: "/images/aspirations/graduation_success_1767788154942.png", alt: "Graduation Success" },
+                  { src: "/images/aspirations/meditation_peace_1767788170234.png", alt: "Meditation & Peace" },
+                  { src: "/images/aspirations/business_presentation_1767788187422.png", alt: "Business Presentation" },
+                  { src: "/images/aspirations/beach_relaxation_1767788206154.png", alt: "Beach Relaxation" },
+                  { src: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80", alt: "Asian Family Home" },
+                  { src: "/images/aspirations/romantic_dinner_1767788222875.png", alt: "Romantic Dinner" },
+                  { src: "/images/aspirations/tech_innovation_1767788240263.png", alt: "Tech Innovation" },
+                  { src: "/images/aspirations/garden_sanctuary_1767788256210.png", alt: "Garden Sanctuary" },
+                  { src: "/images/aspirations/sports_victory_1767788275979.png", alt: "Sports Victory" },
+                  { src: "/images/aspirations/music_performance_1767788293706.png", alt: "Music Performance" },
+                  { src: "/images/success/success_4.png", alt: "達成の瞬間" },
+                  { src: "/images/success/success_5.png", alt: "心の平和と成功" },
+                  { src: "/images/success/success_11.png", alt: "家族の幸せ" },
+                ]}
+                speed={1.0}
+                visibleCount={16}
+                className="h-full w-full"
+              />
+
+              {/* Gradient Lamp Effects Layer */}
+              <GradientLampEffects className="z-5 opacity-40" />
+            </div>
+          </div>
+
+          <div className="text-center absolute bottom-10 left-0 right-0 font-mono uppercase text-[11px] font-semibold text-white/60 pointer-events-none z-30">
             <p>Use mouse wheel, arrow keys, or touch to navigate</p>
             <p className="opacity-60">
               Auto-play resumes after 3 seconds of inactivity
