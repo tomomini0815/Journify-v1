@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { User, Mail, Bell, Lock, Palette, Globe, Save, Camera, Briefcase, Calendar, Sparkles } from "lucide-react"
+import { User, Mail, Bell, Lock, Palette, Globe, Save, Camera, Briefcase, Calendar, Sparkles, Gamepad2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { createClient } from "@/lib/supabase/client"
@@ -16,6 +16,7 @@ interface ProfileClientProps {
         emailUpdates: boolean
         language: string
         enableProjects: boolean
+        enableAdventure: boolean
         showJojo: boolean
         stats: {
             journalCount: number
@@ -35,6 +36,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
     const [emailUpdates, setEmailUpdates] = useState(initialData.emailUpdates)
     const [language, setLanguage] = useState(initialData.language)
     const [enableProjects, setEnableProjects] = useState(initialData.enableProjects)
+    const [enableAdventure, setEnableAdventure] = useState(initialData.enableAdventure)
     const [showJojo, setShowJojo] = useState(initialData.showJojo)
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState("")
@@ -48,6 +50,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
         setEmailUpdates(initialData.emailUpdates)
         setLanguage(initialData.language)
         setEnableProjects(initialData.enableProjects)
+        setEnableAdventure(initialData.enableAdventure)
         setShowJojo(initialData.showJojo)
     }, [initialData])
 
@@ -193,6 +196,72 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
 
             // Revert on error
             setEnableProjects(!newValue)
+        }
+    }
+
+    const handleAdventureToggle = async (newValue: boolean) => {
+        setEnableAdventure(newValue)
+        setError("")
+        setSuccess("")
+
+        try {
+            // Save to API
+            const res = await fetch("/api/user/settings", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enableAdventure: newValue })
+            })
+
+            if (!res.ok) {
+                throw new Error("設定の保存に失敗しました")
+            }
+
+            // Update localStorage
+            if (typeof window !== 'undefined') {
+                const oldValue = localStorage.getItem('enableAdventure')
+                console.log('[ProfileClient] Setting enableAdventure in localStorage:', newValue)
+                localStorage.setItem('enableAdventure', String(newValue))
+
+                // Dispatch custom event with the new value
+                window.dispatchEvent(new CustomEvent('adventureSettingsChanged', {
+                    detail: { enableAdventure: newValue }
+                }))
+
+                // Also manually trigger storage event for same-window updates
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'enableAdventure',
+                    newValue: String(newValue),
+                    oldValue: oldValue,
+                    storageArea: localStorage,
+                    url: window.location.href
+                }))
+            }
+
+            setSuccess(newValue ? "アドベンチャーモードを有効にしました" : "アドベンチャーモードを無効にしました")
+
+            // Auto-dismiss success message after 3 seconds
+            setTimeout(() => {
+                setSuccess("")
+            }, 3000)
+
+            // Refresh server data
+            router.refresh()
+
+            // Dispatch event for other components
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('adventureSettingsChanged'))
+            }
+        } catch (error) {
+            console.error("Failed to update adventure settings:", error)
+            setError("設定の保存に失敗しました")
+
+            // Auto-dismiss error message after 3 seconds
+            setTimeout(() => {
+                setError("")
+            }, 3000)
+
+            // Revert on error
+            setEnableAdventure(!newValue)
         }
     }
 
@@ -405,6 +474,24 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                         >
                             <div
                                 className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${enableProjects ? "translate-x-7" : "translate-x-1"}`}
+                            />
+                        </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                        <div className="flex items-center gap-3">
+                            <Gamepad2 className="w-5 h-5 text-white/60" />
+                            <div>
+                                <p className="font-medium">アドベンチャーモード</p>
+                                <p className="text-sm text-white/60">タスク管理をゲーム化して楽しむ</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => handleAdventureToggle(!enableAdventure)}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${enableAdventure ? "bg-emerald-500" : "bg-white/20"}`}
+                        >
+                            <div
+                                className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${enableAdventure ? "translate-x-7" : "translate-x-1"}`}
                             />
                         </button>
                     </div>

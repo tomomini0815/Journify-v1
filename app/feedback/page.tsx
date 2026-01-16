@@ -96,7 +96,7 @@ export default function FeedbackPage() {
         <DashboardLayout>
             <div className="max-w-2xl mx-auto space-y-8">
                 <header>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+                    <h1 className="text-3xl font-bold text-white">
                         お問い合わせ・フィードバック
                     </h1>
                     <p className="mt-2 text-white/60">
@@ -108,7 +108,7 @@ export default function FeedbackPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-xl"
+                    className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl shadow-cyan-900/10"
                 >
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Feedback Type */}
@@ -125,8 +125,8 @@ export default function FeedbackPage() {
                                         className={`
                                             flex items-center justify-center px-4 py-3 rounded-xl border text-sm font-medium transition-all
                                             ${type === t.value
-                                                ? "bg-white/10 border-white/20 text-white shadow-lg shadow-purple-500/10"
-                                                : "bg-transparent border-white/10 text-white/40 hover:bg-white/5 hover:text-white/60"
+                                                ? "bg-cyan-500/10 border-cyan-500/50 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
+                                                : "bg-slate-900/40 border-white/5 text-slate-400 hover:bg-white/5 hover:text-slate-200 hover:border-white/10"
                                             }
                                         `}
                                     >
@@ -145,11 +145,11 @@ export default function FeedbackPage() {
                                 <select
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all"
+                                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all"
                                 >
-                                    <option value="" className="bg-zinc-900 text-white/50">選択してください</option>
+                                    <option value="" className="bg-slate-900 text-slate-500">選択してください</option>
                                     {categories[type].map((c) => (
-                                        <option key={c.value} value={c.value} className="bg-zinc-900">
+                                        <option key={c.value} value={c.value} className="bg-slate-900">
                                             {c.label}
                                         </option>
                                     ))}
@@ -166,11 +166,11 @@ export default function FeedbackPage() {
                                 <select
                                     value={affectedPage}
                                     onChange={(e) => setAffectedPage(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all"
+                                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all"
                                 >
-                                    <option value="" className="bg-zinc-900 text-white/50">選択してください</option>
+                                    <option value="" className="bg-slate-900 text-slate-500">選択してください</option>
                                     {pages.map((p) => (
-                                        <option key={p.value} value={p.value} className="bg-zinc-900">
+                                        <option key={p.value} value={p.value} className="bg-slate-900">
                                             {p.label}
                                         </option>
                                     ))}
@@ -190,7 +190,7 @@ export default function FeedbackPage() {
                                 required
                                 rows={6}
                                 placeholder="具体的な内容をご記入ください..."
-                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all resize-none"
+                                className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all resize-none"
                             />
                         </div>
 
@@ -202,7 +202,7 @@ export default function FeedbackPage() {
                                 group w-full flex items-center justify-center px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all
                                 ${isSubmitting || !content.trim()
                                     ? "bg-white/5 cursor-not-allowed opacity-50"
-                                    : "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 hover:shadow-purple-500/25 active:scale-[0.98]"
+                                    : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 hover:shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98]"
                                 }
                             `}
                         >

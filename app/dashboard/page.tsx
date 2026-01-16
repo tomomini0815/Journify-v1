@@ -459,36 +459,38 @@ export default async function DashboardPage() {
 
 
             {/* LifeQuest Adventure Link */}
-            <div className="mb-8">
-                <Link
-                    href="/dashboard/adventure"
-                    className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 border border-white/10 p-1 transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-cyan-500/10"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {(settings?.enableAdventure ?? true) && (
+                <div className="mb-8">
+                    <Link
+                        href="/adventure"
+                        className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 border border-white/10 p-1 transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-cyan-500/10"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                    <div className="relative flex items-center justify-between p-6">
-                        <div className="flex items-center gap-4">
-                            <div className="relative w-16 h-16 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden">
-                                <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">🚀</span>
-                                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 to-transparent" />
+                        <div className="relative flex items-center justify-between p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-16 h-16 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden">
+                                    <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">🚀</span>
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 to-transparent" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                                        ADVENTURE MODE
+                                        <span className="text-xs font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">BETA</span>
+                                    </h3>
+                                    <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
+                                        ゲーム化された世界でタスクをこなし、アバターを育てよう（現在ベータ版として開発中）
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-                                    ADVENTURE MODE
-                                    <span className="text-xs font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">BETA</span>
-                                </h3>
-                                <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
-                                    ゲーム化された世界でタスクをこなし、アバターを育てよう（現在ベータ版として開発中）
-                                </p>
+
+                            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:border-cyan-500/50 group-hover:text-cyan-300 transition-all">
+                                →
                             </div>
                         </div>
-
-                        <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:border-cyan-500/50 group-hover:text-cyan-300 transition-all">
-                            →
-                        </div>
-                    </div>
-                </Link>
-            </div>
+                    </Link>
+                </div>
+            )}
 
             {/* Jojo AI Mascot */}
             {(settings?.showJojo ?? true) && <Jojo userId={user.id} />}

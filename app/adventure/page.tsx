@@ -8,12 +8,13 @@ import { HomeEditor } from '@/components/adventure/HomeEditor'
 import { DecorationShop } from '@/components/adventure/DecorationShop'
 import { CompanionsList } from '@/components/adventure/CompanionsList'
 import { CompanionDetailView } from '@/components/adventure/CompanionDetailView'
-import { Armchair, PawPrint, Store, Gamepad2 } from 'lucide-react'
+import { AdventureWorld } from '@/components/adventure/AdventureWorld'
+import { Armchair, PawPrint, Store, Gamepad2, Globe2 } from 'lucide-react'
 
-type Tab = 'home' | 'companions' | 'shop'
+type Tab = 'world' | 'home' | 'companions' | 'shop'
 
 export default function AdventurePage() {
-    const [activeTab, setActiveTab] = useState<Tab>('home')
+    const [activeTab, setActiveTab] = useState<Tab>('world')
     const [selectedCompanionId, setSelectedCompanionId] = useState<string | null>(null)
 
     const handleTabChange = (tab: Tab) => {
@@ -34,6 +35,12 @@ export default function AdventurePage() {
                 {/* Adventure Header & Tabs */}
                 <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
                     <div className="flex items-center gap-2 overflow-x-auto bg-slate-900/50 p-1.5 rounded-2xl border border-white/10">
+                        <TabButton
+                            active={activeTab === 'world'}
+                            onClick={() => handleTabChange('world')}
+                            icon={Globe2}
+                            label="ワールド"
+                        />
                         <TabButton
                             active={activeTab === 'home'}
                             onClick={() => handleTabChange('home')}
@@ -58,6 +65,17 @@ export default function AdventurePage() {
                 {/* Main Content Area */}
                 <div className="flex-1 min-h-[600px] relative">
                     <AnimatePresence mode="wait">
+                        {activeTab === 'world' && (
+                            <motion.div
+                                key="world"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                className="h-full"
+                            >
+                                <AdventureWorld />
+                            </motion.div>
+                        )}
                         {activeTab === 'home' && (
                             <motion.div
                                 key="home"
@@ -114,8 +132,8 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean, on
         <button
             onClick={onClick}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all ${active
-                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
-                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
+                : 'text-white/60 hover:text-white hover:bg-white/10'
                 }`}
         >
             <Icon size={18} />

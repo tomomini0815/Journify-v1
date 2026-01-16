@@ -111,6 +111,7 @@ export default async function ProfilePage() {
             emailUpdates: (profile?.preferences as any)?.emailUpdates ?? false,
             language: (profile?.preferences as any)?.language || "ja",
             enableProjects: settings?.enableProjects ?? false,
+            enableAdventure: (profile?.preferences as any)?.enableAdventure ?? true,
             showJojo: settings?.showJojo ?? true,
             stats: {
                 journalCount,
@@ -138,6 +139,7 @@ export default async function ProfilePage() {
                     emailUpdates: false,
                     language: "ja",
                     enableProjects: false,
+                    enableAdventure: true,
                     showJojo: true,
                     stats: {
                         journalCount: 0,

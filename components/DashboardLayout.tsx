@@ -22,6 +22,9 @@ const defaultNavigation = [
     { name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
     { name: "アドベンチャー", href: "/adventure", icon: Gamepad2 },
     { name: "統計詳細", href: "/year-in-review", icon: BarChart2 },
+]
+
+const bottomNavigation = [
     { name: "アカウント設定", href: "/profile", icon: User },
     { name: "お問い合わせ", href: "/feedback", icon: MessageSquarePlus },
 ]
@@ -49,16 +52,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         const updateNavigationFromStorage = () => {
             if (typeof window !== 'undefined') {
                 const enableProjects = localStorage.getItem('enableProjects') === 'true'
+                const enableAdventure = localStorage.getItem('enableAdventure') === 'false' ? false : true // Default to true if not set
 
                 console.log('[DashboardLayout] Updating navigation...')
                 console.log('[DashboardLayout] enableProjects from localStorage:', enableProjects)
-                console.log('[DashboardLayout] localStorage value:', localStorage.getItem('enableProjects'))
+                console.log('[DashboardLayout] enableAdventure from localStorage:', enableAdventure)
+                console.log('[DashboardLayout] localStorage value (projects):', localStorage.getItem('enableProjects'))
+                console.log('[DashboardLayout] localStorage value (adventure):', localStorage.getItem('enableAdventure'))
 
                 // Filter navigation based on enableProjects setting
                 const filteredNavigation = defaultNavigation.filter(item => {
                     if (item.href === '/projects') {
-                        console.log('[DashboardLayout] Filtering projects item, enabled:', enableProjects)
                         return enableProjects
+                    }
+                    if (item.href === '/adventure') {
+                        return enableAdventure
                     }
                     return true
                 })
@@ -86,6 +94,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     console.log('[DashboardLayout] Fetched settings from API:', settings)
                     if (typeof window !== 'undefined') {
                         localStorage.setItem('enableProjects', String(settings.enableProjects || false))
+                        localStorage.setItem('enableAdventure', String(settings.enableAdventure ?? true))
                         updateNavigationFromStorage()
                     }
                 }
@@ -98,25 +107,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         // Listen for storage changes from other tabs/windows
         const handleStorageChange = (e: StorageEvent) => {
             console.log('[DashboardLayout] Storage event received:', e.key, e.newValue)
-            if (e.key === 'enableProjects') {
+            if (e.key === 'enableProjects' || e.key === 'enableAdventure') {
                 updateNavigationFromStorage()
             }
         }
 
         // Listen for custom events
         const handleCustomEvent = () => {
-            console.log('[DashboardLayout] projectSettingsChanged event received')
+            updateNavigationFromStorage()
+        }
+
+        const handleAdventureEvent = () => {
             updateNavigationFromStorage()
         }
 
         console.log('[DashboardLayout] Registering event listeners')
         window.addEventListener('storage', handleStorageChange)
         window.addEventListener('projectSettingsChanged', handleCustomEvent)
+        window.addEventListener('adventureSettingsChanged', handleAdventureEvent)
 
         return () => {
             console.log('[DashboardLayout] Removing event listeners')
             window.removeEventListener('storage', handleStorageChange)
             window.removeEventListener('projectSettingsChanged', handleCustomEvent)
+            window.removeEventListener('adventureSettingsChanged', handleAdventureEvent)
         }
     }, [])
 
@@ -218,8 +232,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </div>
                     </nav>
 
-                    {/* Logout */}
+                    {/* Bottom Navigation & Logout */}
                     <div className="flex-shrink-0 px-3 pb-4">
+                        <div className="space-y-1 mb-2">
+                            {bottomNavigation.map((item) => {
+                                const isActive = pathname === item.href
+                                const Icon = item.icon
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        prefetch={true}
+                                        className={cn(
+                                            "group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all relative",
+                                            isActive
+                                                ? "text-white bg-white/10"
+                                                : "text-white/60 hover:text-white hover:bg-white/5"
+                                        )}
+                                    >
+                                        <Icon className="mr-3 flex-shrink-0 h-5 w-5" />
+                                        <span>{item.name}</span>
+                                    </Link>
+                                )
+                            })}
+                        </div>
+
                         <button
                             onClick={handleLogout}
                             className="group flex items-center w-full px-3 py-3 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
@@ -321,13 +358,37 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                 )}
                             </div>
                         </nav>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center px-4 py-3 text-base font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
-                        >
-                            <LogOut className="mr-3 h-6 w-6" />
-                            <span>ログアウト</span>
-                        </button>
+
+                        <div className="mt-auto pt-4 space-y-2">
+                            {bottomNavigation.map((item) => {
+                                const isActive = pathname === item.href
+                                const Icon = item.icon
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        prefetch={true}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className={cn(
+                                            "flex items-center px-4 py-3 text-base font-medium rounded-xl transition-all",
+                                            isActive
+                                                ? "text-white bg-white/10"
+                                                : "text-white/60 hover:text-white hover:bg-white/5"
+                                        )}
+                                    >
+                                        <Icon className="mr-3 h-6 w-6" />
+                                        <span>{item.name}</span>
+                                    </Link>
+                                )
+                            })}
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center px-4 py-3 text-base font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                            >
+                                <LogOut className="mr-3 h-6 w-6" />
+                                <span>ログアウト</span>
+                            </button>
+                        </div>
                     </div>
                 </motion.div>
             )}
