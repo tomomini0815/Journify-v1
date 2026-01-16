@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, appendFile } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import os from "os";
@@ -67,11 +67,22 @@ export async function POST(req: NextRequest) {
             type: file.type
         });
 
+
     } catch (error: any) {
         console.error("=== Upload Error ===");
         console.error("Error name:", error.name);
         console.error("Error message:", error.message);
         console.error("Error stack:", error.stack);
+
+        try {
+            const logPath = path.join(process.cwd(), "server-error.log");
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const errorStack = error instanceof Error ? error.stack : 'No stack trace';
+            const logEntry = `[${new Date().toISOString()}] Upload Error: ${errorMsg}\nStack: ${errorStack}\n---\n`;
+            await appendFile(logPath, logEntry);
+        } catch (logError) {
+            console.error("Failed to write error log:", logError);
+        }
 
         return NextResponse.json(
             {

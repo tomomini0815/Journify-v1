@@ -206,7 +206,14 @@ export default function VoiceJournalRecorder({
             });
 
             if (!uploadRes.ok) {
-                throw new Error("Failed to upload audio");
+                let errorDetails = "Unknown error";
+                try {
+                    const errorData = await uploadRes.json();
+                    errorDetails = errorData.error || errorData.details || JSON.stringify(errorData);
+                } catch (e) {
+                    errorDetails = await uploadRes.text();
+                }
+                throw new Error(`Failed to upload audio: ${errorDetails}`);
             }
 
             const uploadData = await uploadRes.json();

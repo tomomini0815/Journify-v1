@@ -46,7 +46,7 @@ export async function POST(
             } as any // Type assertion until Prisma client is regenerated
         })
 
-        const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/shared/${shareToken}`
+        const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://myjournifyapp.com'}/shared/${shareToken}`
 
         return NextResponse.json({
             shareUrl,

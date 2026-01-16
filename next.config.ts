@@ -5,7 +5,20 @@ const repoName = '/Journify-v1';
 
 const nextConfig = {
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'grainy-gradients.vercel.app',
+      },
+    ],
   },
   experimental: {
     serverActions: {

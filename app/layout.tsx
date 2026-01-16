@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://myjournifyapp.com"),
   title: "Journify | Your Personal Growth Platform",
   description: "Track your goals, tasks, and journals in one place.",
 };
