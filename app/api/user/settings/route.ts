@@ -29,11 +29,12 @@ export async function GET() {
 
             console.log(`GET /api/user/settings for ${user.id}:`, settings)
 
-            // Parse preferences for enableAdventure
+            // Parse preferences for enableAdventure - use exact value from DB
             const preferences = (userData?.preferences as any) || {}
             console.log(`[API debug] User preferences:`, JSON.stringify(preferences))
 
-            const enableAdventure = preferences.enableAdventure ?? true // Default true
+            // Only default to true if preferences has never been set
+            const enableAdventure = 'enableAdventure' in preferences ? preferences.enableAdventure : true
             console.log(`[API debug] Resolved enableAdventure:`, enableAdventure)
 
             if (!settings) {
@@ -124,7 +125,7 @@ export async function PATCH(req: Request) {
 
         return NextResponse.json({
             ...settings,
-            enableAdventure: enableAdventure ?? (settings as any).enableAdventure ?? true
+            enableAdventure: enableAdventure !== undefined ? enableAdventure : (settings as any).enableAdventure
         })
     } catch (error: any) {
         console.error("Failed to update user settings:", error)

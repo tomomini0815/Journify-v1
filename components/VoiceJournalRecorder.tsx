@@ -313,7 +313,7 @@ export default function VoiceJournalRecorder({
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="text-xl font-bold text-white mb-1">音声ジャーナル</h3>
-                            <p className="text-white/40 text-sm">ワンタップで記録</p>
+                            <p className="text-white/40 text-sm">小さな記録が、見える景色を変えていく</p>
                         </div>
                         <button
                             onClick={startRecording}
@@ -330,7 +330,7 @@ export default function VoiceJournalRecorder({
                             <div>
                                 <h3 className="text-xl font-bold text-white mb-1">音声ジャーナル</h3>
                                 <p className="text-white/40 text-sm">
-                                    {isRecording ? "録音中..." : "ワンタップで記録"}
+                                    {isRecording ? "録音中..." : "小さな記録が、見える景色を変えていく"}
                                 </p>
                             </div>
                             {isRecording && (

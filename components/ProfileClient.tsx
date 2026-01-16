@@ -42,17 +42,21 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
     const [error, setError] = useState("")
     const [success, setSuccess] = useState("")
 
-    // Sync state with initialData on updates (e.g. after router.refresh())
+    // On mount, sync with localStorage to ensure consistency with sidebar
     useEffect(() => {
-        setName(initialData.name)
-        setBio(initialData.bio)
-        setNotifications(initialData.notifications)
-        setEmailUpdates(initialData.emailUpdates)
-        setLanguage(initialData.language)
-        setEnableProjects(initialData.enableProjects)
-        setEnableAdventure(initialData.enableAdventure)
-        setShowJojo(initialData.showJojo)
-    }, [initialData])
+        if (typeof window !== 'undefined') {
+            const storedProjects = localStorage.getItem('enableProjects')
+            const storedAdventure = localStorage.getItem('enableAdventure')
+
+            // If localStorage has values, use them (they are the source of truth)
+            if (storedProjects !== null) {
+                setEnableProjects(storedProjects === 'true')
+            }
+            if (storedAdventure !== null) {
+                setEnableAdventure(storedAdventure === 'true')
+            }
+        }
+    }, [])
 
     const [showPasswordModal, setShowPasswordModal] = useState(false)
     const [newPassword, setNewPassword] = useState("")
@@ -114,8 +118,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 setSuccess("")
             }, 3000)
 
-            // Refresh server data
-            router.refresh()
+            // Note: Removed router.refresh() to prevent state reset
         } catch (error) {
             console.error("Failed to update Jojo settings:", error)
             setError("設定の保存に失敗しました")
@@ -178,13 +181,12 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 setSuccess("")
             }, 3000)
 
-            // Refresh server data
-            router.refresh()
-
             // Dispatch event for other components
             if (typeof window !== 'undefined') {
                 window.dispatchEvent(new Event('projectSettingsChanged'))
             }
+
+            // Note: Removed router.refresh() to prevent state reset
         } catch (error) {
             console.error("Failed to update project settings:", error)
             setError("プロジェクト設定の保存に失敗しました")
@@ -244,13 +246,12 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 setSuccess("")
             }, 3000)
 
-            // Refresh server data
-            router.refresh()
-
             // Dispatch event for other components
             if (typeof window !== 'undefined') {
                 window.dispatchEvent(new Event('adventureSettingsChanged'))
             }
+
+            // Note: Removed router.refresh() to prevent state reset
         } catch (error) {
             console.error("Failed to update adventure settings:", error)
             setError("設定の保存に失敗しました")

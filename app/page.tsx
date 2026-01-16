@@ -9,6 +9,8 @@ import { ArrowUpRight, Menu, CheckCircle2, Calendar, BarChart3 } from "lucide-re
 import CustomCursor from "@/components/CustomCursor"
 import MagneticButton from "@/components/MagneticButton"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import FloatingParticles from "@/components/FloatingParticles"
+import GlowingOrb from "@/components/GlowingOrb"
 
 // Dynamic import for 3D gallery to avoid SSR issues
 const InfiniteGallery = dynamic(() => import("@/components/ui/3d-gallery-photography"), {
@@ -117,6 +119,7 @@ export default function LandingPage() {
   const starsOpacity = useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 0.8, 1])
   const shootingStarsOpacity = useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 1, 1])
 
+
   const partyX = useParallax(mouseX, -20)
   const partyY = useParallax(mouseY, -20)
   const jetX = useParallax(mouseX, 30)
@@ -135,6 +138,13 @@ export default function LandingPage() {
   return (
     <>
       <CustomCursor />
+
+      {/* Floating Particles Effect */}
+      <FloatingParticles count={60} className="z-[5] opacity-60" />
+
+      {/* Glowing Orbs for ambient lighting */}
+      <GlowingOrb className="top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 z-[3]" color1="#10b981" color2="#06b6d4" size={500} />
+      <GlowingOrb className="bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 z-[3]" color1="#8b5cf6" color2="#ec4899" size={400} />
 
       <div className="fixed inset-0 pointer-events-none z-[50] opacity-[0.05] mix-blend-overlay"
         style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
@@ -279,6 +289,8 @@ export default function LandingPage() {
         </motion.div>
       )}
 
+
+
       <div ref={containerRef} className="relative text-[#e1e1e1] selection:bg-white selection:text-black overflow-x-hidden">
 
         <nav className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 md:px-8 py-6 mix-blend-difference">
@@ -332,6 +344,7 @@ export default function LandingPage() {
             speed={1.0}
             visibleCount={16}
             className="h-screen w-full rounded-lg overflow-hidden"
+            isMobile={isMobile}
           />
 
           {/* Gradient Lamp Effects Layer */}
@@ -352,8 +365,10 @@ export default function LandingPage() {
                 {/* Large circular background on hover */}
                 <div className="absolute inset-0 bg-black/80 backdrop-blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out -z-10 transform scale-90 group-hover:scale-100" />
 
-                <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl transition-all duration-500 group-hover:text-white">
-                  <span className="italic">Journify</span>
+                <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl transition-all duration-500 group-hover:text-white relative">
+                  <span className="italic bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent animate-pulse">Journify</span>
+                  {/* Shimmer overlay */}
+                  <span className="absolute inset-0 italic bg-gradient-to-r from-transparent via-white/30 to-transparent bg-[length:200%_100%] bg-clip-text text-transparent animate-[shimmer_3s_ease-in-out_infinite]" aria-hidden="true">Journify</span>
                 </h1>
                 <div className="max-w-2xl mx-auto space-y-4">
                   <p className="text-base md:text-xl font-light tracking-[0.15em] text-white drop-shadow-lg uppercase transition-all duration-500 group-hover:text-white">
@@ -376,7 +391,7 @@ export default function LandingPage() {
                   <MagneticButton>
                     <Link
                       href="/signup"
-                      className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors text-lg cursor-none shadow-xl"
+                      className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-full font-bold hover:from-emerald-600 hover:to-cyan-600 hover:scale-105 transition-all duration-300 text-lg cursor-none shadow-xl shadow-emerald-500/25"
                     >
                       無料で始める
                       <ArrowUpRight className="w-5 h-5" />
@@ -385,7 +400,7 @@ export default function LandingPage() {
                   <MagneticButton>
                     <Link
                       href="/login"
-                      className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 text-white border border-white/20 rounded-full font-medium hover:bg-white/20 transition-colors text-lg backdrop-blur-md cursor-none"
+                      className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 text-white border border-white/20 rounded-full font-medium hover:bg-white/20 hover:border-white/40 hover:scale-105 transition-all duration-300 text-lg backdrop-blur-md cursor-none"
                     >
                       ログイン
                     </Link>
@@ -395,12 +410,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          <div className="text-center absolute bottom-10 left-0 right-0 font-mono uppercase text-[11px] font-semibold text-white/60 pointer-events-none">
-            <p>Use mouse wheel, arrow keys, or touch to navigate</p>
-            <p className="opacity-60">
-              Auto-play resumes after 3 seconds of inactivity
-            </p>
-          </div>
+
         </section>
 
         {/* Features Section - Moved after Hero */}
@@ -431,7 +441,7 @@ export default function LandingPage() {
                 className="group"
               >
                 <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-violet-500/50 transition-all cursor-none h-full text-left">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none h-full text-left">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 bg-violet-500/20 rounded-2xl text-violet-400">
                         <BarChart3 className="w-8 h-8" />
@@ -479,7 +489,7 @@ export default function LandingPage() {
                 className="group"
               >
                 <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-emerald-500/50 transition-all cursor-none h-full text-left">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none h-full text-left">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 bg-emerald-500/20 rounded-2xl text-emerald-400">
                         <CheckCircle2 className="w-8 h-8" />
@@ -527,7 +537,7 @@ export default function LandingPage() {
                 className="group"
               >
                 <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-blue-500/50 transition-all cursor-none h-full text-left">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none h-full text-left">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 bg-blue-500/20 rounded-2xl text-blue-400">
                         <CheckCircle2 className="w-8 h-8" />
@@ -567,7 +577,7 @@ export default function LandingPage() {
                 className="group"
               >
                 <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-amber-500/50 transition-all cursor-none h-full text-left">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none h-full text-left">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 bg-amber-500/20 rounded-2xl text-amber-400">
                         <Calendar className="w-8 h-8" />
@@ -607,7 +617,7 @@ export default function LandingPage() {
                 className="group md:col-span-2"
               >
                 <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-indigo-500/50 transition-all cursor-none text-left">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none text-left">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 bg-indigo-500/20 rounded-2xl text-indigo-400">
                         <BarChart3 className="w-8 h-8" />
@@ -785,7 +795,7 @@ export default function LandingPage() {
             <MagneticButton>
               <Link
                 href="/signup"
-                className="inline-block px-8 md:px-12 py-4 md:py-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-white/30 text-white text-lg md:text-xl font-medium rounded-full transition-all cursor-none"
+                className="inline-block px-8 md:px-12 py-4 md:py-5 bg-white/10 backdrop-blur-xl border border-white/30 hover:bg-white/20 hover:border-white/50 hover:scale-105 text-white text-lg md:text-xl font-medium rounded-full transition-all duration-300 cursor-none shadow-lg shadow-white/10"
               >
                 無料で始める
               </Link>

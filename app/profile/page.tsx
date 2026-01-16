@@ -60,7 +60,29 @@ export default async function ProfilePage() {
         let allJournalDates: any[] = []
 
         try {
-            [profile, settings, journalCount, goalCount, allJournalDates] = await getCachedProfileData(user.id)
+            // Separate cached data from settings data
+            // Settings should NOT be cached to ensure immediate updates
+            const [cachedData, freshSettings, freshUserPrefs] = await Promise.all([
+                getCachedProfileData(user.id),
+                // Fetch settings directly without cache
+                prisma.userSettings.findUnique({
+                    where: { userId: user.id },
+                    select: { enableProjects: true, showJojo: true }
+                }),
+                // Fetch user preferences directly without cache  
+                prisma.user.findUnique({
+                    where: { id: user.id },
+                    select: { preferences: true }
+                })
+            ])
+
+                ;[profile, , journalCount, goalCount, allJournalDates] = cachedData
+            settings = freshSettings
+
+            // Override profile preferences with fresh data
+            if (profile && freshUserPrefs) {
+                profile.preferences = freshUserPrefs.preferences
+            }
         } catch (dbError) {
             console.error("Database error in profile page:", dbError)
             // Fallback values already set above
@@ -111,7 +133,10 @@ export default async function ProfilePage() {
             emailUpdates: (profile?.preferences as any)?.emailUpdates ?? false,
             language: (profile?.preferences as any)?.language || "ja",
             enableProjects: settings?.enableProjects ?? false,
-            enableAdventure: (profile?.preferences as any)?.enableAdventure ?? true,
+            // Only default to true if enableAdventure was NEVER set in preferences
+            enableAdventure: 'enableAdventure' in ((profile?.preferences as any) || {})
+                ? (profile?.preferences as any)?.enableAdventure
+                : true,
             showJojo: settings?.showJojo ?? true,
             stats: {
                 journalCount,

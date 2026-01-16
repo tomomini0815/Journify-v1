@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useEffect, useState } from "react"
+import { ReactNode, useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -93,8 +93,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     const settings = await res.json()
                     console.log('[DashboardLayout] Fetched settings from API:', settings)
                     if (typeof window !== 'undefined') {
-                        localStorage.setItem('enableProjects', String(settings.enableProjects || false))
-                        localStorage.setItem('enableAdventure', String(settings.enableAdventure ?? true))
+                        // Only update localStorage if API returns explicit values
+                        // Use explicit boolean check to handle false values correctly
+                        if (settings.enableProjects !== undefined) {
+                            localStorage.setItem('enableProjects', String(settings.enableProjects))
+                        }
+                        if (settings.enableAdventure !== undefined) {
+                            localStorage.setItem('enableAdventure', String(settings.enableAdventure))
+                        }
                         updateNavigationFromStorage()
                     }
                 }
@@ -160,7 +166,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                     {/* Navigation */}
                     <nav className="flex-1 px-3 space-y-1">
-                        {defaultNavigation.map((item) => {
+                        {navigation.map((item) => {
                             const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href))
                             const Icon = item.icon
 
@@ -321,9 +327,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             })}
 
                             {/* Wellness Submenu - Mobile */}
-                            <div className="pt-4 mt-4 border-t border-white/10">
+                            <div className="pt-4 mt-4 border-t border-white/10" id="wellness-mobile-section">
                                 <button
-                                    onClick={() => setWellnessMenuOpen(!wellnessMenuOpen)}
+                                    onClick={() => {
+                                        setWellnessMenuOpen(!wellnessMenuOpen)
+                                        // Auto-scroll to show wellness menu after opening
+                                        if (!wellnessMenuOpen) {
+                                            setTimeout(() => {
+                                                const element = document.getElementById('wellness-mobile-section')
+                                                element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                            }, 100)
+                                        }
+                                    }}
                                     className="flex items-center w-full px-4 py-3 text-base font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                                 >
                                     <Heart className="mr-3 h-6 w-6" />
@@ -334,7 +349,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     )} />
                                 </button>
                                 {wellnessMenuOpen && (
-                                    <div className="mt-1 space-y-1 pl-4 max-h-[400px] overflow-y-auto">
+                                    <div className="mt-1 space-y-1 pl-4">
                                         {wellnessItems.map((item) => {
                                             const isActive = pathname === item.href
                                             return (

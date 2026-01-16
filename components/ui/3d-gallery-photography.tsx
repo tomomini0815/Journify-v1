@@ -1,3 +1,5 @@
+"use client"
+
 import type React from 'react';
 import { useRef, useMemo, useCallback, useState, useEffect, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
@@ -39,6 +41,7 @@ interface InfiniteGalleryProps {
     blurSettings?: BlurSettings;
     className?: string;
     style?: React.CSSProperties;
+    isMobile?: boolean;
 }
 
 interface PlaneData {
@@ -201,6 +204,7 @@ function GalleryScene({
         blurOut: { start: 0.9, end: 1.0 },
         maxBlur: 3.0,
     },
+    isMobile = false,
 }: Omit<InfiniteGalleryProps, 'className' | 'style'>) {
     const [scrollVelocity, setScrollVelocity] = useState(0);
     const [autoPlay, setAutoPlay] = useState(true);
@@ -246,8 +250,9 @@ function GalleryScene({
 
     const spatialPositions = useMemo(() => {
         const positions: { x: number; y: number }[] = [];
-        const maxHorizontalOffset = MAX_HORIZONTAL_OFFSET;
-        const maxVerticalOffset = MAX_VERTICAL_OFFSET;
+        // Reduce horizontal spread significantly on mobile
+        const maxHorizontalOffset = isMobile ? MAX_HORIZONTAL_OFFSET * 0.35 : MAX_HORIZONTAL_OFFSET;
+        const maxVerticalOffset = isMobile ? MAX_VERTICAL_OFFSET * 0.8 : MAX_VERTICAL_OFFSET;
 
         for (let i = 0; i < visibleCount; i++) {
             // Create varied distribution patterns for both axes
@@ -267,7 +272,7 @@ function GalleryScene({
         }
 
         return positions;
-    }, [visibleCount]);
+    }, [visibleCount, isMobile]);
 
     const totalImages = loadedTextures.length;
     const depthRange = DEFAULT_DEPTH_RANGE;
@@ -515,6 +520,7 @@ export default function InfiniteGallery({
         blurOut: { start: 0.4, end: 0.43 },
         maxBlur: 8.0,
     },
+    isMobile = false,
 }: InfiniteGalleryProps) {
     const [webglSupported, setWebglSupported] = useState(true);
 
@@ -553,6 +559,7 @@ export default function InfiniteGallery({
                         visibleCount={visibleCount}
                         fadeSettings={fadeSettings}
                         blurSettings={blurSettings}
+                        isMobile={isMobile}
                     />
                 </Suspense>
             </Canvas>
