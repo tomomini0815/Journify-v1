@@ -389,10 +389,24 @@ const getCachedUserProjects = unstable_cache(
 
 const getCachedUserSettings = unstable_cache(
     async (userId: string) => {
-        return await prisma.userSettings.findUnique({
-            where: { userId },
-            select: { showJojo: true }
-        })
+        const [settings, user] = await Promise.all([
+            prisma.userSettings.findUnique({
+                where: { userId },
+                select: { showJojo: true }
+            }),
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { preferences: true }
+            })
+        ])
+
+        const preferences = (user?.preferences as any) || {}
+        const enableAdventure = preferences.enableAdventure ?? true
+
+        return {
+            showJojo: settings?.showJojo ?? true,
+            enableAdventure
+        }
     },
     ['dashboard-user-settings'],
     { revalidate: 60, tags: ['dashboard', 'settings', 'profile'] }
