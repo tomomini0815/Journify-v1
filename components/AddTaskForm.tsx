@@ -12,6 +12,8 @@ interface AddTaskFormProps {
     setEndDate: (value: string) => void
     description?: string
     setDescription?: (value: string) => void
+    priority: 'low' | 'medium' | 'high' | 'urgent'
+    setPriority: (priority: 'low' | 'medium' | 'high' | 'urgent') => void
     onSubmit: (e: FormEvent) => void
     isMobile?: boolean
 }
@@ -25,6 +27,8 @@ export function AddTaskForm({
     setEndDate,
     description,
     setDescription,
+    priority,
+    setPriority,
     onSubmit,
     isMobile = false
 }: AddTaskFormProps) {
@@ -92,6 +96,27 @@ export function AddTaskForm({
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Priority Selector */}
+                <div className="flex items-center bg-white/5 border border-white/20 rounded-2xl h-11 px-3 gap-2">
+                    {(['low', 'medium', 'high', 'urgent'] as const).map((p) => (
+                        <button
+                            key={p}
+                            type="button"
+                            onClick={() => setPriority(p)}
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${priority === p
+                                    ? p === 'urgent' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
+                                        p === 'high' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' :
+                                            p === 'medium' ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' :
+                                                'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
+                                    : 'hover:bg-white/5 text-white/30 hover:text-white/60'
+                                }`}
+                            title={p === 'low' ? '低' : p === 'medium' ? '中' : p === 'high' ? '高' : '最高'}
+                        >
+                            <span className="text-[10px] font-bold uppercase">{p[0]}</span>
+                        </button>
+                    ))}
                 </div>
 
                 {/* Add Button */}

@@ -367,8 +367,6 @@ export default function LandingPage() {
 
                 <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl transition-all duration-500 group-hover:text-white relative">
                   <span className="italic bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent animate-pulse">Journify</span>
-                  {/* Shimmer overlay */}
-                  <span className="absolute inset-0 italic bg-gradient-to-r from-transparent via-white/30 to-transparent bg-[length:200%_100%] bg-clip-text text-transparent animate-[shimmer_3s_ease-in-out_infinite]" aria-hidden="true">Journify</span>
                 </h1>
                 <div className="max-w-2xl mx-auto space-y-4">
                   <p className="text-base md:text-xl font-light tracking-[0.15em] text-white drop-shadow-lg uppercase transition-all duration-500 group-hover:text-white">

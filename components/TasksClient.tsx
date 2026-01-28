@@ -12,6 +12,7 @@ type Task = {
     text: string
     completed: boolean
     status: 'todo' | 'in-progress' | 'done'
+    priority: 'low' | 'medium' | 'high' | 'urgent'
     createdAt: Date
     scheduledDate?: Date
     startDate?: Date
@@ -23,6 +24,7 @@ interface SerializedTask {
     text: string
     completed: boolean
     status?: 'todo' | 'in-progress' | 'done'
+    priority?: 'low' | 'medium' | 'high' | 'urgent'
     createdAt: string
     scheduledDate?: string | null
     startDate?: string | null
@@ -37,6 +39,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const [tasks, setTasks] = useState<Task[]>(initialTasks.map(t => ({
         ...t,
         status: t.status || (t.completed ? 'done' : 'todo'),
+        priority: t.priority || 'medium',
         createdAt: new Date(t.createdAt),
         scheduledDate: t.scheduledDate ? new Date(t.scheduledDate) : undefined,
         startDate: t.startDate ? new Date(t.startDate) : undefined,
@@ -45,6 +48,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const [newTask, setNewTask] = useState("")
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
+    const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium')
     const [description, setDescription] = useState("")
     const [error, setError] = useState("")
     const [activeTab, setActiveTab] = useState<'kanban' | 'calendar'>('kanban')
@@ -232,6 +236,26 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         }
         setDeletingTaskId(id)
         setShowDeleteModal(true)
+    }
+
+    const handlePriorityChange = async (taskId: string, newPriority: 'low' | 'medium' | 'high' | 'urgent') => {
+        // Optimistic update
+        setTasks(tasks.map(t =>
+            t.id === taskId ? { ...t, priority: newPriority } : t
+        ))
+
+        try {
+            await fetch(`/api/tasks/${taskId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ priority: newPriority }),
+            })
+        } catch (error) {
+            console.error("Failed to update task priority", error)
+            // Revert on error
+            setTasks(tasks)
+            setError("優先度の更新に失敗しました")
+        }
     }
 
     const performDelete = async () => {
@@ -560,6 +584,8 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                         setEndDate={setEndDate}
                                         description={description}
                                         setDescription={setDescription}
+                                        priority={priority}
+                                        setPriority={setPriority}
                                         onSubmit={addTask}
                                     />
                                 </motion.div>
@@ -629,6 +655,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                             tasks={todoTasks}
                                             onDelete={confirmDelete}
                                             onStatusChange={updateTaskStatus}
+                                            onPriorityChange={handlePriorityChange}
                                             onEdit={openEditModal}
                                             generateCalendarLink={generateCalendarLink}
                                             accentColor="blue"
@@ -642,6 +669,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                             tasks={inProgressTasks}
                                             onDelete={confirmDelete}
                                             onStatusChange={updateTaskStatus}
+                                            onPriorityChange={handlePriorityChange}
                                             onEdit={openEditModal}
                                             generateCalendarLink={generateCalendarLink}
                                             accentColor="yellow"
@@ -655,6 +683,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                             tasks={doneTasks}
                                             onDelete={confirmDelete}
                                             onStatusChange={updateTaskStatus}
+                                            onPriorityChange={handlePriorityChange}
                                             onEdit={openEditModal}
                                             generateCalendarLink={generateCalendarLink}
                                             accentColor="emerald"
@@ -671,6 +700,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                         tasks={todoTasks}
                                         onDelete={confirmDelete}
                                         onStatusChange={updateTaskStatus}
+                                        onPriorityChange={handlePriorityChange}
                                         onEdit={openEditModal}
                                         generateCalendarLink={generateCalendarLink}
                                         accentColor="blue"
@@ -681,6 +711,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                         tasks={inProgressTasks}
                                         onDelete={confirmDelete}
                                         onStatusChange={updateTaskStatus}
+                                        onPriorityChange={handlePriorityChange}
                                         onEdit={openEditModal}
                                         generateCalendarLink={generateCalendarLink}
                                         accentColor="yellow"
@@ -691,6 +722,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                         tasks={doneTasks}
                                         onDelete={confirmDelete}
                                         onStatusChange={updateTaskStatus}
+                                        onPriorityChange={handlePriorityChange}
                                         onEdit={openEditModal}
                                         generateCalendarLink={generateCalendarLink}
                                         accentColor="emerald"
@@ -834,6 +866,8 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                     setEndDate={setEndDate}
                                     description={description}
                                     setDescription={setDescription}
+                                    priority={priority}
+                                    setPriority={setPriority}
                                     onSubmit={addTask}
                                     isMobile={true}
                                 />
@@ -894,6 +928,7 @@ function KanbanColumn({
     tasks,
     onDelete,
     onStatusChange,
+    onPriorityChange,
     onEdit,
     generateCalendarLink,
     isMobile = false,
@@ -904,6 +939,7 @@ function KanbanColumn({
     tasks: Task[]
     onDelete: (id: string, e?: React.MouseEvent) => void
     onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
+    onPriorityChange: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void
     onEdit: (task: Task) => void
     generateCalendarLink: (task: Task, provider: 'google' | 'outlook' | 'yahoo') => string
     isMobile?: boolean
@@ -953,6 +989,7 @@ function KanbanColumn({
                                 task={task}
                                 onDelete={onDelete}
                                 onStatusChange={onStatusChange}
+                                onPriorityChange={onPriorityChange}
                                 onEdit={onEdit}
                                 generateCalendarLink={generateCalendarLink}
                                 isMobile={isMobile}
@@ -975,6 +1012,7 @@ function TaskCard({
     task,
     onDelete,
     onStatusChange,
+    onPriorityChange,
     onEdit,
     generateCalendarLink,
     isMobile
@@ -982,6 +1020,7 @@ function TaskCard({
     task: Task
     onDelete: (id: string, e?: React.MouseEvent) => void
     onStatusChange: (id: string, status: 'todo' | 'in-progress' | 'done') => void
+    onPriorityChange: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void
     onEdit: (task: Task) => void
     generateCalendarLink: (task: Task, provider: 'google' | 'outlook' | 'yahoo') => string
     isMobile?: boolean
@@ -993,20 +1032,128 @@ function TaskCard({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`group p-4 rounded-2xl border transition-all ${task.completed
+            className={`group p-3 rounded-xl border transition-all ${task.completed
                 ? "bg-white/5 border-white/5"
                 : "bg-white/10 border-white/10 hover:bg-white/15 hover:border-white/20"
                 }`}
         >
-            <div className="flex items-start gap-3">
-                <div className="flex-1">
-                    <div className={`text-lg transition-all ${task.completed ? "text-white/40 line-through" : "text-white"}`}>
+            <div className="flex flex-col gap-3">
+                {/* Top Action Area */}
+                <div className="flex justify-between items-center gap-0.5">
+                    {/* Priority Selector (Left End) */}
+                    <div className="relative group/priority">
+                        <button
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${task.priority === 'urgent' ? 'bg-red-500/10 text-red-500' :
+                                task.priority === 'high' ? 'bg-orange-500/10 text-orange-500' :
+                                    task.priority === 'medium' ? 'bg-yellow-500/10 text-yellow-500' :
+                                        'bg-emerald-500/10 text-emerald-500'
+                                }`}
+                        >
+                            <div className={`w-1.5 h-1.5 rounded-full ${task.priority === 'urgent' ? 'bg-red-500 animate-pulse' :
+                                task.priority === 'high' ? 'bg-orange-500' :
+                                    task.priority === 'medium' ? 'bg-yellow-500' :
+                                        'bg-emerald-500'
+                                }`} />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">
+                                {task.priority === 'urgent' ? '最高' : task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+                            </span>
+                            <ChevronDown className="w-2.5 h-2.5 opacity-40" />
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        <div className="absolute left-0 mt-1 w-24 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-30 overflow-hidden opacity-0 invisible group-focus-within:opacity-100 group-focus-within:visible transition-all">
+                            {(['low', 'medium', 'high', 'urgent'] as const).map((p) => (
+                                <button
+                                    key={p}
+                                    onClick={() => onPriorityChange(task.id, p)}
+                                    className={`w-full px-3 py-1.5 text-[10px] font-bold text-left hover:bg-white/5 transition-colors flex items-center gap-2 ${task.priority === p ? 'text-white' : 'text-white/40'
+                                        }`}
+                                >
+                                    <div className={`w-1.5 h-1.5 rounded-full ${p === 'urgent' ? 'bg-red-500' :
+                                        p === 'high' ? 'bg-orange-500' :
+                                            p === 'medium' ? 'bg-yellow-500' :
+                                                'bg-emerald-500'
+                                        }`} />
+                                    {p === 'urgent' ? '最高' : p === 'high' ? '高' : p === 'medium' ? '中' : '低'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-0.5">
+                        {task.status === 'todo' && (
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowCalendarMenu(!showCalendarMenu)}
+                                    className="p-2 text-white/30 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-colors"
+                                    title="カレンダーに追加"
+                                >
+                                    <Calendar className="w-4 h-4" />
+                                </button>
+                                {showCalendarMenu && (
+                                    <div className="absolute right-0 mt-1 w-44 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-20 overflow-hidden">
+                                        <a
+                                            href={generateCalendarLink(task, 'google')}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block px-3 py-1.5 text-xs text-white hover:bg-white/10 transition-colors"
+                                            onClick={() => setShowCalendarMenu(false)}
+                                        >
+                                            Google Calendar
+                                        </a>
+                                        <a
+                                            href={generateCalendarLink(task, 'outlook')}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block px-3 py-1.5 text-xs text-white hover:bg-white/10 transition-colors"
+                                            onClick={() => setShowCalendarMenu(false)}
+                                        >
+                                            Outlook
+                                        </a>
+                                        <a
+                                            href={generateCalendarLink(task, 'yahoo')}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block px-3 py-1.5 text-xs text-white hover:bg-white/10 transition-colors"
+                                            onClick={() => setShowCalendarMenu(false)}
+                                        >
+                                            Yahoo Calendar
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {task.status === 'todo' && (
+                            <button
+                                onClick={() => onEdit(task)}
+                                className="p-2 text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-md transition-colors"
+                                title="編集"
+                            >
+                                <Pencil className="w-4 h-4" />
+                            </button>
+                        )}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onDelete(task.id, e)
+                            }}
+                            className="p-2 text-white/30 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors"
+                            title="削除"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Main Content (Text and Dates) */}
+                <div className="flex flex-col gap-1.5 px-0.5">
+                    <div className={`text-[15px] font-medium leading-relaxed transition-all ${task.completed ? "text-white/20 line-through" : "text-white/85"}`}>
                         {task.text}
                     </div>
                     {(task.startDate || task.scheduledDate) && (
-                        <div className="flex items-center gap-1 text-xs text-emerald-300/80 mt-1">
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-400/70 font-medium">
                             <Calendar className="w-3 h-3" />
-                            <span>
+                            <span className="tracking-tight">
                                 {(() => {
                                     const start = task.startDate ? new Date(task.startDate) : (task.scheduledDate ? new Date(task.scheduledDate) : null)
                                     const end = task.endDate ? new Date(task.endDate) : null
@@ -1031,93 +1178,32 @@ function TaskCard({
                             </span>
                         </div>
                     )}
+                </div>
 
-                    {/* Status Change Buttons */}
-                    <div className="flex gap-2 mt-3">
+                {/* Bottom Status Buttons */}
+                <div className="flex justify-between items-center mt-1">
+                    <div className="flex-1 flex justify-start">
                         {task.status !== 'todo' && (
                             <button
                                 onClick={() => onStatusChange(task.id, task.status === 'done' ? 'in-progress' : 'todo')}
-                                className="flex items-center gap-1 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs text-white transition-colors whitespace-nowrap"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-xs font-bold text-white/50 transition-all active:scale-95"
                             >
-                                <ArrowLeft className="w-3 h-3" />
+                                <ArrowLeft className="w-3.5 h-3.5 text-white/40" />
                                 {task.status === 'done' ? '進行中' : '未着手'}
                             </button>
                         )}
+                    </div>
+                    <div className="flex-1 flex justify-end">
                         {task.status !== 'done' && (
                             <button
                                 onClick={() => onStatusChange(task.id, task.status === 'todo' ? 'in-progress' : 'done')}
-                                className="flex items-center gap-1 px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-xs text-emerald-300 transition-colors whitespace-nowrap"
+                                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-xs font-bold text-emerald-400 transition-all active:scale-95 shadow-sm shadow-emerald-500/5 group/btn"
                             >
-                                {task.status === 'todo' ? '進行中' : '完了'}
-                                <ArrowRight className="w-3 h-3" />
+                                <span className="tracking-tight">{task.status === 'todo' ? '進行中' : '完了'}</span>
+                                <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5" />
                             </button>
                         )}
                     </div>
-                </div>
-                <div className="flex gap-2 relative">
-                    {/* Calendar Dropdown - Only for todo tasks */}
-                    {task.status === 'todo' && (
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowCalendarMenu(!showCalendarMenu)}
-                                className="p-2 text-white/40 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
-                                title="カレンダーに追加"
-                            >
-                                <Calendar className="w-4 h-4" />
-                            </button>
-                            {showCalendarMenu && (
-                                <div className="absolute left-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-10 overflow-hidden">
-                                    <a
-                                        href={generateCalendarLink(task, 'google')}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                        onClick={() => setShowCalendarMenu(false)}
-                                    >
-                                        Google Calendar
-                                    </a>
-                                    <a
-                                        href={generateCalendarLink(task, 'outlook')}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                        onClick={() => setShowCalendarMenu(false)}
-                                    >
-                                        Outlook
-                                    </a>
-                                    <a
-                                        href={generateCalendarLink(task, 'yahoo')}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-                                        onClick={() => setShowCalendarMenu(false)}
-                                    >
-                                        Yahoo Calendar
-                                    </a>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    {/* Edit button - Only for todo tasks */}
-                    {task.status === 'todo' && (
-                        <button
-                            onClick={() => onEdit(task)}
-                            className="p-2 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                        >
-                            <Pencil className="w-4 h-4" />
-                        </button>
-                    )}
-                    {/* Delete button - Always visible */}
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete(task.id, e)
-                        }}
-                        className="p-2 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
                 </div>
             </div>
         </motion.div>

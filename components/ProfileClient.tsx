@@ -108,7 +108,8 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
             })
 
             if (!res.ok) {
-                throw new Error("設定の保存に失敗しました")
+                const errorData = await res.json()
+                throw new Error(errorData.details || errorData.error || "設定の保存に失敗しました")
             }
 
             setSuccess("設定を保存しました")
@@ -147,7 +148,8 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
             })
 
             if (!res.ok) {
-                throw new Error("設定の保存に失敗しました")
+                const errorData = await res.json()
+                throw new Error(errorData.details || errorData.error || "設定の保存に失敗しました")
             }
 
             // Update localStorage
@@ -215,7 +217,8 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
             })
 
             if (!res.ok) {
-                throw new Error("設定の保存に失敗しました")
+                const errorData = await res.json()
+                throw new Error(errorData.details || errorData.error || "設定の保存に失敗しました")
             }
 
             // Update localStorage

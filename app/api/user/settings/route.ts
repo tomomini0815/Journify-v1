@@ -18,39 +18,22 @@ export async function GET() {
         }
 
         try {
-            // Fetch User settings and User preferences in parallel
-            const [settings, userData] = await Promise.all([
-                prisma.userSettings.findUnique({ where: { userId: user.id } }),
-                prisma.user.findUnique({
-                    where: { id: user.id },
-                    select: { preferences: true }
-                })
-            ])
+            const settings = await prisma.userSettings.findUnique({
+                where: { userId: user.id }
+            })
 
             console.log(`GET /api/user/settings for ${user.id}:`, settings)
 
-            // Parse preferences for enableAdventure - use exact value from DB
-            const preferences = (userData?.preferences as any) || {}
-            console.log(`[API debug] User preferences:`, JSON.stringify(preferences))
-
-            // Only default to true if preferences has never been set
-            const enableAdventure = 'enableAdventure' in preferences ? preferences.enableAdventure : true
-            console.log(`[API debug] Resolved enableAdventure:`, enableAdventure)
-
             if (!settings) {
-                // Return default with enableAdventure
                 return NextResponse.json({
                     userId: user.id,
                     enableProjects: false,
-                    enableAdventure: enableAdventure,
+                    enableAdventure: true,
                     showJojo: true
                 })
             }
 
-            return NextResponse.json({
-                ...settings,
-                enableAdventure // Inject from preferences
-            })
+            return NextResponse.json(settings)
         } catch (dbError) {
             console.error("Database error, returning default settings:", dbError)
             return NextResponse.json({
@@ -89,8 +72,28 @@ export async function PATCH(req: Request) {
         const updateData: any = {}
         if (enableProjects !== undefined) updateData.enableProjects = enableProjects
         if (showJojo !== undefined) updateData.showJojo = showJojo
+        if (enableAdventure !== undefined) updateData.enableAdventure = enableAdventure
 
         console.log(`PATCH /api/user/settings for ${user.id}:`, updateData)
+
+        // Check if user exists in the database
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id }
+        })
+
+        if (!dbUser) {
+            console.log(`User ${user.id} not found in database. Creating user record...`)
+            // If user doesn't exist in Prisma (but exists in Supabase), create them
+            // This can happen if the webhook failed or wasn't set up
+            await prisma.user.create({
+                data: {
+                    id: user.id,
+                    email: user.email!,
+                    name: user.user_metadata?.full_name || user.email?.split('@')[0] || "User",
+                    // Add other default fields if necessary
+                }
+            })
+        }
 
         // 1. Update UserSettings table
         const settings = await prisma.userSettings.upsert({
@@ -99,34 +102,14 @@ export async function PATCH(req: Request) {
             create: {
                 userId: user.id,
                 enableProjects: enableProjects ?? false,
+                enableAdventure: enableAdventure ?? true,
                 showJojo: showJojo ?? true
             }
         })
 
-        // 2. Update User preferences if enableAdventure is provided
-        if (enableAdventure !== undefined) {
-            // Fetch existing preferences first to merge
-            const currentUser = await prisma.user.findUnique({
-                where: { id: user.id },
-                select: { preferences: true }
-            })
-
-            const currentPrefs = (currentUser?.preferences as any) || {}
-            const newPrefs = { ...currentPrefs, enableAdventure }
-
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { preferences: newPrefs }
-            })
-            console.log("Updated User preferences:", newPrefs)
-        }
-
         revalidateTag('profile', 'max')
 
-        return NextResponse.json({
-            ...settings,
-            enableAdventure: enableAdventure !== undefined ? enableAdventure : (settings as any).enableAdventure
-        })
+        return NextResponse.json(settings)
     } catch (error: any) {
         console.error("Failed to update user settings:", error)
         console.error("Error details:", error.message, error.stack)

@@ -45,11 +45,12 @@ model User {
 }
 
 model UserSettings {
-  id             String  @id @default(uuid())
-  userId         String  @unique
-  enableProjects Boolean @default(false)
-  showJojo       Boolean @default(true)
-  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  enableProjects  Boolean @default(false)
+  enableAdventure Boolean @default(true)
+  showJojo        Boolean @default(true)
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Project {
