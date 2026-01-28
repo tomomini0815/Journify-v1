@@ -367,6 +367,7 @@ async function TasksSection({ userId }: { userId: string }) {
     // Serialize for client component
     const serializedTasks = tasks.map((t: any) => ({
         ...t,
+        priority: (['low', 'medium', 'high', 'urgent'].includes(t.priority) ? t.priority : 'medium'),
         scheduledDate: t.scheduledDate ? (typeof t.scheduledDate === 'string' ? t.scheduledDate : t.scheduledDate.toISOString()) : null,
         createdAt: typeof t.createdAt === 'string' ? t.createdAt : t.createdAt.toISOString(),
         updatedAt: typeof t.updatedAt === 'string' ? t.updatedAt : t.updatedAt.toISOString(),

@@ -75,8 +75,8 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === tab
-                                ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                                : "text-white/40 hover:text-white hover:bg-white/5"
+                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                            : "text-white/40 hover:text-white hover:bg-white/5"
                             }`}
                     >
                         {tab === 'today' ? '今日' : tab === 'week' ? '今週' : '今月'}
@@ -93,8 +93,9 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
 
                     return (
                         <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 transition-colors group">
-                            <div className={`w-3 h-3 rounded-full flex-shrink-0 ${task.priority === 'high' ? 'bg-red-500 shadow-red-500/50' :
-                                    task.priority === 'medium' ? 'bg-amber-500 shadow-amber-500/50' : 'bg-emerald-500 shadow-emerald-500/50'
+                            <div className={`w-3 h-3 rounded-full flex-shrink-0 ${task.priority === 'urgent' ? 'bg-red-500 shadow-red-500/50 animate-pulse' :
+                                task.priority === 'high' ? 'bg-orange-500 shadow-orange-500/50' :
+                                    task.priority === 'medium' ? 'bg-yellow-500 shadow-yellow-500/50' : 'bg-emerald-500 shadow-emerald-500/50'
                                 } shadow-sm`} />
 
                             <div className="flex-1 min-w-0">
