@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X, ChevronDown } from "lucide-react"
+import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X, ChevronDown, AlertCircle } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
 import { AddTaskForm } from "@/components/AddTaskForm"
 import { UnifiedTabs } from "@/components/ui/unified-tabs"
@@ -17,6 +17,7 @@ type Task = {
     scheduledDate?: Date
     startDate?: Date
     endDate?: Date
+    projectId?: string | null
 }
 
 interface SerializedTask {
@@ -29,6 +30,7 @@ interface SerializedTask {
     scheduledDate?: string | null
     startDate?: string | null
     endDate?: string | null
+    projectId?: string | null
 }
 
 interface TasksClientProps {
@@ -36,15 +38,18 @@ interface TasksClientProps {
 }
 
 export function TasksClient({ initialTasks }: TasksClientProps) {
-    const [tasks, setTasks] = useState<Task[]>(initialTasks.map(t => ({
-        ...t,
-        status: t.status || (t.completed ? 'done' : 'todo'),
-        priority: t.priority || 'medium',
-        createdAt: new Date(t.createdAt),
-        scheduledDate: t.scheduledDate ? new Date(t.scheduledDate) : undefined,
-        startDate: t.startDate ? new Date(t.startDate) : undefined,
-        endDate: t.endDate ? new Date(t.endDate) : undefined
-    })))
+    const [tasks, setTasks] = useState<Task[]>(initialTasks
+        .filter(t => !t.projectId) // Filter out project tasks
+        .map(t => ({
+            ...t,
+            status: t.status || (t.completed ? 'done' : 'todo'),
+            priority: t.priority || 'medium',
+            createdAt: new Date(t.createdAt),
+            scheduledDate: t.scheduledDate ? new Date(t.scheduledDate) : undefined,
+            startDate: t.startDate ? new Date(t.startDate) : undefined,
+            endDate: t.endDate ? new Date(t.endDate) : undefined,
+            projectId: t.projectId
+        })))
     const [newTask, setNewTask] = useState("")
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
@@ -441,14 +446,15 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
             return activeScope === 'all'
         }
 
-        const date = task.scheduledDate
+        const date = task.scheduledDate instanceof Date ? task.scheduledDate : new Date(task.scheduledDate)
+        const now = new Date()
         switch (activeScope) {
             case 'today':
-                return isToday(date) || (date < new Date() && task.status !== 'done') // Show overdue in today
+                return isToday(date) || (date < now && task.status !== 'done') // Show overdue in today
             case 'week':
-                return isThisWeek(date) || (date < new Date() && task.status !== 'done') // Show overdue in week
+                return isThisWeek(date) || (date < now && task.status !== 'done') // Show overdue in week
             case 'month':
-                return isThisMonth(date) || (date < new Date() && task.status !== 'done') // Show overdue in month
+                return isThisMonth(date) || (date < now && task.status !== 'done') // Show overdue in month
             case 'all':
                 return true
             default:
@@ -456,6 +462,24 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         }
     })
 
+    // Helper to check if a task is overdue
+    const isOverdue = (task: Task) => {
+        if (task.status === 'done') return false
+        // Check endDate first, then scheduledDate/startDate
+        const dateToCheck = task.endDate || task.scheduledDate
+        if (!dateToCheck) return false
+
+        const taskDate = dateToCheck instanceof Date ? dateToCheck : new Date(dateToCheck)
+        const taskTime = new Date(taskDate)
+        taskTime.setHours(0, 0, 0, 0)
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        return taskTime.getTime() < today.getTime()
+    }
+
+    // Show all tasks in kanban columns (including overdue)
     const todoTasks = filteredTasks.filter(t => t.status === 'todo')
     const inProgressTasks = filteredTasks.filter(t => t.status === 'in-progress')
     const doneTasks = filteredTasks.filter(t => t.status === 'done')
@@ -515,9 +539,27 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-0 gap-4 md:gap-0">
                     <UnifiedTabs
                         tabs={[
-                            { id: 'today', label: '今日', count: tasks.filter(t => t.scheduledDate && isToday(new Date(t.scheduledDate))).length },
-                            { id: 'week', label: '1週間', count: tasks.filter(t => t.scheduledDate && isThisWeek(new Date(t.scheduledDate))).length },
-                            { id: 'month', label: '今月', count: tasks.filter(t => t.scheduledDate && isThisMonth(new Date(t.scheduledDate))).length },
+                            {
+                                id: 'today', label: '今日', count: tasks.filter(t => {
+                                    if (!t.scheduledDate) return false
+                                    const d = t.scheduledDate instanceof Date ? t.scheduledDate : new Date(t.scheduledDate)
+                                    return isToday(d) || (d < new Date() && t.status !== 'done')
+                                }).length
+                            },
+                            {
+                                id: 'week', label: '1週間', count: tasks.filter(t => {
+                                    if (!t.scheduledDate) return false
+                                    const d = t.scheduledDate instanceof Date ? t.scheduledDate : new Date(t.scheduledDate)
+                                    return isThisWeek(d) || (d < new Date() && t.status !== 'done')
+                                }).length
+                            },
+                            {
+                                id: 'month', label: '今月', count: tasks.filter(t => {
+                                    if (!t.scheduledDate) return false
+                                    const d = t.scheduledDate instanceof Date ? t.scheduledDate : new Date(t.scheduledDate)
+                                    return isThisMonth(d) || (d < new Date() && t.status !== 'done')
+                                }).length
+                            },
                             { id: 'all', label: '全て', count: tasks.length }
                         ]}
                         activeTab={activeScope}
@@ -660,6 +702,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                             generateCalendarLink={generateCalendarLink}
                                             accentColor="blue"
                                             isMobile={true}
+                                            isOverdue={isOverdue}
                                         />
                                     )}
                                     {mobileKanbanTab === 'in-progress' && (
@@ -674,6 +717,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                             generateCalendarLink={generateCalendarLink}
                                             accentColor="yellow"
                                             isMobile={true}
+                                            isOverdue={isOverdue}
                                         />
                                     )}
                                     {mobileKanbanTab === 'done' && (
@@ -688,6 +732,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                             generateCalendarLink={generateCalendarLink}
                                             accentColor="emerald"
                                             isMobile={true}
+                                            isOverdue={isOverdue}
                                         />
                                     )}
                                 </div>
@@ -704,6 +749,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                         onEdit={openEditModal}
                                         generateCalendarLink={generateCalendarLink}
                                         accentColor="blue"
+                                        isOverdue={isOverdue}
                                     />
                                     <KanbanColumn
                                         title="進行中"
@@ -715,6 +761,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                         onEdit={openEditModal}
                                         generateCalendarLink={generateCalendarLink}
                                         accentColor="yellow"
+                                        isOverdue={isOverdue}
                                     />
                                     <KanbanColumn
                                         title="完了"
@@ -726,6 +773,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                                         onEdit={openEditModal}
                                         generateCalendarLink={generateCalendarLink}
                                         accentColor="emerald"
+                                        isOverdue={isOverdue}
                                     />
                                 </div>
                             </div>
@@ -932,7 +980,8 @@ function KanbanColumn({
     onEdit,
     generateCalendarLink,
     isMobile = false,
-    accentColor = 'blue'
+    accentColor = 'blue',
+    isOverdue
 }: {
     title: string
     status: 'todo' | 'in-progress' | 'done'
@@ -944,6 +993,7 @@ function KanbanColumn({
     generateCalendarLink: (task: Task, provider: 'google' | 'outlook' | 'yahoo') => string
     isMobile?: boolean
     accentColor?: 'blue' | 'yellow' | 'emerald'
+    isOverdue: (task: Task) => boolean
 }) {
     const accentColors = {
         'blue': {
@@ -993,6 +1043,7 @@ function KanbanColumn({
                                 onEdit={onEdit}
                                 generateCalendarLink={generateCalendarLink}
                                 isMobile={isMobile}
+                                isOverdue={isOverdue(task)}
                             />
                         ))}
                     </AnimatePresence>
@@ -1015,7 +1066,8 @@ function TaskCard({
     onPriorityChange,
     onEdit,
     generateCalendarLink,
-    isMobile
+    isMobile,
+    isOverdue = false
 }: {
     task: Task
     onDelete: (id: string, e?: React.MouseEvent) => void
@@ -1024,6 +1076,7 @@ function TaskCard({
     onEdit: (task: Task) => void
     generateCalendarLink: (task: Task, provider: 'google' | 'outlook' | 'yahoo') => string
     isMobile?: boolean
+    isOverdue?: boolean
 }) {
     const [showCalendarMenu, setShowCalendarMenu] = useState(false)
     const [showPriorityMenu, setShowPriorityMenu] = useState(false)
@@ -1164,8 +1217,9 @@ function TaskCard({
                         {task.text}
                     </div>
                     {(task.startDate || task.scheduledDate) && (
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-400/70 font-medium">
-                            <Calendar className="w-3 h-3" />
+                        <div className={`flex items-center gap-1.5 text-xs font-medium ${isOverdue ? 'text-red-400' : 'text-emerald-400/70'}`}>
+                            {isOverdue && <AlertCircle className="w-3 h-3" />}
+                            {!isOverdue && <Calendar className="w-3 h-3" />}
                             <span className="tracking-tight">
                                 {(() => {
                                     const start = task.startDate ? new Date(task.startDate) : (task.scheduledDate ? new Date(task.scheduledDate) : null)
@@ -1189,6 +1243,17 @@ function TaskCard({
                                     return formatDate(start)
                                 })()}
                             </span>
+                            {isOverdue && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onEdit(task)
+                                    }}
+                                    className="ml-1 px-2 py-0.5 text-[10px] font-bold bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded text-red-400 transition-all"
+                                >
+                                    期限延長
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

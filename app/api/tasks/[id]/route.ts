@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
+import { revalidateTag } from "next/cache"
 
 export async function PATCH(
     request: Request,
@@ -38,11 +39,14 @@ export async function PATCH(
                 priority,
                 completed,
                 color,
-                startDate: startDate ? new Date(startDate) : undefined,
-                endDate: endDate ? new Date(endDate) : undefined,
-                scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+                startDate: startDate ? new Date(startDate) : startDate === null ? null : undefined,
+                endDate: endDate ? new Date(endDate) : endDate === null ? null : undefined,
+                scheduledDate: scheduledDate ? new Date(scheduledDate) : scheduledDate === null ? null : undefined,
             },
         })
+
+        revalidateTag('tasks', 'max')
+        revalidateTag('dashboard', 'max')
 
         return NextResponse.json(task)
     } catch (error) {
@@ -76,6 +80,9 @@ export async function DELETE(
         await prisma.task.delete({
             where: { id },
         })
+
+        revalidateTag('tasks', 'max')
+        revalidateTag('dashboard', 'max')
 
         return NextResponse.json({ success: true })
     } catch (error) {

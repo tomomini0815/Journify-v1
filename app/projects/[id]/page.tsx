@@ -1902,8 +1902,12 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                         <MessageSquare className="w-4 h-4 text-emerald-400" />
                                         共有コメント
                                     </h3>
-                                    <button onClick={() => setShowComments(false)} className="text-white/40 hover:text-white transition-colors">
-                                        <X className="w-5 h-5" />
+                                    <button
+                                        onClick={() => setShowComments(false)}
+                                        className="px-3 py-1.5 text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex items-center gap-1.5"
+                                    >
+                                        <X className="w-4 h-4" />
+                                        閉じる
                                     </button>
                                 </div>
 

@@ -99,6 +99,7 @@
 html {
   color-scheme: dark;
   scrollbar-color: #666 #1a1a1a;
+  overflow-x: hidden;
 }
 
 body {
@@ -106,6 +107,8 @@ body {
   color: var(--foreground);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: var(--line-height-relaxed);
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Reduce motion for accessibility */

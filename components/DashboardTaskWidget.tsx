@@ -9,6 +9,8 @@ type Task = {
     text: string;
     priority: string;
     scheduledDate: Date | string | null;
+    startDate?: Date | string | null;
+    endDate?: Date | string | null;
     completed: boolean;
 };
 
@@ -17,8 +19,11 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
 
     // Helper to filter tasks
     const filteredTasks = tasks.filter(task => {
-        if (!task.scheduledDate) return false;
-        const date = new Date(task.scheduledDate);
+        // Use scheduledDate or endDate for filtering logic
+        const dateToCheck = task.scheduledDate || task.endDate || task.startDate;
+        if (!dateToCheck) return false;
+
+        const date = new Date(dateToCheck);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -42,8 +47,8 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
 
     // Sort by date then priority
     const sortedTasks = [...filteredTasks].sort((a, b) => {
-        const dateA = new Date(a.scheduledDate || 0).getTime();
-        const dateB = new Date(b.scheduledDate || 0).getTime();
+        const dateA = new Date(a.scheduledDate || a.endDate || a.startDate || 0).getTime();
+        const dateB = new Date(b.scheduledDate || b.endDate || b.startDate || 0).getTime();
         if (dateA !== dateB) return dateA - dateB;
         // Priority order: high > medium > low
         const pMap: Record<string, number> = { high: 3, medium: 2, low: 1 };
@@ -86,10 +91,24 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
 
             <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
                 {displayTasks.map((task) => {
-                    const date = new Date(task.scheduledDate || "");
+                    const scheduledDate = task.scheduledDate ? new Date(task.scheduledDate) : null;
+                    const startDate = task.startDate ? new Date(task.startDate) : null;
+                    const endDate = task.endDate ? new Date(task.endDate) : null;
+
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    const isOverdue = date < today;
+
+                    // Determine which date to display and check for overdue
+                    let dateDisplay = "";
+                    let isOverdue = false;
+
+                    if (startDate && endDate) {
+                        dateDisplay = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+                        isOverdue = endDate < today;
+                    } else if (scheduledDate) {
+                        dateDisplay = scheduledDate.toLocaleDateString();
+                        isOverdue = scheduledDate < today;
+                    }
 
                     return (
                         <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 transition-colors group">
@@ -100,11 +119,11 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
 
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-medium truncate text-sm group-hover:text-emerald-300 transition-colors">{task.text}</h4>
-                                {task.scheduledDate && (
+                                {(dateDisplay) && (
                                     <div className="flex items-center gap-2 mt-0.5">
                                         <p className={`text-[10px] flex items-center gap-1 ${isOverdue ? "text-red-400 font-bold" : "text-white/40"}`}>
                                             {isOverdue && <AlertCircle className="w-3 h-3" />}
-                                            {date.toLocaleDateString()}
+                                            {dateDisplay}
                                         </p>
                                     </div>
                                 )}

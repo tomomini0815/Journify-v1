@@ -342,6 +342,7 @@ const getCachedDashboardTasks = unstable_cache(
             where: {
                 userId,
                 completed: false,
+                projectId: null, // Only show daily tasks
                 OR: [
                     {
                         scheduledDate: {
@@ -369,6 +370,8 @@ async function TasksSection({ userId }: { userId: string }) {
         ...t,
         priority: (['low', 'medium', 'high', 'urgent'].includes(t.priority) ? t.priority : 'medium'),
         scheduledDate: t.scheduledDate ? (typeof t.scheduledDate === 'string' ? t.scheduledDate : t.scheduledDate.toISOString()) : null,
+        startDate: t.startDate ? (typeof t.startDate === 'string' ? t.startDate : t.startDate.toISOString()) : null,
+        endDate: t.endDate ? (typeof t.endDate === 'string' ? t.endDate : t.endDate.toISOString()) : null,
         createdAt: typeof t.createdAt === 'string' ? t.createdAt : t.createdAt.toISOString(),
         updatedAt: typeof t.updatedAt === 'string' ? t.updatedAt : t.updatedAt.toISOString(),
     }));
@@ -458,16 +461,16 @@ export default async function DashboardPage() {
                 <ChartsSection userId={user.id} />
             </Suspense>
 
-            {/* Recent Journals, Goals, and Daily Challenges */}
+            {/* Tasks, Goals, Recent Journals, and Daily Challenges (Reordered) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-                <Suspense fallback={<RecentJournalsSkeleton />}>
-                    <RecentJournalsSection userId={user.id} />
+                <Suspense fallback={<div className="h-48 bg-white/5 rounded-3xl animate-pulse" />}>
+                    <TasksSection userId={user.id} />
                 </Suspense>
                 <Suspense fallback={<GoalProgressSkeleton />}>
                     <GoalProgressSection userId={user.id} />
                 </Suspense>
-                <Suspense fallback={<div className="h-48 bg-white/5 rounded-3xl animate-pulse" />}>
-                    <TasksSection userId={user.id} />
+                <Suspense fallback={<RecentJournalsSkeleton />}>
+                    <RecentJournalsSection userId={user.id} />
                 </Suspense>
                 <DailyChallenges />
             </div>

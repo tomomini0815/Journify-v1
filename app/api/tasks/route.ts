@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
+import { revalidateTag } from "next/cache"
 
 export async function GET() {
     const supabase = await createClient()
@@ -53,6 +54,9 @@ export async function POST(request: Request) {
                 description: description || null,
             },
         })
+
+        revalidateTag('tasks', 'max')
+        revalidateTag('dashboard', 'max')
 
         return NextResponse.json(task)
     } catch (error) {
