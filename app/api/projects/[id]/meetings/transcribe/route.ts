@@ -89,64 +89,95 @@ export async function POST(
 `
 
         // Handle Audio Source
-        // Strategy: If URL, use File API (supports large files). If Base64, use Inline Data (limit 20MB).
+        // Strategy: If URL (production), download and use Inline Data. If local path (dev), use File API.
 
         let requestParts: any[] = []
+        let audioBase64 = ""
 
         if (audioPath) {
-            // File already uploaded to /tmp, use it directly
-            console.log(`Using uploaded file: ${audioPath}`)
+            // Check if it's a URL (production) or file path (development)
+            const isUrl = audioPath.startsWith("http://") || audioPath.startsWith("https://")
 
-            try {
-                // Upload to Google AI File Manager
-                console.log(`Uploading file to Gemini: ${audioPath}`)
-                const uploadResponse = await fileManager.uploadFile(audioPath, {
-                    mimeType: "audio/webm",
-                    displayName: `Meeting Audio ${new Date().toISOString()}`
-                })
+            if (isUrl) {
+                // Production: Download from Supabase Storage URL
+                console.log(`Downloading audio from URL: ${audioPath}`)
+                try {
+                    const response = await fetch(audioPath)
+                    if (!response.ok) {
+                        throw new Error(`Failed to download audio: ${response.status}`)
+                    }
+                    const arrayBuffer = await response.arrayBuffer()
+                    audioBase64 = Buffer.from(arrayBuffer).toString('base64')
+                    console.log(`Audio downloaded and converted to base64: ${audioBase64.length} chars`)
 
-                uploadedFileUri = uploadResponse.file.uri
-                console.log(`File uploaded: ${uploadedFileUri}`)
-
-                // Wait for processing to be ACTIVE (Audio is usually instant, but good practice)
-                let fileState = await fileManager.getFile(uploadResponse.file.name)
-                while (fileState.state === "PROCESSING") {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    fileState = await fileManager.getFile(uploadResponse.file.name)
+                    requestParts = [
+                        {
+                            inlineData: {
+                                mimeType: "audio/webm",
+                                data: audioBase64
+                            }
+                        },
+                        { text: systemPrompt }
+                    ]
+                } catch (downloadError: any) {
+                    console.error("Failed to download audio from URL:", downloadError)
+                    throw new Error(`Failed to download audio file: ${downloadError.message}`)
                 }
+            } else {
+                // Development: File already uploaded to local filesystem
+                console.log(`Using local file: ${audioPath}`)
 
-                if (fileState.state === "FAILED") {
-                    throw new Error("Audio processing failed by Gemini")
+                try {
+                    // Upload to Google AI File Manager
+                    console.log(`Uploading file to Gemini: ${audioPath}`)
+                    const uploadResponse = await fileManager.uploadFile(audioPath, {
+                        mimeType: "audio/webm",
+                        displayName: `Meeting Audio ${new Date().toISOString()}`
+                    })
+
+                    uploadedFileUri = uploadResponse.file.uri
+                    console.log(`File uploaded: ${uploadedFileUri}`)
+
+                    // Wait for processing to be ACTIVE (Audio is usually instant, but good practice)
+                    let fileState = await fileManager.getFile(uploadResponse.file.name)
+                    while (fileState.state === "PROCESSING") {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        fileState = await fileManager.getFile(uploadResponse.file.name)
+                    }
+
+                    if (fileState.state === "FAILED") {
+                        throw new Error("Audio processing failed by Gemini")
+                    }
+
+                    requestParts = [
+                        {
+                            fileData: {
+                                mimeType: uploadResponse.file.mimeType,
+                                fileUri: uploadedFileUri
+                            }
+                        },
+                        { text: systemPrompt }
+                    ]
+
+                } catch (error: any) {
+                    console.error("File Manager Upload Failed:", error)
+                    // Fallback to reading file and sending base64 (if small enough)
+                    const audioBuffer = await readFile(audioPath)
+                    audioBase64 = audioBuffer.toString('base64')
+                    requestParts = [
+                        {
+                            inlineData: {
+                                mimeType: "audio/webm",
+                                data: audioBase64
+                            }
+                        },
+                        { text: systemPrompt }
+                    ]
                 }
-
-                requestParts = [
-                    {
-                        fileData: {
-                            mimeType: uploadResponse.file.mimeType,
-                            fileUri: uploadedFileUri
-                        }
-                    },
-                    { text: systemPrompt }
-                ]
-
-            } catch (error: any) {
-                console.error("File Manager Upload Failed:", error)
-                // Fallback to reading file and sending base64 (if small enough)
-                const audioBuffer = await readFile(audioPath)
-                const audioBase64 = audioBuffer.toString('base64')
-                requestParts = [
-                    {
-                        inlineData: {
-                            mimeType: "audio/webm",
-                            data: audioBase64
-                        }
-                    },
-                    { text: systemPrompt }
-                ]
             }
 
         } else if (audioData) {
-            const audioBase64 = audioData.replace(/^data:.+;base64,/, "")
+            audioBase64 = audioData.replace(/^data:.+;base64,/, "")
             requestParts = [
                 {
                     inlineData: {
@@ -157,6 +188,7 @@ export async function POST(
                 { text: systemPrompt }
             ]
         }
+
 
         for (const modelName of modelsToTry) {
             try {
