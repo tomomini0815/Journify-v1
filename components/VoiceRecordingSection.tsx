@@ -70,27 +70,69 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            const mediaRecorder = new MediaRecorder(stream)
+
+            // MIME Type detection
+            let mimeType = "audio/webm"
+            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                mimeType = "audio/webm;codecs=opus"
+            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                mimeType = "audio/mp4"
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, { mimeType })
             mediaRecorderRef.current = mediaRecorder
             chunksRef.current = []
 
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) chunksRef.current.push(e.data)
+            // Android Detection
+            const isAndroid = /Android/i.test(navigator.userAgent)
+
+            mediaRecorder.ondataavailable = async (e) => {
+                if (e.data.size > 0) {
+                    chunksRef.current.push(e.data)
+
+                    // Android: Send chunk for partial transcription
+                    if (isAndroid) {
+                        try {
+                            const formData = new FormData()
+                            // Ensure extension matches mimeType for API handling
+                            const ext = mimeType.includes("mp4") ? "mp4" : "webm"
+                            formData.append("file", e.data, `partial.${ext}`)
+
+                            const res = await fetch("/api/transcribe/partial", {
+                                method: "POST",
+                                body: formData
+                            })
+                            if (res.ok) {
+                                const data = await res.json()
+                                if (data.text) {
+                                    setTranscript(prev => prev + data.text + " ")
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Partial transcription failed:", err)
+                        }
+                    }
+                }
             }
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: "audio/webm" })
+                const blob = new Blob(chunksRef.current, { type: mimeType })
                 setAudioBlob(blob)
                 stream.getTracks().forEach(track => track.stop())
             }
 
-            mediaRecorder.start()
+            // Start with timeslice (4000ms = 4s) to trigger ondataavailable periodically
+            mediaRecorder.start(4000)
+
             setIsRecording(true)
             setRecordingTime(0)
             setTranscript("")
             setInterimTranscript("")
 
-            if (recognitionRef.current) recognitionRef.current.start()
+            // Disable SpeechRecognition on Android to prevent mic conflict
+            if (!isAndroid && recognitionRef.current) {
+                recognitionRef.current.start()
+            }
 
             timerRef.current = setInterval(() => {
                 setRecordingTime(prev => prev + 1)
@@ -150,8 +192,10 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             }
 
             // 2. Upload Audio
+            const mimeType = audioBlob.type
+            const ext = mimeType.includes("mp4") ? "mp4" : "webm"
             const formData = new FormData()
-            formData.append("file", audioBlob, "meeting-recording.webm")
+            formData.append("file", audioBlob, `meeting-recording.${ext}`)
             const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
             if (!uploadRes.ok) throw new Error("Failed to upload audio")
             const uploadData = await uploadRes.json()
@@ -209,10 +253,10 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
         <div className="mb-4">
             {/* Tab Switcher */}
             <div className="mb-2">
-                <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/10 w-full sm:w-fit">
+                <div className="flex flex-wrap gap-2 p-1 bg-white/5 rounded-xl border border-white/10 w-full sm:w-fit">
                     <button
                         onClick={() => setActiveTab("journal")}
-                        className={`flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${activeTab === "journal"
+                        className={`flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${activeTab === "journal"
                             ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                             }`}
@@ -223,7 +267,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
                     <button
                         onClick={() => setActiveTab("meeting")}
-                        className={`flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${activeTab === "meeting"
+                        className={`flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${activeTab === "meeting"
                             ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                             }`}
@@ -301,7 +345,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                             {formatTime(recordingTime)}
                                         </div>
                                         <div className="text-white/60 text-sm animate-pulse">
-                                            録音中... {transcript && "聞き取っています"}
+                                            録音中... {/Android/i.test(navigator.userAgent) ? "(文字は数秒ごとに表示されます)" : (transcript && "聞き取っています")}
                                         </div>
                                     </div>
                                 ) : audioBlob && (
@@ -326,7 +370,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                     <button
                                         onClick={handleSave}
                                         disabled={isProcessing}
-                                        className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg hover:shadow-cyan-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed group min-w-[180px]"
+                                        className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg hover:shadow-cyan-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed group min-w-[180px] whitespace-nowrap"
                                     >
                                         {isProcessing ? (
                                             <div className="flex items-center gap-3">

@@ -79,7 +79,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === tab
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
                             ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
                             : "text-white/40 hover:text-white hover:bg-white/5"
                             }`}

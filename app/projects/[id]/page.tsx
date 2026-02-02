@@ -1232,14 +1232,14 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                         generateShareLink()
                                     }
                                 }}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-xl transition-colors text-emerald-300"
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-xl transition-colors text-emerald-300 whitespace-nowrap"
                             >
                                 <Share2 className="w-4 h-4" />
                                 <span className="hidden sm:inline">共有</span>
                             </button>
                             <button
                                 onClick={() => setShowComments(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/50 rounded-xl transition-colors text-indigo-300 relative"
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/50 rounded-xl transition-colors text-indigo-300 relative whitespace-nowrap"
                             >
                                 <MessageSquare className="w-4 h-4" />
                                 <span className="hidden sm:inline">コメント</span>
@@ -1260,19 +1260,19 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
                 {/* Main Content Container */}
                 <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl overflow-hidden flex flex-col mx-4 sm:mx-6 lg:mx-8 mb-8">
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1a1a1a] flex-shrink-0">
+                    <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-[#1a1a1a] flex-shrink-0 gap-4">
                         <h2 className="text-xl font-bold flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-indigo-400" />
                             プロジェクト工程表
                         </h2>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full sm:w-auto">
                             <button
                                 onClick={() => {
                                     setNewMilestone({ title: "", date: "" })
                                     setEditingItem(null)
                                     setShowMilestoneModal(true)
                                 }}
-                                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition-colors flex items-center gap-2"
+                                className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                             >
                                 <Flag className="w-4 h-4 text-amber-400" />
                                 マイルストーン追加
@@ -1293,7 +1293,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                     setEditingItem(null)
                                     setShowTaskModal(true)
                                 }}
-                                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition-colors flex items-center gap-2"
+                                className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                             >
                                 <Plus className="w-4 h-4 text-indigo-400" />
                                 タスク追加
@@ -1303,10 +1303,10 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
                     <div className="flex flex-col bg-[#1a1a1a]">
                         {/* View Toggle Tabs */}
-                        <div className="flex gap-2 p-4 border-b border-white/10 flex-shrink-0">
+                        <div className="flex gap-2 p-4 border-b border-white/10 flex-shrink-0 overflow-x-auto scrollbar-hide">
                             <button
                                 onClick={() => setActiveTab('list')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'list'
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'list'
                                     ? 'bg-white/10 text-white'
                                     : 'text-white/40 hover:text-white hover:bg-white/5'
                                     }`}
@@ -1316,7 +1316,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             </button>
                             <button
                                 onClick={() => setActiveTab('timeline')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'timeline'
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'timeline'
                                     ? 'bg-white/10 text-white'
                                     : 'text-white/40 hover:text-white hover:bg-white/5'
                                     }`}
@@ -1326,7 +1326,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             </button>
                             <button
                                 onClick={() => setActiveTab('docs')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'docs'
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'docs'
                                     ? 'bg-white/10 text-white'
                                     : 'text-white/40 hover:text-white hover:bg-white/5'
                                     }`}
@@ -1336,7 +1336,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             </button>
                             <button
                                 onClick={() => setActiveTab('meetings')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'meetings'
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'meetings'
                                     ? 'bg-white/10 text-white'
                                     : 'text-white/40 hover:text-white hover:bg-white/5'
                                     }`}
@@ -1351,7 +1351,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         ) : activeTab === 'meetings' ? (
                             /* Meeting Logs View */
                             <div className="p-6">
-                                <div className="flex justify-between items-center mb-6">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                                     <h3 className="text-lg font-semibold">議事録一覧</h3>
                                     <button
                                         onClick={() => {
@@ -1370,7 +1370,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                             setAudioBlob(null)
                                             setShowMeetingModal(true)
                                         }}
-                                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm transition-colors flex items-center gap-2"
+                                        className="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                                     >
                                         <Plus className="w-4 h-4" />
                                         新規作成
@@ -1452,7 +1452,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                                 }
                                                                             }
                                                                         }}
-                                                                        className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1 px-3 py-1.5 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                                        className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1 px-3 py-1.5 hover:bg-red-500/10 rounded-lg transition-colors whitespace-nowrap"
                                                                     >
                                                                         <Trash2 className="w-4 h-4" />
                                                                         削除
@@ -1904,7 +1904,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                     </h3>
                                     <button
                                         onClick={() => setShowComments(false)}
-                                        className="px-3 py-1.5 text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex items-center gap-1.5"
+                                        className="px-3 py-1.5 text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
                                     >
                                         <X className="w-4 h-4" />
                                         閉じる
@@ -1951,7 +1951,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                             <button
                                                 type="submit"
                                                 disabled={isSubmittingReply || !newReply.trim()}
-                                                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium text-white transition-colors flex items-center gap-2"
+                                                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-medium text-white transition-colors flex items-center gap-2 whitespace-nowrap"
                                             >
                                                 {isSubmittingReply ? '送信中...' : (
                                                     <>
@@ -2006,13 +2006,13 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                             <button
                                                 type="button"
                                                 onClick={() => setShowMilestoneModal(false)}
-                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
                                             >
                                                 キャンセル
                                             </button>
                                             <button
                                                 type="submit"
-                                                className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                                className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors whitespace-nowrap"
                                             >
                                                 {editingItem ? '更新' : '作成'}
                                             </button>
@@ -2176,13 +2176,13 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                             <button
                                                 type="button"
                                                 onClick={() => setShowTaskModal(false)}
-                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
                                             >
                                                 キャンセル
                                             </button>
                                             <button
                                                 type="submit"
-                                                className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                                className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors whitespace-nowrap"
                                             >
                                                 {editingItem ? '更新' : '作成'}
                                             </button>
@@ -2217,7 +2217,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                 <div className="flex justify-end gap-3">
                                     <button
                                         onClick={() => setDeleteConfirm(null)}
-                                        className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                        className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
                                     >
                                         キャンセル
                                     </button>
@@ -2232,7 +2232,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                 setDeleteConfirm(null)
                                             }
                                         }}
-                                        className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors"
+                                        className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors whitespace-nowrap"
                                     >
                                         削除
                                     </button>
@@ -2292,13 +2292,13 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setShowShareModal(false)}
-                                        className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white"
+                                        className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white whitespace-nowrap"
                                     >
                                         閉じる
                                     </button>
                                     <button
                                         onClick={removeShareLink}
-                                        className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 rounded-xl transition-colors text-rose-300"
+                                        className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 rounded-xl transition-colors text-rose-300 whitespace-nowrap"
                                     >
                                         共有を解除
                                     </button>
@@ -2471,13 +2471,13 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                 setAudioBlob(null)
                                                 setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
                                             }}
-                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
                                         >
                                             キャンセル
                                         </button>
                                         <button
                                             type="submit"
-                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors whitespace-nowrap"
                                         >
                                             保存
                                         </button>

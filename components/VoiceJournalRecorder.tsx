@@ -129,30 +129,66 @@ export default function VoiceJournalRecorder({
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
+
+            // MIME Type detection
+            let mimeType = "audio/webm";
+            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                mimeType = "audio/webm;codecs=opus";
+            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                mimeType = "audio/mp4";
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, { mimeType });
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
 
-            mediaRecorder.ondataavailable = (e) => {
+            // Android Detection
+            const isAndroid = /Android/i.test(navigator.userAgent);
+
+            mediaRecorder.ondataavailable = async (e) => {
                 if (e.data.size > 0) {
                     chunksRef.current.push(e.data);
+
+                    // Android: Send chunk for partial transcription
+                    if (isAndroid) {
+                        try {
+                            const formData = new FormData();
+                            const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+                            formData.append("file", e.data, `partial.${ext}`);
+
+                            const res = await fetch("/api/transcribe/partial", {
+                                method: "POST",
+                                body: formData
+                            });
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.text) {
+                                    setTranscript(prev => prev + data.text + " ");
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Partial transcription failed:", err);
+                        }
+                    }
                 }
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+                const blob = new Blob(chunksRef.current, { type: mimeType });
                 setAudioBlob(blob);
                 stream.getTracks().forEach(track => track.stop());
             };
 
-            mediaRecorder.start();
+            // Start with timeslice (4000ms = 4s)
+            mediaRecorder.start(4000);
+
             setIsRecording(true);
             setRecordingTime(0);
             setTranscript("");
             setInterimTranscript("");
 
-            // 音声認識開始
-            if (recognitionRef.current) {
+            // 音声認識開始 - Androidの場合、マイクの競合を防ぐため音声認識を無効化
+            if (!isAndroid && recognitionRef.current) {
                 try {
                     recognitionRef.current.start();
                 } catch (e) {
@@ -197,8 +233,10 @@ export default function VoiceJournalRecorder({
 
         try {
             // 1. 音声ファイルをアップロード
+            const mimeType = audioBlob.type;
+            const ext = mimeType.includes("mp4") ? "mp4" : "webm";
             const formData = new FormData();
-            formData.append("file", audioBlob, "voice-journal.webm");
+            formData.append("file", audioBlob, `voice-journal.${ext}`);
 
             const uploadRes = await fetch("/api/upload", {
                 method: "POST",
@@ -353,7 +391,7 @@ export default function VoiceJournalRecorder({
                             <p className="text-white/80 leading-relaxed text-sm">
                                 {transcript || interimTranscript || (
                                     <span className="text-white/30 italic">
-                                        {isRecording ? "お話しください..." : "音声がここに表示されます"}
+                                        {isRecording ? (/Android/i.test(navigator.userAgent) ? "録音中... (文字は数秒ごとにまとめて表示されます)" : "お話しください...") : "音声がここに表示されます"}
                                     </span>
                                 )}
                             </p>
@@ -390,7 +428,7 @@ export default function VoiceJournalRecorder({
                                                     e.stopPropagation();
                                                     setLocalMood(item.value);
                                                 }}
-                                                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${localMood === item.value
+                                                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all whitespace-nowrap ${localMood === item.value
                                                     ? "bg-emerald-500/20 border-emerald-500 text-white"
                                                     : "bg-white/5 border-transparent text-white/40 hover:bg-white/10 hover:text-white/80"
                                                     }`}
@@ -450,7 +488,7 @@ export default function VoiceJournalRecorder({
                                                     e.stopPropagation();
                                                     toggleTag(tag);
                                                 }}
-                                                className={`px-3 py-1.5 rounded-lg text-xs transition-all ${localTags.includes(tag)
+                                                className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${localTags.includes(tag)
                                                     ? 'bg-emerald-500/30 border border-emerald-500/50 text-white'
                                                     : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
                                                     }`}
@@ -480,17 +518,17 @@ export default function VoiceJournalRecorder({
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex gap-4 pt-2">
+                                <div className="flex flex-wrap gap-4 pt-2">
                                     <button
                                         onClick={cancelRecording}
-                                        className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors border border-white/10"
+                                        className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors border border-white/10 whitespace-nowrap"
                                     >
                                         キャンセル
                                     </button>
                                     <button
                                         onClick={processVoiceJournal}
                                         disabled={isProcessing}
-                                        className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
+                                        className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 whitespace-nowrap"
                                     >
                                         {isProcessing ? (
                                             <span className="flex items-center justify-center gap-2">
@@ -607,18 +645,18 @@ export default function VoiceJournalRecorder({
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="flex gap-4 justify-center mt-8"
+                            className="flex flex-wrap gap-4 justify-center mt-8"
                         >
                             <button
                                 onClick={cancelRecording}
-                                className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full font-semibold transition-all"
+                                className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full font-semibold transition-all whitespace-nowrap"
                             >
                                 キャンセル
                             </button>
                             <button
                                 onClick={processVoiceJournal}
                                 disabled={isProcessing}
-                                className="bg-gradient-to-r from-cyan-600 to-emerald-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg hover:shadow-cyan-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="bg-gradient-to-r from-cyan-600 to-emerald-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg hover:shadow-cyan-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                                 {isProcessing ? (
                                     <span className="flex items-center gap-2">
