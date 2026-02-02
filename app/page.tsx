@@ -360,17 +360,17 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.5 }}
                 whileHover={{ scale: 1.02 }}
-                className="relative bg-black/30 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl pointer-events-auto group cursor-pointer transition-all duration-500 mix-blend-normal"
+                className="relative bg-black/60 backdrop-blur-md p-6 md:p-10 rounded-[32px] border border-white/10 max-w-4xl pointer-events-auto group cursor-pointer transition-all duration-500 mix-blend-normal"
               >
                 {/* Large circular background on hover */}
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out -z-10 transform scale-90 group-hover:scale-100" />
+
 
                 <h1 className="font-serif text-5xl md:text-8xl tracking-tighter mb-3 drop-shadow-2xl transition-all duration-500 group-hover:text-white relative">
-                  <span className="italic bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent animate-pulse">Journify</span>
+                  <span className="italic bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent animate-pulse px-2 py-1">Journify</span>
                 </h1>
                 <div className="max-w-2xl mx-auto space-y-4">
-                  <p className="text-base md:text-xl font-light tracking-[0.15em] text-white drop-shadow-lg uppercase transition-all duration-500 group-hover:text-white">
-                    AIで加速する、書く瞑想と音声ジャーナル
+                  <p className="text-xl md:text-3xl font-light tracking-[0.15em] text-white drop-shadow-lg uppercase transition-all duration-500 group-hover:text-white">
+                    書く瞑想と音声ジャーナル
                   </p>
                   <p className="text-sm md:text-lg text-white/90 leading-relaxed tracking-[0.1em] px-2 drop-shadow-md font-light transition-all duration-500 group-hover:text-white">
                     ジャーナリングは、思考を整理し、自分自身を深く知るためのパワフルな習慣です。<br className="hidden md:block" />
