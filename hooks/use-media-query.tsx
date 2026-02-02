@@ -1,19 +1,29 @@
 import { useState, useEffect } from "react"
 
-export function useMediaQuery(query: string) {
-    const [value, setValue] = useState(false)
+export function useMediaQuery(query: string): boolean {
+    // Initialize as false to match server-side rendering
+    // The actual value will be set after hydration
+    const [matches, setMatches] = useState(false)
+    const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
+        setMounted(true)
+        const mediaQuery = matchMedia(query)
+
+        // Set the initial value
+        setMatches(mediaQuery.matches)
+
         function onChange(event: MediaQueryListEvent) {
-            setValue(event.matches)
+            setMatches(event.matches)
         }
 
-        const result = matchMedia(query)
-        result.addEventListener("change", onChange)
-        setValue(result.matches)
-
-        return () => result.removeEventListener("change", onChange)
+        mediaQuery.addEventListener("change", onChange)
+        return () => mediaQuery.removeEventListener("change", onChange)
     }, [query])
 
-    return value
+    // Return false during SSR and initial hydration to match server
+    // This prevents hydration mismatch
+    if (!mounted) return false
+
+    return matches
 }
