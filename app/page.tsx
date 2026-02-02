@@ -136,7 +136,7 @@ export default function LandingPage() {
   const homeY = useParallax(mouseY, 50)
 
   return (
-    <>
+    <div className="relative w-full overflow-x-hidden">
       <CustomCursor />
 
       {/* Floating Particles Effect */}
@@ -815,6 +815,6 @@ export default function LandingPage() {
           </div>
         </footer>
       </div>
-    </>
+    </div >
   )
 }
