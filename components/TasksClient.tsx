@@ -1026,6 +1026,8 @@ function TaskCard({
     isMobile?: boolean
 }) {
     const [showCalendarMenu, setShowCalendarMenu] = useState(false)
+    const [showPriorityMenu, setShowPriorityMenu] = useState(false)
+
     return (
         <motion.div
             layout
@@ -1041,8 +1043,13 @@ function TaskCard({
                 {/* Top Action Area */}
                 <div className="flex justify-between items-center gap-0.5">
                     {/* Priority Selector (Left End) */}
-                    <div className="relative group/priority">
+                    <div className="relative">
                         <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setShowPriorityMenu(!showPriorityMenu)
+                                setShowCalendarMenu(false)
+                            }}
                             className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${task.priority === 'urgent' ? 'bg-red-500/10 text-red-500' :
                                 task.priority === 'high' ? 'bg-orange-500/10 text-orange-500' :
                                     task.priority === 'medium' ? 'bg-yellow-500/10 text-yellow-500' :
@@ -1061,23 +1068,29 @@ function TaskCard({
                         </button>
 
                         {/* Dropdown Menu */}
-                        <div className="absolute left-0 mt-1 w-24 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-30 overflow-hidden opacity-0 invisible group-focus-within:opacity-100 group-focus-within:visible transition-all">
-                            {(['low', 'medium', 'high', 'urgent'] as const).map((p) => (
-                                <button
-                                    key={p}
-                                    onClick={() => onPriorityChange(task.id, p)}
-                                    className={`w-full px-3 py-1.5 text-[10px] font-bold text-left hover:bg-white/5 transition-colors flex items-center gap-2 ${task.priority === p ? 'text-white' : 'text-white/40'
-                                        }`}
-                                >
-                                    <div className={`w-1.5 h-1.5 rounded-full ${p === 'urgent' ? 'bg-red-500' :
-                                        p === 'high' ? 'bg-orange-500' :
-                                            p === 'medium' ? 'bg-yellow-500' :
-                                                'bg-emerald-500'
-                                        }`} />
-                                    {p === 'urgent' ? '最高' : p === 'high' ? '高' : p === 'medium' ? '中' : '低'}
-                                </button>
-                            ))}
-                        </div>
+                        {showPriorityMenu && (
+                            <div className="absolute left-0 mt-1 w-24 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-30 overflow-hidden">
+                                {(['low', 'medium', 'high', 'urgent'] as const).map((p) => (
+                                    <button
+                                        key={p}
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onPriorityChange(task.id, p)
+                                            setShowPriorityMenu(false)
+                                        }}
+                                        className={`w-full px-3 py-1.5 text-[10px] font-bold text-left hover:bg-white/5 transition-colors flex items-center gap-2 ${task.priority === p ? 'text-white' : 'text-white/40'
+                                            }`}
+                                    >
+                                        <div className={`w-1.5 h-1.5 rounded-full ${p === 'urgent' ? 'bg-red-500' :
+                                            p === 'high' ? 'bg-orange-500' :
+                                                p === 'medium' ? 'bg-yellow-500' :
+                                                    'bg-emerald-500'
+                                            }`} />
+                                        {p === 'urgent' ? '最高' : p === 'high' ? '高' : p === 'medium' ? '中' : '低'}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-0.5">
