@@ -288,10 +288,28 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
     useEffect(() => {
         const action = searchParams.get('action')
+        const tab = searchParams.get('tab')
+        const meetingId = searchParams.get('meetingId')
+
         if (action === 'new-meeting') {
             setShowMeetingModal(true)
         }
+
+        // Handle tab parameter
+        if (tab === 'meetings') {
+            setActiveTab('meetings')
+        }
+
+        // Handle meetingId parameter - auto-expand the meeting
+        if (meetingId) {
+            setExpandedLogIds(prev => {
+                const next = new Set(prev)
+                next.add(meetingId)
+                return next
+            })
+        }
     }, [searchParams])
+
 
     useEffect(() => {
         fetchProject()

@@ -186,10 +186,14 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 })
             })
 
+
             if (!createMeetingRes.ok) throw new Error("Failed to create meeting log")
 
-            // 5. Redirect
-            router.push(`/projects/${targetProjectId}?tab=meetings`)
+            const createdMeeting = await createMeetingRes.json()
+
+            // 5. Redirect with meetingId to auto-expand
+            router.push(`/projects/${targetProjectId}?tab=meetings&meetingId=${createdMeeting.id}`)
+
 
         } catch (error) {
             console.error("Save failed:", error)
