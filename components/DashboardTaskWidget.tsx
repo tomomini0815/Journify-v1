@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Calendar, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
 
 type Task = {
@@ -12,9 +13,12 @@ type Task = {
     startDate?: Date | string | null;
     endDate?: Date | string | null;
     completed: boolean;
+    description?: string;
+    status?: string;
 };
 
 export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month'>('today');
 
     // Helper to filter tasks
@@ -56,6 +60,32 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
     });
 
     const displayTasks = sortedTasks.slice(0, 5); // Show max 5
+
+    const handleTaskClick = (task: Task) => {
+        const dateToCheck = task.scheduledDate || task.endDate || task.startDate;
+        if (!dateToCheck) {
+            router.push('/tasks?scope=all');
+            return;
+        }
+
+        const date = new Date(dateToCheck);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const nextWeek = new Date(today);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        const nextMonth = new Date(today);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+        if (date < new Date(today.getTime() + 24 * 60 * 60 * 1000)) {
+            router.push('/tasks?scope=today');
+        } else if (date < nextWeek) {
+            router.push('/tasks?scope=week');
+        } else if (date < nextMonth) {
+            router.push('/tasks?scope=month');
+        } else {
+            router.push('/tasks?scope=all');
+        }
+    };
 
     return (
         <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col h-full">
@@ -111,7 +141,11 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                     }
 
                     return (
-                        <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 transition-colors group">
+                        <div
+                            key={task.id}
+                            onClick={() => handleTaskClick(task)}
+                            className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 hover:bg-white/10 transition-colors cursor-pointer group"
+                        >
                             <div className={`w-3 h-3 rounded-full flex-shrink-0 ${task.priority === 'urgent' ? 'bg-red-500 shadow-red-500/50 animate-pulse' :
                                 task.priority === 'high' ? 'bg-orange-500 shadow-orange-500/50' :
                                     task.priority === 'medium' ? 'bg-yellow-500 shadow-yellow-500/50' : 'bg-emerald-500 shadow-emerald-500/50'

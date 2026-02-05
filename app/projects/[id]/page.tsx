@@ -684,9 +684,18 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 recognitionRef.current = recognition
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error accessing microphone:', error)
-            alert('マイクへのアクセスが許可されていません')
+
+            if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                alert('マイクが見つかりませんでした。マイクが接続されているか確認してください。')
+            } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                alert('マイクへのアクセスが拒否されました。ブラウザの設定で許可してください。')
+            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                alert('マイクにアクセスできません。他のアプリケーションが使用している可能性があります。')
+            } else {
+                alert('マイクへのアクセス中にエラーが発生しました: ' + (error.message || 'Unknown error'))
+            }
         }
     }
 
@@ -1211,17 +1220,52 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         <DashboardLayout>
             <div className="flex flex-col -mx-4 sm:-mx-6 lg:-mx-8 -my-8">
                 {/* Header */}
-                <div className="flex-shrink-0 mb-6 px-4 sm:px-6 lg:px-8 pt-8">
-                    <Link href="/projects" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-4 transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
-                        プロジェクト一覧に戻る
-                    </Link>
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h1 className="text-[28px] font-bold text-white mb-2">{project.title}</h1>
-                            <p className="text-white/60">{project.description}</p>
+                <div className="flex-shrink-0 mb-8 px-4 sm:px-6 lg:px-8 pt-8">
+                    <Link href="/projects" className="inline-flex items-center gap-2 text-white/40 hover:text-white mb-6 transition-colors group">
+                        <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <ArrowLeft className="w-4 h-4" />
                         </div>
-                        <div className="flex gap-2">
+                        <span className="text-sm font-medium">プロジェクト一覧に戻る</span>
+                    </Link>
+
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                        <div className="space-y-4 max-w-3xl">
+                            <div>
+                                <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight mb-3">
+                                    {project.title}
+                                </h1>
+                                <div className="flex flex-wrap items-center gap-4 text-sm text-white/60">
+                                    <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                                        <Calendar className="w-4 h-4 text-emerald-400" />
+                                        <span>
+                                            {project.startDate ? new Date(project.startDate).toLocaleDateString('ja-JP') : '開始日未定'}
+                                            {project.endDate && ` - ${new Date(project.endDate).toLocaleDateString('ja-JP')}`}
+                                        </span>
+                                    </div>
+                                    <div className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${project.status === 'completed' || project.status === 'done' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                        project.status === 'in_progress' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                            'bg-white/5 border-white/10 text-white/60'
+                                        }`}>
+                                        <div className={`w-1.5 h-1.5 rounded-full ${project.status === 'completed' || project.status === 'done' ? 'bg-emerald-400' :
+                                            project.status === 'in_progress' ? 'bg-blue-400' :
+                                                'bg-white/40'
+                                            }`} />
+                                        <span>
+                                            {project.status === 'completed' || project.status === 'done' ? '完了' :
+                                                project.status === 'in_progress' ? '進行中' : '未着手'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {project.description && (
+                                <p className="text-white/70 text-base leading-relaxed border-l-2 border-white/10 pl-4 py-1">
+                                    {project.description}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex gap-2 flex-wrap">
                             <button
                                 onClick={() => {
                                     if ((project as any).isPublic && (project as any).shareToken) {
@@ -1232,25 +1276,25 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                         generateShareLink()
                                     }
                                 }}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 rounded-xl transition-colors text-emerald-300 whitespace-nowrap"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 rounded-xl transition-all text-emerald-400 font-medium whitespace-nowrap shadow-lg shadow-emerald-500/5"
                             >
                                 <Share2 className="w-4 h-4" />
-                                <span className="hidden sm:inline">共有</span>
+                                <span className="">共有</span>
                             </button>
                             <button
                                 onClick={() => setShowComments(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/50 rounded-xl transition-colors text-indigo-300 relative whitespace-nowrap"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-500/50 rounded-xl transition-all text-indigo-400 font-medium relative whitespace-nowrap shadow-lg shadow-indigo-500/5"
                             >
                                 <MessageSquare className="w-4 h-4" />
-                                <span className="hidden sm:inline">コメント</span>
+                                <span className="">コメント</span>
                                 {project.comments && project.comments.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
+                                    <span className="absolute -top-1.5 -right-1.5 h-5 min-w-[20px] px-1 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-[#121212]">
                                         {project.comments.length}
                                     </span>
                                 )}
                             </button>
                             <Link href={`/projects/${id}/edit`}>
-                                <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+                                <button className="p-2.5 bg-white/5 hover:bg-white/10 hover:text-white text-white/60 border border-white/5 hover:border-white/10 rounded-xl transition-colors">
                                     <MoreVertical className="w-5 h-5" />
                                 </button>
                             </Link>

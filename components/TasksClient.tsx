@@ -37,7 +37,14 @@ interface TasksClientProps {
     initialTasks: SerializedTask[]
 }
 
+import { useSearchParams } from "next/navigation"
+
+// ...
+
 export function TasksClient({ initialTasks }: TasksClientProps) {
+    const searchParams = useSearchParams()
+    const scopeParam = searchParams.get('scope')
+
     const [tasks, setTasks] = useState<Task[]>(initialTasks
         .filter(t => !t.projectId) // Filter out project tasks
         .map(t => ({
@@ -57,7 +64,11 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const [description, setDescription] = useState("")
     const [error, setError] = useState("")
     const [activeTab, setActiveTab] = useState<'kanban' | 'calendar'>('kanban')
-    const [activeScope, setActiveScope] = useState<'today' | 'week' | 'month' | 'all'>('today')
+    const [activeScope, setActiveScope] = useState<'today' | 'week' | 'month' | 'all'>(
+        (scopeParam === 'week' || scopeParam === 'month' || scopeParam === 'all')
+            ? scopeParam
+            : 'today'
+    )
     const [mobileKanbanTab, setMobileKanbanTab] = useState<'todo' | 'in-progress' | 'done'>('todo')
 
     const [editingTask, setEditingTask] = useState<Task | null>(null)
