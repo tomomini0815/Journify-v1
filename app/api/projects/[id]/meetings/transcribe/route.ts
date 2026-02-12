@@ -13,6 +13,16 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey!)
 const fileManager = new GoogleAIFileManager(apiKey!)
 
+// Helper: Extract retry delay from 429 error message
+function extractRetryDelay(errorMessage: string): number {
+    const match = errorMessage.match(/retry in (\d+\.?\d*)s/i)
+    if (match) return Math.ceil(parseFloat(match[1]))
+    return 10
+}
+function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 export async function POST(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -47,14 +57,11 @@ export async function POST(
         // Try multiple models in order of preference/availability
         // Strategy: Start with premium models, fall back to smaller Gemma models if quota exceeded
         const modelsToTry = [
-            "gemini-3-pro-preview", // Latest preview (Dec 2025) - highest quality
-            "gemini-2.5-pro", // Stable high-quality
-            "gemini-2.0-flash", // Fast fallback
-            "gemini-flash-latest", // Generic flash alias
-            // Gemma models - smaller, separate quota pools, more likely available
-            "gemma-3-27b-it", // Largest Gemma (27B parameters)
-            "gemma-3-12b-it", // Medium Gemma (12B parameters)
-            "gemma-3-4b-it"   // Smallest Gemma (4B parameters) - last resort
+            "gemini-2.0-flash-lite",   // Lightest, fast, separate quota
+            "gemini-2.5-flash-lite",   // Next gen lite
+            "gemini-2.0-flash",        // Standard flash
+            "gemini-3-flash-preview",  // New generation
+            "gemma-3-27b-it",          // Largest Gemma (separate quota pool)
         ]
 
         let errors: string[] = []
@@ -191,43 +198,51 @@ export async function POST(
 
 
         for (const modelName of modelsToTry) {
-            try {
-                console.log(`Trying model: ${modelName}...`)
-                const model = genAI.getGenerativeModel({ model: modelName })
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    console.log(`Trying model: ${modelName} (attempt ${attempt + 1})...`)
+                    const model = genAI.getGenerativeModel({ model: modelName })
 
-                result = await model.generateContent(requestParts)
+                    result = await model.generateContent(requestParts)
 
-                const response = await result.response
-                const text = response.text()
-                console.log(`Success with model: ${modelName}`)
+                    const response = await result.response
+                    const text = response.text()
+                    console.log(`Success with model: ${modelName}`)
 
-                // Parse title if possible
-                const titleMatch = text.match(/^#\s+(.+)$/m)
-                const title = titleMatch ? titleMatch[1].trim() : "会議議事録"
+                    // Parse title if possible
+                    const titleMatch = text.match(/^#\s+(.+)$/m)
+                    const title = titleMatch ? titleMatch[1].trim() : "会議議事録"
 
-                // Cleanup File API
-                if (uploadedFileUri) {
-                    try {
-                        // In production, we should store this and delete later.
-                    } catch (e) { console.error("Cleanup failed", e) }
+                    // Cleanup File API
+                    if (uploadedFileUri) {
+                        try {
+                            // In production, we should store this and delete later.
+                        } catch (e) { console.error("Cleanup failed", e) }
+                    }
+
+                    return NextResponse.json({
+                        title,
+                        content: text,
+                        model: modelName
+                    })
+
+                } catch (error: any) {
+                    const is429 = error.message?.includes("429") || error.message?.includes("quota");
+                    if (is429 && attempt === 0) {
+                        const waitTime = Math.min(extractRetryDelay(error.message), 20);
+                        console.warn(`Meeting transcribe ${modelName}: 429, retrying in ${waitTime}s...`);
+                        await sleep(waitTime * 1000);
+                        continue;
+                    }
+
+                    console.warn(`Failed with model ${modelName}:`, error.message?.substring(0, 100))
+                    if (is429) {
+                        errors.push(`${modelName}: API利用制限に達しました`)
+                    } else {
+                        errors.push(`${modelName}: ${error.message?.substring(0, 100)}`)
+                    }
+                    break; // try next model
                 }
-
-                return NextResponse.json({
-                    title,
-                    content: text,
-                    model: modelName
-                })
-
-            } catch (error: any) {
-                console.warn(`Failed with model ${modelName}:`, error.message)
-
-                // Check for quota errors (429)
-                if (error.message?.includes("429") || error.message?.includes("quota")) {
-                    errors.push(`${modelName}: API利用制限に達しました`)
-                } else {
-                    errors.push(`${modelName}: ${error.message}`)
-                }
-                // Continue to next model
             }
         }
 

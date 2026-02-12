@@ -2,8 +2,8 @@ import { useGame } from '@/components/providers/GameProvider'
 
 // Game Stats Hooks
 export function useGameStats() {
-    const { stats, isLoading } = useGame()
-    return { data: stats, isLoading }
+    const { stats, isLoading, refreshData } = useGame()
+    return { data: stats, isLoading, mutate: refreshData }
 }
 
 export function useAddXP() {

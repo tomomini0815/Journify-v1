@@ -1,38 +1,40 @@
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
-import path from "path";
 import fs from "fs";
+import path from "path";
 
-// Load .env.local
-const envPath = path.join(process.cwd(), '.env.local');
-if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath });
-} else {
-    console.error(".env.local not found at " + envPath);
+dotenv.config({ path: ".env.local" });
+
+const apiKey = process.env.GOOGLE_API_KEY;
+
+if (!apiKey) {
+    console.error("API key missing");
+    process.exit(1);
 }
 
 async function listModels() {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
-        console.error("No GOOGLE_API_KEY found in process.env");
-        return;
-    }
-
-    console.log(`Using API Key: ${apiKey.substring(0, 5)}...`);
-
-    // Fetch directly to bypass SDK mapping issues if any
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
     try {
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log("=== Available Models ===");
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const data = await response.json();
+
+        let output = "";
         if (data.models) {
-            data.models.forEach((m: any) => console.log(`- ${m.name} (${m.version}) [Methods: ${m.supportedGenerationMethods?.join(', ')}]`));
+            output += "Available Models:\n";
+            data.models.forEach((m: any) => {
+                if (m.name.includes("flash")) {
+                    output += `- ${m.name}\n`;
+                }
+            });
         } else {
-            console.log("No models found or error response:", JSON.stringify(data, null, 2));
+            output += "No models found or error: " + JSON.stringify(data);
         }
-    } catch (e) {
-        console.error("Fetch failed:", e);
+
+        fs.writeFileSync(path.join(process.cwd(), "models_flash.txt"), output);
+        console.log("Wrote models to models_flash.txt");
+
+    } catch (error) {
+        console.error("Error listing models:", error);
     }
 }
 

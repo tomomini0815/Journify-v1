@@ -92,41 +92,41 @@ export default function VoiceJournalRecorder({
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const recognitionRef = useRef<any>(null);
+    const speechRecognitionRef = useRef<any>(null);
+    const [isBraveBrowser, setIsBraveBrowser] = useState(false);
 
+    // Detect Brave browser
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                const recognition = new SpeechRecognition();
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                recognition.lang = "ja-JP";
-
-                recognition.onresult = (event: any) => {
-                    let interim = "";
-                    let final = "";
-
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        if (event.results[i].isFinal) {
-                            final += event.results[i][0].transcript;
-                        } else {
-                            interim += event.results[i][0].transcript;
-                        }
-                    }
-
-                    if (final) {
-                        setTranscript(prev => prev + final);
-                    }
-                    setInterimTranscript(interim);
-                };
-
-                recognitionRef.current = recognition;
+        const checkBrave = async () => {
+            if ((navigator as any).brave && await (navigator as any).brave.isBrave()) {
+                setIsBraveBrowser(true);
+                console.log('🦁 Brave browser detected');
             }
-        }
+        };
+        checkBrave();
+    }, []);
+
+    // Cleanup SpeechRecognition on unmount
+    useEffect(() => {
+        return () => {
+            if (speechRecognitionRef.current) {
+                try { speechRecognitionRef.current.stop(); } catch (e) { }
+            }
+        };
     }, []);
 
     const startRecording = async () => {
+        // Check for Secure Context (HTTPS or localhost)
+        if (typeof window !== 'undefined' && !window.isSecureContext) {
+            alert('セキュリティ上の理由により、マイクの使用はHTTPS接続またはlocalhostでのみ許可されています。')
+            return
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('お使いのブラウザはマイク録音をサポートしていません。')
+            return
+        }
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -142,34 +142,9 @@ export default function VoiceJournalRecorder({
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
 
-            // Android Detection
-            const isAndroid = /Android/i.test(navigator.userAgent);
-
-            mediaRecorder.ondataavailable = async (e) => {
+            mediaRecorder.ondataavailable = (e) => {
                 if (e.data.size > 0) {
                     chunksRef.current.push(e.data);
-
-                    // Android: Send chunk for partial transcription
-                    if (isAndroid) {
-                        try {
-                            const formData = new FormData();
-                            const ext = mimeType.includes("mp4") ? "mp4" : "webm";
-                            formData.append("file", e.data, `partial.${ext}`);
-
-                            const res = await fetch("/api/transcribe/partial", {
-                                method: "POST",
-                                body: formData
-                            });
-                            if (res.ok) {
-                                const data = await res.json();
-                                if (data.text) {
-                                    setTranscript(prev => prev + data.text + " ");
-                                }
-                            }
-                        } catch (err) {
-                            console.error("Partial transcription failed:", err);
-                        }
-                    }
                 }
             };
 
@@ -177,33 +152,141 @@ export default function VoiceJournalRecorder({
                 const blob = new Blob(chunksRef.current, { type: mimeType });
                 setAudioBlob(blob);
                 stream.getTracks().forEach(track => track.stop());
+
+                // Stop SpeechRecognition when recording stops
+                if (speechRecognitionRef.current) {
+                    try { speechRecognitionRef.current.stop(); } catch (e) { }
+                }
             };
 
-            // Start with timeslice (4000ms = 4s)
-            mediaRecorder.start(4000);
+            // Start MediaRecorder (continuous, no timeslice needed for audio capture)
+            mediaRecorder.start(15000);
+
+            // === Real-time transcription via Web Speech API (FREE, no API calls) ===
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                try {
+                    const recognition = new SpeechRecognition();
+                    recognition.lang = 'ja-JP';
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.maxAlternatives = 1;
+
+                    recognition.onresult = (event: any) => {
+                        let interim = '';
+                        let finalText = '';
+
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const result = event.results[i];
+                            if (result.isFinal) {
+                                finalText += result[0].transcript;
+                            } else {
+                                interim += result[0].transcript;
+                            }
+                        }
+
+                        if (finalText) {
+                            setTranscript(prev => prev + finalText + ' ');
+                        }
+                        setInterimTranscript(interim);
+                    };
+
+                    recognition.onerror = (event: any) => {
+                        console.warn('SpeechRecognition error:', event.error);
+
+                        // Handle different error types
+                        if (event.error === 'network') {
+                            setInterimTranscript('(ネットワークエラー: リアルタイム文字起こしが一時的に利用できません)');
+                            // Auto-retry after 2 seconds
+                            setTimeout(() => {
+                                if (mediaRecorderRef.current?.state === 'recording') {
+                                    try {
+                                        recognition.start();
+                                        setInterimTranscript('');
+                                    } catch (e) { }
+                                }
+                            }, 2000);
+                        } else if (event.error === 'no-speech') {
+                            // Common, non-fatal - just continue
+                        } else if (event.error === 'not-allowed') {
+                            if (isBraveBrowser) {
+                                setInterimTranscript('(Brave: 音声認識が無効です。brave://settings/shields で「Googleの音声認識を使用する」を有効にしてください)');
+                            } else {
+                                setInterimTranscript('(音声認識が許可されていません)');
+                            }
+                        } else if (event.error === 'aborted') {
+                            // User stopped, ignore
+                        } else {
+                            console.error('SpeechRecognition error:', event.error);
+                            setInterimTranscript(`(音声認識エラー: ${event.error})`);
+                        }
+                    };
+
+                    recognition.onend = () => {
+                        // Auto-restart if still recording
+                        if (mediaRecorderRef.current?.state === 'recording') {
+                            try { recognition.start(); } catch (e) {
+                                console.warn('Failed to restart SpeechRecognition:', e);
+                            }
+                        }
+                    };
+
+                    speechRecognitionRef.current = recognition;
+                    recognition.start();
+                    console.log('✅ Real-time transcription: Web Speech API (FREE)');
+                } catch (error) {
+                    console.error('Failed to initialize SpeechRecognition:', error);
+                    if (isBraveBrowser) {
+                        setInterimTranscript('(Brave: リアルタイム文字起こしを使用するには、brave://settings/shields で「Googleの音声認識を使用する」を有効にしてください。録音は正常に動作します。)');
+                    } else {
+                        setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)');
+                    }
+                }
+            } else {
+                console.warn('Web Speech API not available.');
+                if (isBraveBrowser) {
+                    setInterimTranscript('(Brave: リアルタイム文字起こしを使用するには、brave://settings/shields で「Googleの音声認識を使用する」を有効にしてください。録音は正常に動作します。)');
+                } else {
+                    setInterimTranscript('(リアルタイム文字起こしはこのブラウザで利用できません。録音は正常に動作します。)');
+                }
+            }
 
             setIsRecording(true);
             setRecordingTime(0);
             setTranscript("");
             setInterimTranscript("");
 
-            // 音声認識開始 - Androidの場合、マイクの競合を防ぐため音声認識を無効化
-            if (!isAndroid && recognitionRef.current) {
-                try {
-                    recognitionRef.current.start();
-                } catch (e) {
-                    console.error("Recognition start error:", e);
-                }
-            }
-
             // タイマー開始
             timerRef.current = setInterval(() => {
                 setRecordingTime(prev => prev + 1);
             }, 1000);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to start recording:", error);
-            alert("マイクへのアクセスが拒否されました");
+
+            // Log error details for debugging
+            console.log('Microphone Error Details:', {
+                name: error.name,
+                message: error.message,
+                type: error.constructor.name,
+                browser: isBraveBrowser ? 'Brave' : 'Other'
+            });
+
+            if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                console.warn('Microphone not found.')
+                alert('マイクが見つかりませんでした。マイクが接続されているか確認してください。')
+            } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                console.warn('Microphone permission denied.')
+                if (isBraveBrowser) {
+                    alert('マイクへのアクセスが拒否されました。\n\nBraveブラウザをお使いの場合:\n1. アドレスバー左側のライオンアイコンをクリック\n2. 「Shieldsを無効にする」または「詳細設定」からマイクを許可\n3. ページを再読み込みしてください');
+                } else {
+                    alert('マイクへのアクセスが拒否されました。\nブラウザの設定（アドレスバーの鍵アイコンなど）から、このサイトのマイク使用を許可してください。');
+                }
+            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                alert('マイクにアクセスできません。他のアプリケーション（ZoomやTeamsなど）がマイクを使用している可能性があります。')
+            } else {
+                alert(`録音を開始できませんでした: ${error.message || 'Unknown error'}`);
+            }
         }
     };
 
@@ -216,13 +299,7 @@ export default function VoiceJournalRecorder({
                 clearInterval(timerRef.current);
             }
 
-            if (recognitionRef.current) {
-                try {
-                    recognitionRef.current.stop();
-                } catch (e) {
-                    console.error("Recognition stop error:", e);
-                }
-            }
+
         }
     };
 
@@ -391,7 +468,7 @@ export default function VoiceJournalRecorder({
                             <p className="text-white/80 leading-relaxed text-sm">
                                 {transcript || interimTranscript || (
                                     <span className="text-white/30 italic">
-                                        {isRecording ? (/Android/i.test(navigator.userAgent) ? "録音中... (文字は数秒ごとにまとめて表示されます)" : "お話しください...") : "音声がここに表示されます"}
+                                        {isRecording ? "録音中... (AIが文字起こし中)" : "音声がここに表示されます"}
                                     </span>
                                 )}
                             </p>

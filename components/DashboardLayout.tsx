@@ -20,7 +20,7 @@ const defaultNavigation = [
     { name: "タスク", href: "/tasks", icon: CheckSquare },
     { name: "プロジェクト", href: "/projects", icon: Briefcase },
     { name: "ビジョンボード", href: "/vision-board", icon: Sparkles },
-    { name: "アドベンチャー", href: "/adventure", icon: Gamepad2 },
+    { name: "ペットハウス", href: "/adventure", icon: PawPrint },
     { name: "統計詳細", href: "/year-in-review", icon: BarChart2 },
 ]
 

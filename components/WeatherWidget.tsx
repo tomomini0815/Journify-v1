@@ -153,7 +153,7 @@ export function WeatherWidget() {
                         <span className="text-sm font-medium text-white/90">{weather.temperature}°C</span>
                     </div>
                     {(weather.minTemp !== undefined && weather.maxTemp !== undefined) && (
-                        <div className="flex items-center gap-2 text-xs border-l border-white/10 pl-3">
+                        <div className="hidden md:flex items-center gap-2 text-xs border-l border-white/10 pl-3">
                             <span className="text-red-300">H: {weather.maxTemp}°</span>
                             <span className="text-blue-300">L: {weather.minTemp}°</span>
                         </div>

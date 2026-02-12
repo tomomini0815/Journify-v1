@@ -7,6 +7,16 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const prisma = new PrismaClient();
 
+// Helper: Extract retry delay from 429 error message
+function extractRetryDelay(errorMessage: string): number {
+    const match = errorMessage.match(/retry in (\d+\.?\d*)s/i)
+    if (match) return Math.ceil(parseFloat(match[1]))
+    return 10
+}
+function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 export async function POST(req: Request) {
     console.log("=== Voice Journal POST request received (Recreated File) ===");
     const supabase = await createClient();
@@ -37,7 +47,8 @@ export async function POST(req: Request) {
         // Case 1: Client provided transcript -> Use text analysis
         if (transcript && transcript !== "音声を認識できませんでした") {
             const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+            const modelsToTry = ["gemini-2.0-flash-lite", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-3-flash-preview"];
+            let processed = false;
 
             const prompt = `以下のテキスト（ユーザーの音声ジャーナル）を分析し、JSON形式で返してください。
 
@@ -53,18 +64,39 @@ ${transcript}
 
 JSONのみを返し、他の説明は不要です。`;
 
-            try {
-                const result = await model.generateContent(prompt);
-                const responseText = result.response.text();
+            for (const modelName of modelsToTry) {
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    try {
+                        const model = genAI.getGenerativeModel({ model: modelName });
+                        const result = await model.generateContent(prompt);
+                        const responseText = result.response.text();
 
-                let jsonText = responseText.replace(/```json\n?|```\n?/g, "").trim();
-                const analysis = JSON.parse(jsonText);
+                        let jsonText = responseText.replace(/```json\n?|```\n?/g, "").trim();
+                        const analysis = JSON.parse(jsonText);
 
-                summary = analysis.summary;
-                sentiment = analysis.sentiment;
-                aiTags = analysis.tags || [];
-            } catch (error) {
-                console.error("Text analysis error:", error);
+                        summary = analysis.summary;
+                        sentiment = analysis.sentiment;
+                        aiTags = analysis.tags || [];
+                        processed = true;
+                        break;
+                    } catch (error: any) {
+                        const is429 = error.message?.includes("429") || error.message?.includes("quota");
+                        if (is429 && attempt === 0) {
+                            const waitTime = Math.min(extractRetryDelay(error.message), 15);
+                            console.warn(`Text analysis ${modelName}: 429, retrying in ${waitTime}s...`);
+                            await sleep(waitTime * 1000);
+                            continue;
+                        }
+                        console.warn(`Text analysis failed with ${modelName}:`, error.message?.substring(0, 100));
+                        break;
+                    }
+                }
+                if (processed) break;
+            }
+
+            if (!processed) {
+                // If all fails, use basic fallback
+                console.error("All models failed for text analysis");
                 summary = transcript.substring(0, 100) + "...";
             }
         }
@@ -76,38 +108,69 @@ JSONのみを返し、他の説明は不要です。`;
                 const audioBase64 = audioFile.toString("base64");
 
                 const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                const modelsToTry = ["gemini-2.0-flash-lite", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-3-flash-preview"];
+                let lastError = null;
+                let processed = false;
 
-                const prompt = `この音声ファイルを日本語で文字起こしし、さらに内容を分析してJSONで出力してください。
-
-出力フォーマット:
+                const prompt = `この音声ファイルを分析してください。
+出力JSONフォーマット:
 {
   "transcript": "文字起こしされた全文",
   "summary": "内容の要約（2-3文）",
   "sentiment": "positive/neutral/negative",
   "tags": ["タグ1", "タグ2", "タグ3"]
-}
+}`;
 
-JSONのみを出力してください。`;
+                for (const modelName of modelsToTry) {
+                    for (let attempt = 0; attempt < 2; attempt++) {
+                        try {
+                            const model = genAI.getGenerativeModel({
+                                model: modelName,
+                                generationConfig: {
+                                    temperature: 0.0,
+                                    responseMimeType: "application/json",
+                                },
+                                systemInstruction: "You are a specialized Japanese transcription and analysis engine. \n1. Transcribe the audio strictly into Japanese.\n2. Analyze the content for summary, sentiment, and tags.\n3. If the audio is silent or unintelligible, return empty transcript.\n4. Do NOT hallucinate.\n5. Return ONLY valid JSON."
+                            });
+                            const result = await model.generateContent([
+                                prompt,
+                                {
+                                    inlineData: {
+                                        mimeType: "audio/webm",
+                                        data: audioBase64
+                                    }
+                                }
+                            ]);
+                            const responseText = result.response.text();
 
-                const result = await model.generateContent([
-                    prompt,
-                    {
-                        inlineData: {
-                            mimeType: "audio/webm",
-                            data: audioBase64
+                            let jsonText = responseText.replace(/```json\n?|```\n?/g, "").trim();
+                            const analysis = JSON.parse(jsonText);
+
+                            transcript = analysis.transcript || "";
+                            summary = analysis.summary || "";
+                            sentiment = analysis.sentiment || "neutral";
+                            aiTags = analysis.tags || [];
+                            processed = true;
+                            break;
+                        } catch (error: any) {
+                            const is429 = error.message?.includes("429") || error.message?.includes("quota");
+                            if (is429 && attempt === 0) {
+                                const waitTime = Math.min(extractRetryDelay(error.message), 15);
+                                console.warn(`Audio analysis ${modelName}: 429, retrying in ${waitTime}s...`);
+                                await sleep(waitTime * 1000);
+                                continue;
+                            }
+                            console.warn(`Audio analysis failed with ${modelName}:`, error.message?.substring(0, 100));
+                            lastError = error;
+                            break;
                         }
                     }
-                ]);
+                    if (processed) break;
+                }
 
-                const responseText = result.response.text();
-                let jsonText = responseText.replace(/```json\n?|```\n?/g, "").trim();
-                const analysis = JSON.parse(jsonText);
-
-                transcript = analysis.transcript;
-                summary = analysis.summary;
-                sentiment = analysis.sentiment;
-                aiTags = analysis.tags || [];
+                if (!processed) {
+                    throw lastError || new Error("All models failed for audio analysis");
+                }
 
             } catch (error: any) {
                 console.error("Server-side audio processing failed:", error);

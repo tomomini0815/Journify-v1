@@ -628,6 +628,17 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
     // Meeting log functions
     const startRecording = async () => {
+        // Check for Secure Context (HTTPS or localhost)
+        if (!window.isSecureContext) {
+            alert('セキュリティ上の理由により、マイクの使用はHTTPS接続またはlocalhostでのみ許可されています。')
+            return
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('お使いのブラウザはマイク録音をサポートしていません。')
+            return
+        }
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
             const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
@@ -680,19 +691,36 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                     setTranscriptPreview(accumulatedTranscript + interimTranscript)
                 }
 
-                recognition.start()
-                recognitionRef.current = recognition
+                // Handle recognition errors silently or log them, don't crash the main recording
+                recognition.onerror = (event) => {
+                    console.warn('Speech recognition error:', event.error)
+                }
+
+                try {
+                    recognition.start()
+                    recognitionRef.current = recognition
+                } catch (e) {
+                    console.warn('Failed to start speech recognition:', e)
+                }
             }
 
         } catch (error: any) {
-            console.error('Error accessing microphone:', error)
+            // Log structure for debugging
+            console.log('Microphone Error Details:', {
+                name: error.name,
+                message: error.message,
+                type: error.constructor.name
+            })
 
             if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                console.warn('Microphone not found.')
                 alert('マイクが見つかりませんでした。マイクが接続されているか確認してください。')
             } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                alert('マイクへのアクセスが拒否されました。ブラウザの設定で許可してください。')
+                console.warn('Microphone permission denied.')
+
+                alert('マイクへのアクセスが拒否されました。\nブラウザの設定（アドレスバーの鍵アイコンなど）から、このサイトのマイク使用を許可してください。')
             } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-                alert('マイクにアクセスできません。他のアプリケーションが使用している可能性があります。')
+                alert('マイクにアクセスできません。他のアプリケーション（ZoomやTeamsなど）がマイクを使用している可能性があります。')
             } else {
                 alert('マイクへのアクセス中にエラーが発生しました: ' + (error.message || 'Unknown error'))
             }
