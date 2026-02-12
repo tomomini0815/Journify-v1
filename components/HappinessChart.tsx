@@ -179,7 +179,7 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+            className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-lg"
         >
             <div className="flex flex-col gap-4 mb-6">
                 <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
@@ -208,7 +208,7 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
 
             <div className="h-[300px] sm:h-[400px] min-h-[300px] min-w-0 relative outline-none focus:outline-none [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none *:focus:outline-none" style={{ width: '100%', minWidth: '100%' }}>
                 {/* Background Glow */}
-                <div className={`absolute inset-0 bg-gradient-to-t ${currentTheme.gradient} via-transparent to-transparent rounded-2xl transition-colors duration-500`}></div>
+                <div className={`absolute inset-0 bg-gradient-to-t ${currentTheme.gradient} via-transparent to-transparent rounded-2xl transition-colors duration-500 opacity-60`}></div>
 
                 {isLoading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl">

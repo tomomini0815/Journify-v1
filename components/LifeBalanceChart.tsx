@@ -207,7 +207,7 @@ export function LifeBalanceChart({ data: initialData }: { data?: { category: str
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+            className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-lg"
         >
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -218,12 +218,12 @@ export function LifeBalanceChart({ data: initialData }: { data?: { category: str
                 </div>
 
                 {/* 期間セレクター */}
-                <div className="flex flex-wrap bg-black/40 p-1 rounded-xl gap-1">
+                <div className="flex bg-black/40 p-1 rounded-xl gap-0.5 overflow-x-auto no-scrollbar">
                     {periods.map((p) => (
                         <button
                             key={p.id}
                             onClick={() => setPeriod(p.id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${period === p.id
+                            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${period === p.id
                                 ? 'bg-white/10 text-white shadow-sm'
                                 : 'text-white/40 hover:text-white/70 hover:bg-white/5'
                                 }`}
@@ -236,7 +236,7 @@ export function LifeBalanceChart({ data: initialData }: { data?: { category: str
 
             <div className="h-[300px] sm:h-[400px] min-h-[300px] min-w-0 relative outline-none focus:outline-none [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none *:focus:outline-none" style={{ width: '100%', minWidth: '100%' }}>
                 {/* 背景のグロー効果 */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-indigo-500/10 rounded-2xl blur-3xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-indigo-500/10 rounded-2xl blur-2xl opacity-50"></div>
 
                 {isLoading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl">

@@ -464,14 +464,29 @@ export default function VoiceJournalRecorder({
                         </div>
 
                         {/* Transcript Area */}
-                        <div className="bg-white/5 rounded-2xl p-4 min-h-[100px] max-h-[200px] overflow-y-auto border border-white/5">
-                            <p className="text-white/80 leading-relaxed text-sm">
-                                {transcript || interimTranscript || (
-                                    <span className="text-white/30 italic">
-                                        {isRecording ? "録音中... (AIが文字起こし中)" : "音声がここに表示されます"}
-                                    </span>
-                                )}
-                            </p>
+                        <div className="bg-white/5 rounded-2xl p-4 min-h-[100px] max-h-[200px] overflow-y-auto border border-white/5 relative">
+                            {isRecording ? (
+                                <p className="text-white/80 leading-relaxed text-sm">
+                                    {transcript}
+                                    <span className="text-white/40">{interimTranscript}</span>
+                                    {!transcript && !interimTranscript && (
+                                        <span className="text-white/30 italic">録音中... (AIが文字起こし中)</span>
+                                    )}
+                                </p>
+                            ) : (
+                                <>
+                                    <textarea
+                                        value={transcript}
+                                        onChange={(e) => setTranscript(e.target.value)}
+                                        placeholder="音声がここに表示されます。録音後に編集できます。"
+                                        className="w-full bg-transparent text-white/80 leading-relaxed text-sm resize-none focus:outline-none placeholder:text-white/30 placeholder:italic min-h-[80px]"
+                                        rows={4}
+                                    />
+                                    {transcript && (
+                                        <span className="absolute bottom-2 right-3 text-[10px] text-white/20">✏️ 編集可能</span>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         {/* Post-Recording Options */}
@@ -677,13 +692,30 @@ export default function VoiceJournalRecorder({
                             className="mb-6 max-w-2xl mx-auto"
                         >
                             <div className="bg-white/5 rounded-xl p-6 max-h-48 overflow-y-auto text-left">
-                                <h4 className="text-white/60 text-sm mb-2">文字起こし:</h4>
-                                <p className="text-white text-lg leading-relaxed">
-                                    {transcript}
-                                    <span className="text-white/40">{interimTranscript}</span>
-                                </p>
-                                {!transcript && !interimTranscript && isRecording && (
-                                    <p className="text-white/40 italic">話してください...</p>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h4 className="text-white/60 text-sm">文字起こし:</h4>
+                                    {!isRecording && transcript && (
+                                        <span className="text-[10px] text-white/30">✏️ タップして編集</span>
+                                    )}
+                                </div>
+                                {isRecording ? (
+                                    <>
+                                        <p className="text-white text-lg leading-relaxed">
+                                            {transcript}
+                                            <span className="text-white/40">{interimTranscript}</span>
+                                        </p>
+                                        {!transcript && !interimTranscript && (
+                                            <p className="text-white/40 italic">話してください...</p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <textarea
+                                        value={transcript}
+                                        onChange={(e) => setTranscript(e.target.value)}
+                                        placeholder="録音後にテキストが表示されます。編集も可能です。"
+                                        className="w-full bg-transparent text-white text-lg leading-relaxed resize-none focus:outline-none placeholder:text-white/30 placeholder:italic min-h-[80px]"
+                                        rows={4}
+                                    />
                                 )}
                             </div>
                         </motion.div>

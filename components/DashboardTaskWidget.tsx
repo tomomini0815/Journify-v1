@@ -21,45 +21,84 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month'>('today');
 
-    // Helper to filter tasks
+    // Helper: compute date range for each tab
+    const getDateRange = (tab: 'today' | 'week' | 'month') => {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        if (tab === 'today') {
+            const todayEnd = new Date(todayStart);
+            todayEnd.setDate(todayEnd.getDate() + 1);
+            return { start: todayStart, end: todayEnd };
+        }
+        if (tab === 'week') {
+            // Monday-based week
+            const dayOfWeek = now.getDay();
+            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const weekStart = new Date(todayStart);
+            weekStart.setDate(weekStart.getDate() + mondayOffset);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 7);
+            return { start: weekStart, end: weekEnd };
+        }
+        // month
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        return { start: monthStart, end: monthEnd };
+    };
+
+    const { start: rangeStart, end: rangeEnd } = getDateRange(activeTab);
+
+    // Filter tasks: a task is shown if its effective date range overlaps the selected tab range
     const filteredTasks = tasks.filter(task => {
-        // Use scheduledDate or endDate for filtering logic
-        const dateToCheck = task.scheduledDate || task.endDate || task.startDate;
-        if (!dateToCheck) return false;
+        if (task.completed) return false;
 
-        const date = new Date(dateToCheck);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const taskStart = task.startDate ? new Date(task.startDate)
+            : task.scheduledDate ? new Date(task.scheduledDate)
+                : task.endDate ? new Date(task.endDate)
+                    : null;
+        const taskEnd = task.endDate ? new Date(task.endDate)
+            : task.scheduledDate ? new Date(task.scheduledDate)
+                : task.startDate ? new Date(task.startDate)
+                    : null;
 
+        if (!taskStart && !taskEnd) return false;
+
+        const effectiveStart = taskStart || taskEnd!;
+        const effectiveEnd = taskEnd || taskStart!;
+
+        // For "今日" tab, also include overdue tasks (effectiveEnd < today)
         if (activeTab === 'today') {
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            return date < tomorrow; // Includes overdue
+            const isOverdue = effectiveEnd < rangeStart;
+            const overlapsToday = effectiveStart < rangeEnd && effectiveEnd >= rangeStart;
+            return isOverdue || overlapsToday;
         }
-        if (activeTab === 'week') {
-            const nextWeek = new Date(today);
-            nextWeek.setDate(nextWeek.getDate() + 7);
-            return date < nextWeek;
-        }
-        if (activeTab === 'month') {
-            const nextMonth = new Date(today);
-            nextMonth.setMonth(nextMonth.getMonth() + 1);
-            return date < nextMonth;
-        }
-        return false;
+
+        // For week/month: task range overlaps the selected range
+        return effectiveStart < rangeEnd && effectiveEnd >= rangeStart;
     });
 
-    // Sort by date then priority
+    // Sort: overdue first, then by date, then by priority
     const sortedTasks = [...filteredTasks].sort((a, b) => {
-        const dateA = new Date(a.scheduledDate || a.endDate || a.startDate || 0).getTime();
-        const dateB = new Date(b.scheduledDate || b.endDate || b.startDate || 0).getTime();
-        if (dateA !== dateB) return dateA - dateB;
-        // Priority order: high > medium > low
-        const pMap: Record<string, number> = { high: 3, medium: 2, low: 1 };
+        const dateA = new Date(a.scheduledDate || a.endDate || a.startDate || 0);
+        const dateB = new Date(b.scheduledDate || b.endDate || b.startDate || 0);
+        const now = new Date();
+        const aOverdue = dateA < now;
+        const bOverdue = dateB < now;
+
+        // Overdue tasks first
+        if (aOverdue && !bOverdue) return -1;
+        if (!aOverdue && bOverdue) return 1;
+
+        // Then by date
+        if (dateA.getTime() !== dateB.getTime()) return dateA.getTime() - dateB.getTime();
+
+        // Then by priority
+        const pMap: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
         return (pMap[b.priority] || 0) - (pMap[a.priority] || 0);
     });
 
-    const displayTasks = sortedTasks.slice(0, 5); // Show max 5
+    const displayTasks = sortedTasks.slice(0, 5);
 
     const handleTaskClick = (task: Task) => {
         const dateToCheck = task.scheduledDate || task.endDate || task.startDate;

@@ -17,7 +17,7 @@ export function StatCard({ icon: Icon, label, value, trend, delay }: StatCardPro
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay }}
-            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all"
+            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all"
         >
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                 {/* Left column: Icon and Value and Trend (Mobile) */}

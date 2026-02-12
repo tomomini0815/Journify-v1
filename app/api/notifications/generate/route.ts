@@ -102,15 +102,25 @@ export async function POST(request: Request) {
                 }
             }
 
-            // 期日が近いタスクをチェック（3日以内）
+            // 期日が近いタスクをチェック（3日以内）- scheduledDate と endDate の両方をチェック
             const upcomingTasks = await prisma.task.findMany({
                 where: {
                     userId: user.id,
                     completed: false,
-                    scheduledDate: {
-                        gte: now,
-                        lte: threeDaysFromNow
-                    }
+                    OR: [
+                        {
+                            scheduledDate: {
+                                gte: now,
+                                lte: threeDaysFromNow
+                            }
+                        },
+                        {
+                            endDate: {
+                                gte: now,
+                                lte: threeDaysFromNow
+                            }
+                        }
+                    ]
                 }
             })
 
@@ -126,29 +136,41 @@ export async function POST(request: Request) {
                     }
                 })
 
-                if (!existingNotification && task.scheduledDate) {
-                    const daysUntil = Math.ceil((task.scheduledDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-                    await prisma.notification.create({
-                        data: {
-                            userId: user.id,
-                            type: 'task_reminder',
-                            title: 'タスクの期日が近づいています',
-                            message: `「${task.text}」の期日まであと ${daysUntil} 日です。`,
-                            actionUrl: `/tasks?id=${task.id}`
-                        }
-                    })
-                    createdCount++
+                if (!existingNotification) {
+                    const dueDate = task.scheduledDate || task.endDate
+                    if (dueDate) {
+                        const daysUntil = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                        await prisma.notification.create({
+                            data: {
+                                userId: user.id,
+                                type: 'task_reminder',
+                                title: 'タスクの期日が近づいています',
+                                message: `「${task.text}」の期日まであと ${daysUntil} 日です。`,
+                                actionUrl: `/tasks?id=${task.id}`
+                            }
+                        })
+                        createdCount++
+                    }
                 }
             }
 
-            // 期限切れのタスクをチェック
+            // 期限切れのタスクをチェック - scheduledDate と endDate の両方をチェック
             const overdueTasks = await prisma.task.findMany({
                 where: {
                     userId: user.id,
                     completed: false,
-                    scheduledDate: {
-                        lt: now
-                    }
+                    OR: [
+                        {
+                            scheduledDate: {
+                                lt: now
+                            }
+                        },
+                        {
+                            endDate: {
+                                lt: now
+                            }
+                        }
+                    ]
                 }
             })
 

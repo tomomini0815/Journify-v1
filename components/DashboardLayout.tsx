@@ -151,7 +151,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
         <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-white">
             {/* Noise texture */}
-            <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
+            <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.02] mix-blend-soft-light"
                 style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
 
             {/* Sidebar - Desktop */}
