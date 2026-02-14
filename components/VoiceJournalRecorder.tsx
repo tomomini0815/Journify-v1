@@ -95,15 +95,23 @@ export default function VoiceJournalRecorder({
     const speechRecognitionRef = useRef<any>(null);
     const [isBraveBrowser, setIsBraveBrowser] = useState(false);
 
-    // Detect Brave browser
+    const [isAndroid, setIsAndroid] = useState(false);
+
+    // Detect Brave browser and Android
     useEffect(() => {
-        const checkBrave = async () => {
+        const checkBrowser = async () => {
             if ((navigator as any).brave && await (navigator as any).brave.isBrave()) {
                 setIsBraveBrowser(true);
                 console.log('🦁 Brave browser detected');
             }
+            // Simple Android detection
+            const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+            if (/android/i.test(userAgent)) {
+                setIsAndroid(true);
+                console.log('🤖 Android device detected');
+            }
         };
-        checkBrave();
+        checkBrowser();
     }, []);
 
     // Cleanup SpeechRecognition on unmount
@@ -131,14 +139,30 @@ export default function VoiceJournalRecorder({
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             // MIME Type detection
-            let mimeType = "audio/webm";
-            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-                mimeType = "audio/webm;codecs=opus";
-            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                mimeType = "audio/mp4";
+            let mimeType = "";
+
+            if (isAndroid) {
+                // Android preferred formats
+                if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                    mimeType = "audio/webm;codecs=opus";
+                } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+                    mimeType = "audio/webm";
+                } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                    mimeType = "audio/mp4"; // Fallback
+                }
+            } else {
+                // iPhone / Desktop / Others (Keep existing logic which favors webm then mp4)
+                if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                    mimeType = "audio/webm;codecs=opus";
+                } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                    mimeType = "audio/mp4";
+                }
             }
 
-            const mediaRecorder = new MediaRecorder(stream, { mimeType });
+            console.log(`Using MIME type: ${mimeType || 'default'}`);
+
+            const options = mimeType ? { mimeType } : undefined;
+            const mediaRecorder = new MediaRecorder(stream, options);
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
 
@@ -149,7 +173,7 @@ export default function VoiceJournalRecorder({
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: mimeType });
+                const blob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' });
                 setAudioBlob(blob);
                 stream.getTracks().forEach(track => track.stop());
 
@@ -160,7 +184,7 @@ export default function VoiceJournalRecorder({
             };
 
             // Start MediaRecorder (continuous, no timeslice needed for audio capture)
-            mediaRecorder.start(15000);
+            mediaRecorder.start(1000); // 1s chunks for safety
 
             // === Real-time transcription via Web Speech API (FREE, no API calls) ===
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -211,6 +235,8 @@ export default function VoiceJournalRecorder({
                         } else if (event.error === 'not-allowed') {
                             if (isBraveBrowser) {
                                 setInterimTranscript('(Brave: 音声認識が無効です。brave://settings/shields で「Googleの音声認識を使用する」を有効にしてください)');
+                            } else if (isAndroid) {
+                                setInterimTranscript('(音声認識が許可されていません。Androidの設定 > プライバシー > マイクの権限を確認してください)');
                             } else {
                                 setInterimTranscript('(音声認識が許可されていません)');
                             }
@@ -269,7 +295,8 @@ export default function VoiceJournalRecorder({
                 name: error.name,
                 message: error.message,
                 type: error.constructor.name,
-                browser: isBraveBrowser ? 'Brave' : 'Other'
+                browser: isBraveBrowser ? 'Brave' : 'Other',
+                isAndroid: isAndroid
             });
 
             if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
@@ -279,6 +306,8 @@ export default function VoiceJournalRecorder({
                 console.warn('Microphone permission denied.')
                 if (isBraveBrowser) {
                     alert('マイクへのアクセスが拒否されました。\n\nBraveブラウザをお使いの場合:\n1. アドレスバー左側のライオンアイコンをクリック\n2. 「Shieldsを無効にする」または「詳細設定」からマイクを許可\n3. ページを再読み込みしてください');
+                } else if (isAndroid) {
+                    alert('マイクへのアクセスが拒否されました。\n\nAndroidの場合:\n1. ブラウザのアドレスバーの鍵アイコンをタップ\n2. 「権限」または「サイトの設定」を選択\n3. 「マイク」を許可してください\n4. それでもダメな場合は、Androidの「設定」>「アプリ」>ブラウザ(Chromeなど)>「権限」でマイクを許可してください');
                 } else {
                     alert('マイクへのアクセスが拒否されました。\nブラウザの設定（アドレスバーの鍵アイコンなど）から、このサイトのマイク使用を許可してください。');
                 }
