@@ -501,7 +501,6 @@ export default function VoiceJournalRecorder({
                                 ref={fileInputRef}
                                 type="file"
                                 accept="audio/*"
-                                capture="microphone"
                                 className="hidden"
                                 onChange={handleFileUpload}
                             />
@@ -736,7 +735,6 @@ export default function VoiceJournalRecorder({
                         ref={fileInputRef}
                         type="file"
                         accept="audio/*"
-                        capture="microphone"
                         className="hidden"
                         onChange={handleFileUpload}
                     />
