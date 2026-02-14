@@ -39,7 +39,8 @@ export default async function TasksPage() {
         createdAt: new Date(task.createdAt).toISOString(),
         scheduledDate: task.scheduledDate ? new Date(task.scheduledDate).toISOString() : null,
         startDate: task.startDate ? new Date(task.startDate).toISOString() : null,
-        endDate: task.endDate ? new Date(task.endDate).toISOString() : null
+        endDate: task.endDate ? new Date(task.endDate).toISOString() : null,
+        updatedAt: new Date(task.updatedAt).toISOString()
     }))
 
     return (

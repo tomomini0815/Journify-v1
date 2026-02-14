@@ -14,6 +14,7 @@ type Task = {
     status: 'todo' | 'in-progress' | 'done'
     priority: 'low' | 'medium' | 'high' | 'urgent'
     createdAt: Date
+    updatedAt: Date
     scheduledDate?: Date
     startDate?: Date
     endDate?: Date
@@ -27,6 +28,7 @@ interface SerializedTask {
     status?: 'todo' | 'in-progress' | 'done'
     priority?: 'low' | 'medium' | 'high' | 'urgent'
     createdAt: string
+    updatedAt: string
     scheduledDate?: string | null
     startDate?: string | null
     endDate?: string | null
@@ -52,6 +54,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
             status: t.status || (t.completed ? 'done' : 'todo'),
             priority: t.priority || 'medium',
             createdAt: new Date(t.createdAt),
+            updatedAt: new Date(t.updatedAt),
             scheduledDate: t.scheduledDate ? new Date(t.scheduledDate) : undefined,
             startDate: t.startDate ? new Date(t.startDate) : undefined,
             endDate: t.endDate ? new Date(t.endDate) : undefined,
@@ -132,6 +135,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                     ...task,
                     status: task.status || 'todo',
                     createdAt: new Date(task.createdAt),
+                    updatedAt: new Date(task.updatedAt),
                     scheduledDate: newScheduledDate,
                     startDate: newStartDate,
                     endDate: newEndDate
@@ -168,8 +172,14 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
 
     const updateTaskStatus = async (taskId: string, newStatus: 'todo' | 'in-progress' | 'done') => {
         // Optimistic update
+        const now = new Date()
         setTasks(tasks.map(t =>
-            t.id === taskId ? { ...t, status: newStatus, completed: newStatus === 'done' } : t
+            t.id === taskId ? {
+                ...t,
+                status: newStatus,
+                completed: newStatus === 'done',
+                updatedAt: now
+            } : t
         ))
 
         try {
@@ -188,7 +198,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const updateTask = async (taskId: string, updates: Partial<Task>) => {
         // Optimistic update
         const updatedTasks = tasks.map(t =>
-            t.id === taskId ? { ...t, ...updates } : t
+            t.id === taskId ? { ...t, ...updates, updatedAt: new Date() } : t
         )
         setTasks(updatedTasks)
 
@@ -257,7 +267,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const handlePriorityChange = async (taskId: string, newPriority: 'low' | 'medium' | 'high' | 'urgent') => {
         // Optimistic update
         setTasks(tasks.map(t =>
-            t.id === taskId ? { ...t, priority: newPriority } : t
+            t.id === taskId ? { ...t, priority: newPriority, updatedAt: new Date() } : t
         ))
 
         try {
@@ -412,6 +422,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                         ...task,
                         status: task.status || 'todo',
                         createdAt: new Date(task.createdAt),
+                        updatedAt: new Date(task.updatedAt),
                         scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : undefined
                     }, ...prev])
                 }
@@ -459,13 +470,17 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
 
         const date = task.scheduledDate instanceof Date ? task.scheduledDate : new Date(task.scheduledDate)
         const now = new Date()
+
+        // Check if task was completed *today*
+        const isCompletedToday = task.status === 'done' && isToday(task.updatedAt)
+
         switch (activeScope) {
             case 'today':
-                return isToday(date) || (date < now && task.status !== 'done') // Show overdue in today
+                return isToday(date) || (date < now && task.status !== 'done') || isCompletedToday
             case 'week':
-                return isThisWeek(date) || (date < now && task.status !== 'done') // Show overdue in week
+                return isThisWeek(date) || (date < now && task.status !== 'done') || isCompletedToday
             case 'month':
-                return isThisMonth(date) || (date < now && task.status !== 'done') // Show overdue in month
+                return isThisMonth(date) || (date < now && task.status !== 'done') || isCompletedToday
             case 'all':
                 return true
             default:
