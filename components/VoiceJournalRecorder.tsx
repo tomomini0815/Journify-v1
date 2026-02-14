@@ -215,6 +215,10 @@ export default function VoiceJournalRecorder({
                     recognition.interimResults = true;
                     recognition.maxAlternatives = 1;
 
+                    recognition.onstart = () => {
+                        alert("DEBUG: SpeechRecognition started event");
+                    }
+
                     recognition.onresult = (event: any) => {
                         let interim = '';
                         let finalText = '';
@@ -236,19 +240,17 @@ export default function VoiceJournalRecorder({
 
                     recognition.onerror = (event: any) => {
                         console.warn('SpeechRecognition error:', event.error);
+                        alert(`DEBUG: Speech Recognition Error: ${event.error}`); // Debug
 
-                        // Handle errors gracefully to keep recording alive
                         if (event.error === 'no-speech') {
-                            // Ignore, keeps running
+                            // Ignore
                         } else if (event.error === 'network') {
                             setInterimTranscript('(接続不安定...)');
                         } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                            // Fatal errors for speech recognition
                             setInterimTranscript('(音声認識へのアクセスが拒否されました)');
+                            alert("音声認識エラー: マイク権限が拒否されました。");
                         } else {
-                            // Other errors, try to restart if recording
                             if (isAndroid && mediaRecorderRef.current?.state === 'recording') {
-                                // Short delay before restart to prevent tight loops
                                 setTimeout(() => {
                                     try { recognition.start(); } catch (e) { }
                                 }, 500);
@@ -257,14 +259,11 @@ export default function VoiceJournalRecorder({
                     };
 
                     recognition.onend = () => {
-                        // Auto-restart loop for Android OR if it stopped unexpectedly while recording
                         if (mediaRecorderRef.current?.state === 'recording') {
                             try {
                                 recognition.start();
                                 if (isAndroid) console.log('🔄 Android loop: Restarting speech recognition');
-                            } catch (e) {
-                                // Ignore "already started" errors
-                            }
+                            } catch (e) { }
                         }
                     };
 
@@ -274,6 +273,7 @@ export default function VoiceJournalRecorder({
 
                 } catch (error) {
                     console.error('Failed to initialize SpeechRecognition:', error);
+                    alert(`DEBUG: SpeechRecognition Init Failed: ${error}`);
                     setInterimTranscript('(音声認識の起動に失敗しました。録音は継続します)');
                 }
             } else {
