@@ -27,12 +27,12 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
             console.log("Gemini Live WebSocket Connected");
             setIsConnected(true);
 
-            // Send initial setup message (optional but good for config)
+            // Send initial setup message
             const setupMsg = {
                 setup: {
-                    model: "models/gemini-2.0-flash-exp", // Or gemini-2.0-flash-exp based on availability
+                    model: "models/gemini-2.0-flash-exp",
                     generationConfig: {
-                        responseModalities: ["TEXT"] // We only need text back for the transcript
+                        responseModalities: ["TEXT"]
                     }
                 }
             };
@@ -48,7 +48,6 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
                     data = JSON.parse(event.data);
                 }
 
-                // Handle server content
                 if (data.serverContent?.modelTurn?.parts) {
                     const parts = data.serverContent.modelTurn.parts;
                     for (const part of parts) {
@@ -57,8 +56,6 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
                         }
                     }
                 }
-
-                // Handle tool use or other events if needed
             } catch (e) {
                 console.error("Error parsing WebSocket message:", e);
             }
@@ -82,9 +79,6 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
     const startStreaming = useCallback(async (existingStream?: MediaStream) => {
         if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
             connect();
-            // Wait a bit for connection? Or just fail? 
-            // For simplicity, we assume connect was called or we wait for simple retry logic.
-            // Better: User clicks 'Start', we connect AND start audio.
         }
 
         try {
@@ -93,55 +87,87 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
                 stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
                         channelCount: 1,
-                        sampleRate: 16000, // Try to request 16kHz
+                        // We do NOT force 16k here, let browser decide native rate (e.g. 48k)
+                        // echoCancellation: true // Optional, good for mobile
                     }
                 });
             }
 
             streamRef.current = stream;
 
-            const audioContext = new AudioContext({ sampleRate: 16000 }); // Work at 16kHz if possible
+            const audioContext = new AudioContext(); // Native sample rate
             audioContextRef.current = audioContext;
+            const sourceSampleRate = audioContext.sampleRate;
+            console.log(`AudioContext Sample Rate: ${sourceSampleRate}`);
 
             await audioContext.audioWorklet.addModule('/audio-processor.js');
 
             const source = audioContext.createMediaStreamSource(stream);
             const processor = new AudioWorkletNode(audioContext, 'audio-processor');
 
+            // Simple Downsampler State
+            let bufferAccumulator = new Float32Array(0);
+
             processor.port.onmessage = (event) => {
                 if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) return;
 
-                const float32Data = event.data; // Float32Array
+                const inputData = event.data; // Float32Array at native rate
 
-                // Convert Float32 to Int16 PCM
-                const int16Data = new Int16Array(float32Data.length);
-                for (let i = 0; i < float32Data.length; i++) {
-                    const s = Math.max(-1, Math.min(1, float32Data[i]));
-                    int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-                }
+                // Append to accumulator
+                const newBuffer = new Float32Array(bufferAccumulator.length + inputData.length);
+                newBuffer.set(bufferAccumulator);
+                newBuffer.set(inputData, bufferAccumulator.length);
+                bufferAccumulator = newBuffer;
 
-                // Base64 encode the Int16 buffer
-                // We can use a helper or FileReader. 
-                // Since we are in browser, simple btoa on string is tricky for large binaries.
-                // Let's use a blob -> reader approach or simple loop if small.
-                const base64Audio = arrayBufferToBase64(int16Data.buffer);
+                // Target: 16000Hz
+                const targetSampleRate = 16000;
+                const ratio = sourceSampleRate / targetSampleRate;
 
-                const msg = {
-                    realtimeInput: {
-                        mediaChunks: [
-                            {
-                                mimeType: "audio/pcm;rate=16000",
-                                data: base64Audio
-                            }
-                        ]
+                // Process if we have enough for at least ~20ms
+                const outputLength = Math.floor(bufferAccumulator.length / ratio);
+
+                if (outputLength > 0) {
+                    const resampledData = new Int16Array(outputLength);
+
+                    for (let i = 0; i < outputLength; i++) {
+                        // Linear Interpolation
+                        const originalIndex = i * ratio;
+                        const index1 = Math.floor(originalIndex);
+                        const index2 = Math.min(index1 + 1, bufferAccumulator.length - 1);
+                        const weight = originalIndex - index1;
+
+                        const val1 = bufferAccumulator[index1];
+                        const val2 = bufferAccumulator[index2];
+                        const value = val1 + (val2 - val1) * weight;
+
+                        // Float to PCM Int16
+                        const s = Math.max(-1, Math.min(1, value));
+                        resampledData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                     }
-                };
 
-                websocketRef.current.send(JSON.stringify(msg));
+                    // Reset accumulator (simplification: we drop sub-sample remainder to avoid drift blocking)
+                    // Ideally we keep the remainder, but for live transcription this is usually fine.
+                    bufferAccumulator = new Float32Array(0);
+
+                    const base64Audio = arrayBufferToBase64(resampledData.buffer);
+
+                    const msg = {
+                        realtimeInput: {
+                            mediaChunks: [
+                                {
+                                    mimeType: "audio/pcm;rate=16000",
+                                    data: base64Audio
+                                }
+                            ]
+                        }
+                    };
+
+                    websocketRef.current.send(JSON.stringify(msg));
+                }
             };
 
             source.connect(processor);
-            processor.connect(audioContext.destination); // Necessary to keep the processor alive? Chrome sometimes needs this.
+            processor.connect(audioContext.destination);
 
             workletNodeRef.current = processor;
             setIsStreaming(true);
@@ -178,7 +204,7 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
     };
 }
 
-// Helper to convert ArrayBuffer to Base64
+// Helper
 function arrayBufferToBase64(buffer: ArrayBuffer) {
     let binary = '';
     const bytes = new Uint8Array(buffer);

@@ -116,6 +116,13 @@ export default function VoiceJournalRecorder({
         checkBrowser();
     }, []);
 
+    // --- Debug Helper ---
+    const [debugLogs, setDebugLogs] = useState<string[]>([]);
+    const addLog = (msg: string) => {
+        console.log(msg);
+        setDebugLogs(prev => [...prev.slice(-4), msg]); // Keep last 5
+    };
+
     // --- Gemini Live Hook (Android Only) ---
     const {
         isStreaming: isGeminiStreaming,
@@ -128,8 +135,9 @@ export default function VoiceJournalRecorder({
             setTranscript(prev => prev + text);
         },
         onError: (err) => {
-            console.error("Gemini Live Error:", err);
-            setInterimTranscript("(接続エラー発生)");
+            const msg = err instanceof Error ? err.message : JSON.stringify(err);
+            addLog(`Gemini Error: ${msg}`);
+            setInterimTranscript("(接続エラー)");
             // Fallback to normal?
         }
     });
