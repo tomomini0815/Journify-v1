@@ -131,7 +131,7 @@ export default function VoiceJournalRecorder({
         }
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert('お使いのブラウザはマイク録音をサポートしていません。')
+            alert('お使いのブラウザはマイク録音をサポートしていません。Chromeまたは最新のブラウザをご利用ください。')
             return
         }
 
@@ -142,16 +142,17 @@ export default function VoiceJournalRecorder({
             let mimeType = "";
 
             if (isAndroid) {
-                // Android preferred formats
-                if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                // Android preferred formats for stability
+                // 'audio/mp4' is often better supported on mobile Chrome for file playback compatibility
+                if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                    mimeType = "audio/mp4";
+                } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
                     mimeType = "audio/webm;codecs=opus";
                 } else if (MediaRecorder.isTypeSupported("audio/webm")) {
                     mimeType = "audio/webm";
-                } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                    mimeType = "audio/mp4"; // Fallback
                 }
             } else {
-                // iPhone / Desktop / Others (Keep existing logic which favors webm then mp4)
+                // Desktop / iOS (Safari prefers mp4/aac, Chrome prefers webm)
                 if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
                     mimeType = "audio/webm;codecs=opus";
                 } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
@@ -159,21 +160,35 @@ export default function VoiceJournalRecorder({
                 }
             }
 
-            console.log(`Using MIME type: ${mimeType || 'default'}`);
+            console.log(`Using MIME type: ${mimeType || 'default (browser decided)'}`);
 
+            // mimeTypeが空の場合はオプションを渡さない（ブラウザのデフォルトを使用）
             const options = mimeType ? { mimeType } : undefined;
-            const mediaRecorder = new MediaRecorder(stream, options);
-            mediaRecorderRef.current = mediaRecorder;
+
+            try {
+                const mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorderRef.current = mediaRecorder;
+            } catch (e) {
+                console.warn('Failed to create MediaRecorder with options, trying default:', e);
+                // Fallback to default if specific mimeType fails
+                mediaRecorderRef.current = new MediaRecorder(stream);
+            }
+
+            if (!mediaRecorderRef.current) {
+                throw new Error("MediaRecorder failed to initialize");
+            }
+
             chunksRef.current = [];
 
-            mediaRecorder.ondataavailable = (e) => {
+            mediaRecorderRef.current.ondataavailable = (e) => {
                 if (e.data.size > 0) {
                     chunksRef.current.push(e.data);
                 }
             };
 
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' });
+            mediaRecorderRef.current.onstop = () => {
+                const type = mediaRecorderRef.current?.mimeType || mimeType || 'audio/webm';
+                const blob = new Blob(chunksRef.current, { type });
                 setAudioBlob(blob);
                 stream.getTracks().forEach(track => track.stop());
 
@@ -183,17 +198,19 @@ export default function VoiceJournalRecorder({
                 }
             };
 
-            // Start MediaRecorder (continuous, no timeslice needed for audio capture)
-            mediaRecorder.start(1000); // 1s chunks for safety
+            // Start MediaRecorder
+            mediaRecorderRef.current.start(1000); // 1s chunks
 
-            // === Real-time transcription via Web Speech API (FREE, no API calls) ===
+            // === Real-time transcription via Web Speech API ===
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
             if (SpeechRecognition) {
                 try {
                     const recognition = new SpeechRecognition();
                     recognition.lang = 'ja-JP';
-                    // Android: continuous=false for stability (mimics native behavior of restarting)
-                    // Others: continuous=true for standard behavior
+
+                    // Android Chrome often has issues with continuous=true
+                    // usage of continuous=false with auto-restart loop is more stable on Android
                     recognition.continuous = !isAndroid;
                     recognition.interimResults = true;
                     recognition.maxAlternatives = 1;
@@ -220,70 +237,48 @@ export default function VoiceJournalRecorder({
                     recognition.onerror = (event: any) => {
                         console.warn('SpeechRecognition error:', event.error);
 
-                        // Handle different error types
-                        if (event.error === 'network') {
-                            setInterimTranscript('(ネットワークエラー: リアルタイム文字起こしが一時的に利用できません)');
-                            // Auto-retry after 2 seconds
-                            setTimeout(() => {
-                                if (mediaRecorderRef.current?.state === 'recording') {
-                                    try {
-                                        recognition.start();
-                                        setInterimTranscript('');
-                                    } catch (e) { }
-                                }
-                            }, 2000);
-                        } else if (event.error === 'no-speech') {
-                            // Common, non-fatal - just continue
-                        } else if (event.error === 'not-allowed') {
-                            if (isBraveBrowser) {
-                                setInterimTranscript('(Brave: 音声認識が無効です。brave://settings/shields で「Googleの音声認識を使用する」を有効にしてください)');
-                            } else if (isAndroid) {
-                                setInterimTranscript('(音声認識が許可されていません。Androidの設定 > プライバシー > マイクの権限を確認してください)');
-                            } else {
-                                setInterimTranscript('(音声認識が許可されていません)');
-                            }
-                        } else if (event.error === 'aborted') {
-                            // User stopped, ignore
+                        // Handle errors gracefully to keep recording alive
+                        if (event.error === 'no-speech') {
+                            // Ignore, keeps running
+                        } else if (event.error === 'network') {
+                            setInterimTranscript('(接続不安定...)');
+                        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                            // Fatal errors for speech recognition
+                            setInterimTranscript('(音声認識へのアクセスが拒否されました)');
                         } else {
-                            console.error('SpeechRecognition error:', event.error);
-                            setInterimTranscript(`(音声認識エラー: ${event.error})`);
+                            // Other errors, try to restart if recording
+                            if (isAndroid && mediaRecorderRef.current?.state === 'recording') {
+                                // Short delay before restart to prevent tight loops
+                                setTimeout(() => {
+                                    try { recognition.start(); } catch (e) { }
+                                }, 500);
+                            }
                         }
                     };
 
                     recognition.onend = () => {
-                        // Auto-restart if still recording
-                        // For Android (continuous=false), this IS the loop mechanism
+                        // Auto-restart loop for Android OR if it stopped unexpectedly while recording
                         if (mediaRecorderRef.current?.state === 'recording') {
                             try {
                                 recognition.start();
-                                if (isAndroid) {
-                                    console.log('🔄 Restarting SpeechRecognition (Android loop)');
-                                }
+                                if (isAndroid) console.log('🔄 Android loop: Restarting speech recognition');
                             } catch (e) {
-                                console.warn('Failed to restart SpeechRecognition:', e);
+                                // Ignore "already started" errors
                             }
                         }
                     };
 
                     speechRecognitionRef.current = recognition;
                     recognition.start();
-                    console.log('✅ Real-time transcription: Web Speech API (FREE)');
-                    if (isAndroid) console.log('🤖 Android mode: continuous=false, using auto-restart');
+                    console.log('✅ Speech Recognition started');
+
                 } catch (error) {
                     console.error('Failed to initialize SpeechRecognition:', error);
-                    if (isBraveBrowser) {
-                        setInterimTranscript('(Brave: リアルタイム文字起こしを使用するには、brave://settings/shields で「Googleの音声認識を使用する」を有効にしてください。録音は正常に動作します。)');
-                    } else {
-                        setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)');
-                    }
+                    setInterimTranscript('(音声認識の起動に失敗しました。録音は継続します)');
                 }
             } else {
-                console.warn('Web Speech API not available.');
-                if (isBraveBrowser) {
-                    setInterimTranscript('(Brave: リアルタイム文字起こしを使用するには、brave://settings/shields で「Googleの音声認識を使用する」を有効にしてください。録音は正常に動作します。)');
-                } else {
-                    setInterimTranscript('(リアルタイム文字起こしはこのブラウザで利用できません。録音は正常に動作します。)');
-                }
+                console.warn('Web Speech API not supported in this browser');
+                setInterimTranscript('(このブラウザはリアルタイム文字起こし未対応です)');
             }
 
             setIsRecording(true);
@@ -291,7 +286,7 @@ export default function VoiceJournalRecorder({
             setTranscript("");
             setInterimTranscript("");
 
-            // タイマー開始
+            // Timer start
             timerRef.current = setInterval(() => {
                 setRecordingTime(prev => prev + 1);
             }, 1000);
@@ -299,32 +294,17 @@ export default function VoiceJournalRecorder({
         } catch (error: any) {
             console.error("Failed to start recording:", error);
 
-            // Log error details for debugging
-            console.log('Microphone Error Details:', {
-                name: error.name,
-                message: error.message,
-                type: error.constructor.name,
-                browser: isBraveBrowser ? 'Brave' : 'Other',
-                isAndroid: isAndroid
-            });
+            let errorMessage = "録音を開始できませんでした。";
 
-            if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                console.warn('Microphone not found.')
-                alert('マイクが見つかりませんでした。マイクが接続されているか確認してください。')
-            } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                console.warn('Microphone permission denied.')
-                if (isBraveBrowser) {
-                    alert('マイクへのアクセスが拒否されました。\n\nBraveブラウザをお使いの場合:\n1. アドレスバー左側のライオンアイコンをクリック\n2. 「Shieldsを無効にする」または「詳細設定」からマイクを許可\n3. ページを再読み込みしてください');
-                } else if (isAndroid) {
-                    alert('マイクへのアクセスが拒否されました。\n\nAndroidの場合:\n1. ブラウザのアドレスバーの鍵アイコンをタップ\n2. 「権限」または「サイトの設定」を選択\n3. 「マイク」を許可してください\n4. それでもダメな場合は、Androidの「設定」>「アプリ」>ブラウザ(Chromeなど)>「権限」でマイクを許可してください');
-                } else {
-                    alert('マイクへのアクセスが拒否されました。\nブラウザの設定（アドレスバーの鍵アイコンなど）から、このサイトのマイク使用を許可してください。');
-                }
-            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-                alert('マイクにアクセスできません。他のアプリケーション（ZoomやTeamsなど）がマイクを使用している可能性があります。')
-            } else {
-                alert(`録音を開始できませんでした: ${error.message || 'Unknown error'}`);
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                errorMessage = "マイクへのアクセスが拒否されました。ブラウザの設定で許可してください。";
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = "マイクが見つかりませんでした。";
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = "マイクにアクセスできません。他のアプリが使用中の可能性があります。";
             }
+
+            alert(errorMessage);
         }
     };
 
