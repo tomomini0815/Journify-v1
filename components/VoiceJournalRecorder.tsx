@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useGeminiLive } from "@/hooks/useGeminiLive";
 
 interface VoiceJournalRecorderProps {
     onComplete?: (journalId: string) => void;
@@ -96,6 +97,7 @@ export default function VoiceJournalRecorder({
     const [isBraveBrowser, setIsBraveBrowser] = useState(false);
 
     const [isAndroid, setIsAndroid] = useState(false);
+    const [isGeminiLiveActive, setIsGeminiLiveActive] = useState(false);
 
     // Detect Brave browser and Android
     useEffect(() => {
@@ -113,6 +115,24 @@ export default function VoiceJournalRecorder({
         };
         checkBrowser();
     }, []);
+
+    // --- Gemini Live Hook (Android Only) ---
+    const {
+        isStreaming: isGeminiStreaming,
+        isConnected: isGeminiConnected,
+        startStreaming: startGeminiStreaming,
+        stopStreaming: stopGeminiStreaming
+    } = useGeminiLive({
+        apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
+        onTranscript: (text) => {
+            setTranscript(prev => prev + text);
+        },
+        onError: (err) => {
+            console.error("Gemini Live Error:", err);
+            setInterimTranscript("(接続エラー発生)");
+            // Fallback to normal?
+        }
+    });
 
     // Cleanup SpeechRecognition on unmount
     useEffect(() => {
@@ -135,6 +155,79 @@ export default function VoiceJournalRecorder({
             return
         }
 
+        // --- Android Real-time Streaming Path ---
+        if (isAndroid) {
+            console.log("🚀 Starting Gemini Live Streaming for Android");
+            setIsRecording(true);
+            setRecordingTime(0);
+            setTranscript("");
+            setInterimTranscript("");
+
+            // Standard MediaRecorder for FILE SAVING (simultaneous with Streaming)
+            // We still need to save the file to upload it later as "proof" or audio log
+            // But we WON'T attach SpeechRecognition to it.
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // We use a separate stream or same? 
+                // Gemini Hook uses its own getUserMedia. 
+                // Accessing microphone twice can be an issue.
+                // ideally useGeminiLive should expose the stream or we pass it in.
+                // For now, let's TRY simultaneous if possible, OR just trust Gemini Transcript and not save audio file?
+                // The user needs "Voice Journal", so valid audio file is expected by backend...
+
+                // REVISION: To get the File, we MUST use MediaRecorder.
+                // To get Realtime Transcript, we use Gemini Live.
+                // We can try to share the stream.
+
+                // Let's modify useGeminiLive to accept a stream, OR 
+                // simpler: Just launch Gemini Live. 
+                // ISSUE: If we don't save the audio file, we can't upload it.
+                // Solution: Launch MediaRecorder here as usual. Pass the stream to Gemini Hook?
+
+                // Let's rely on the plan: "Sequential Mode" was rejected. "Realtime" was requested.
+                // We will run MediaRecorder AND Gemini Live (via AudioWorklet).
+                // They both need AudioContext/Stream.
+
+                // Start Gemini Live
+                await startGeminiStreaming(stream);
+                setIsGeminiLiveActive(true);
+
+                // Start MediaRecorder for backup file
+                let mimeType = "audio/webm;codecs=opus"; // Default for Android
+                if (MediaRecorder.isTypeSupported("audio/mp4")) mimeType = "audio/mp4";
+
+                const mediaRecorder = new MediaRecorder(stream, { mimeType });
+                mediaRecorderRef.current = mediaRecorder;
+                chunksRef.current = [];
+
+                mediaRecorderRef.current.ondataavailable = (e) => {
+                    if (e.data.size > 0) chunksRef.current.push(e.data);
+                };
+
+                mediaRecorderRef.current.onstop = () => {
+                    const blob = new Blob(chunksRef.current, { type: mimeType });
+                    setAudioBlob(blob);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorderRef.current.start(1000);
+
+                // Timer
+                timerRef.current = setInterval(() => {
+                    setRecordingTime(prev => prev + 1);
+                }, 1000);
+
+                return; // Exit normal flow
+
+            } catch (e) {
+                console.error("Android Recording Setup Error:", e);
+                alert("録音の開始に失敗しました。");
+                setIsRecording(false);
+                return;
+            }
+        }
+
+        // --- Standard Web Speech API Path (iOS/Desktop) ---
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -303,6 +396,11 @@ export default function VoiceJournalRecorder({
     };
 
     const stopRecording = () => {
+        if (isAndroid && isGeminiLiveActive) {
+            stopGeminiStreaming();
+            setIsGeminiLiveActive(false);
+        }
+
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
@@ -451,7 +549,16 @@ export default function VoiceJournalRecorder({
                 body: formData
             });
 
-            if (!uploadRes.ok) throw new Error("File upload failed");
+            if (!uploadRes.ok) {
+                let errorDetails = "Unknown error";
+                try {
+                    const errorData = await uploadRes.json();
+                    errorDetails = errorData.error || errorData.details || JSON.stringify(errorData);
+                } catch (e) {
+                    errorDetails = await uploadRes.text();
+                }
+                throw new Error(errorDetails);
+            }
             const uploadData = await uploadRes.json();
 
             // 2. Create Journal (Server-side transcription)
