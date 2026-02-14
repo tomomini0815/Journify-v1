@@ -428,6 +428,60 @@ export default function VoiceJournalRecorder({
         }
     };
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Reset previous state
+        setAudioBlob(null);
+        setTranscript("");
+        setInterimTranscript("");
+
+        setIsProcessing(true);
+
+        try {
+            // 1. Upload
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const uploadRes = await fetch("/api/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!uploadRes.ok) throw new Error("File upload failed");
+            const uploadData = await uploadRes.json();
+
+            // 2. Create Journal (Server-side transcription)
+            const createRes = await fetch("/api/voice-journal/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    audioPath: uploadData.filepath,
+                    transcript: "", // Let server handle it
+                    mood: localMood,
+                    tags: localTags
+                })
+            });
+
+            if (!createRes.ok) throw new Error("Analysis failed");
+            const result = await createRes.json();
+
+            if (onComplete) onComplete(result.id);
+            router.push("/journal?tab=voice");
+
+        } catch (error: any) {
+            console.error(error);
+            alert(`エラーが発生しました: ${error.message}`);
+        } finally {
+            setIsProcessing(false);
+            // Reset input
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
     if (compact) {
         return (
             <div className="rounded-3xl bg-[#0F172A] border border-white/5 p-6 shadow-2xl overflow-hidden relative">
@@ -442,12 +496,30 @@ export default function VoiceJournalRecorder({
                             <h3 className="text-xl font-bold text-white mb-1">音声ジャーナル</h3>
                             <p className="text-white/40 text-sm">小さな記録が、見える景色を変えていく</p>
                         </div>
-                        <button
-                            onClick={startRecording}
-                            className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
-                        >
-                            <Mic className="w-6 h-6" />
-                        </button>
+                        <div className="flex gap-2">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="audio/*"
+                                capture="microphone"
+                                className="hidden"
+                                onChange={handleFileUpload}
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isProcessing}
+                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:bg-white/20 transition-all"
+                                title="ファイルをアップロード"
+                            >
+                                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-xs">📂</span>}
+                            </button>
+                            <button
+                                onClick={startRecording}
+                                className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
+                            >
+                                <Mic className="w-6 h-6" />
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     // Recording or Post-Recording State
@@ -660,6 +732,29 @@ export default function VoiceJournalRecorder({
 
                 {/* Recording Button */}
                 <div className="relative inline-block mb-6">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="audio/*"
+                        capture="microphone"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                    />
+
+                    {/* Fallback Button for Android/Issues */}
+                    {!isRecording && !isProcessing && (
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute -right-16 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 p-2 transition-all flex flex-col items-center gap-1"
+                            title="ファイルを選択してアップロード"
+                        >
+                            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10">
+                                <span className="text-lg">📂</span>
+                            </div>
+                            <span className="text-[10px] whitespace-nowrap">アップロード</span>
+                        </button>
+                    )}
+
                     {isRecording && (
                         <motion.div
                             animate={{
