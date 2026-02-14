@@ -192,7 +192,9 @@ export default function VoiceJournalRecorder({
                 try {
                     const recognition = new SpeechRecognition();
                     recognition.lang = 'ja-JP';
-                    recognition.continuous = true;
+                    // Android: continuous=false for stability (mimics native behavior of restarting)
+                    // Others: continuous=true for standard behavior
+                    recognition.continuous = !isAndroid;
                     recognition.interimResults = true;
                     recognition.maxAlternatives = 1;
 
@@ -250,8 +252,14 @@ export default function VoiceJournalRecorder({
 
                     recognition.onend = () => {
                         // Auto-restart if still recording
+                        // For Android (continuous=false), this IS the loop mechanism
                         if (mediaRecorderRef.current?.state === 'recording') {
-                            try { recognition.start(); } catch (e) {
+                            try {
+                                recognition.start();
+                                if (isAndroid) {
+                                    console.log('🔄 Restarting SpeechRecognition (Android loop)');
+                                }
+                            } catch (e) {
                                 console.warn('Failed to restart SpeechRecognition:', e);
                             }
                         }
@@ -260,6 +268,7 @@ export default function VoiceJournalRecorder({
                     speechRecognitionRef.current = recognition;
                     recognition.start();
                     console.log('✅ Real-time transcription: Web Speech API (FREE)');
+                    if (isAndroid) console.log('🤖 Android mode: continuous=false, using auto-restart');
                 } catch (error) {
                     console.error('Failed to initialize SpeechRecognition:', error);
                     if (isBraveBrowser) {
