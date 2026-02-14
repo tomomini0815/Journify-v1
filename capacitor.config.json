@@ -1,0 +1,10 @@
+{
+    "appId": "com.journify.app",
+    "appName": "Journify",
+    "webDir": "cap-www",
+    "bundledWebRuntime": false,
+    "server": {
+        "url": "https://journify-v1.vercel.app",
+        "cleartext": true
+    }
+}
