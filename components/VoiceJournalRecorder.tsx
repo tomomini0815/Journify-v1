@@ -275,23 +275,20 @@ export default function VoiceJournalRecorder({
 
             const isNative = Capacitor.isNativePlatform();
 
-            // ===================================================================
-            // ANDROID CHROME: Web Speech API has EXCLUSIVE mic access.
-            // We CANNOT run getUserMedia + webkitSpeechRecognition at the same time.
-            // Strategy: Attempt to run both Speech Recognition and MediaRecorder.
-            // ===================================================================
-            if (isAndroid && !isNative) {
-                addLog("📱 Android Chrome mode: Attempting Speech + MediaRecorder (Hybrid)");
-                // In some Android versions, both can coexist. If they conflict, 
-                // Speech will fire an error, but MediaRecorder should keep the audio.
-            }
-
-            // ===================================================================
-            // iOS / DESKTOP: getUserMedia + Web Speech API can coexist.
-            // ===================================================================
             addLog("🎙️ requesting getUserMedia...");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             addLog("✅ stream granted");
+
+            // ===================================================================
+            // ANDROID CHROME: Web Speech API has EXCLUSIVE mic access.
+            // We CANNOT run getUserMedia + webkitSpeechRecognition at the same time.
+            // Strategy: Use Gemini Live via WebSocket for real-time transcription.
+            // ===================================================================
+            if (isAndroid && !isNative) {
+                addLog("📱 Android Chrome mode: Using Gemini Live (WebSocket)");
+                setIsGeminiLiveActive(true);
+                await startGeminiStreaming(stream);
+            }
 
             // MIME Type detection
             let mimeType = "";
@@ -359,9 +356,10 @@ export default function VoiceJournalRecorder({
             addLog("📊 visualizer started");
 
             // Start Web Speech API (iOS/Desktop can use it alongside MediaRecorder)
+            // Skip on Android if Gemini Live is active to avoid mic conflict
             addLog("🌐 trying Web Speech API...");
             const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            if (SpeechRecognitionWeb) {
+            if (SpeechRecognitionWeb && !isGeminiLiveActive) {
                 try {
                     const recognition = new SpeechRecognitionWeb();
                     recognition.lang = 'ja-JP';
@@ -443,8 +441,11 @@ export default function VoiceJournalRecorder({
     const stopRecording = async () => {
         if (isGeminiLiveActive) {
             try {
+                addLog("🛑 Stopping Gemini Live streaming");
                 stopGeminiStreaming();
-            } catch (e) { }
+            } catch (e) {
+                addLog(`⚠️ Error stopping Gemini: ${e}`);
+            }
             setIsGeminiLiveActive(false);
         }
 

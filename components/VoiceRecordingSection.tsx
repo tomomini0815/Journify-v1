@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Mic, Square, Loader2, CheckCircle2, FileText, X, RotateCcw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useGeminiLive } from "@/hooks/useGeminiLive"
 import VoiceJournalRecorder from "./VoiceJournalRecorder"
 
 interface VoiceRecordingSectionProps {
@@ -60,6 +61,24 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const lastFinalResultRef = useRef<string>('')
     const lastProcessedIndexRef = useRef<number>(-1)
     const [isAndroid, setIsAndroid] = useState(false)
+    const [isGeminiLiveActive, setIsGeminiLiveActive] = useState(false)
+
+    // --- Gemini Live Hook (Android Only) ---
+    const {
+        isStreaming: isGeminiStreaming,
+        isConnected: isGeminiConnected,
+        startStreaming: startGeminiStreaming,
+        stopStreaming: stopGeminiStreaming
+    } = useGeminiLive({
+        apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
+        onTranscript: (text) => {
+            setTranscript(prev => prev + text);
+        },
+        onLog: (msg) => console.log(`[Meeting Gemini] ${msg}`),
+        onError: (err) => {
+            console.error(`Meeting Gemini Error: ${err}`);
+        }
+    });
 
     // Sync isRecordingRef
     useEffect(() => {
@@ -150,9 +169,16 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 addLog("🎙️ MediaRecorder started")
             }
 
-            // --- Speech Recognition ---
+            // --- Android Chrome: Use Gemini Live instead of Web Speech API ---
+            if (isAndroid) {
+                addLog("📱 Android Chrome detected: Using Gemini Live path")
+                setIsGeminiLiveActive(true)
+                await startGeminiStreaming(stream)
+            }
+
+            // --- Speech Recognition (iOS/Desktop) ---
             const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-            if (SpeechRecognitionClass) {
+            if (SpeechRecognitionClass && !isAndroid) {
                 try {
                     const recognition = new SpeechRecognitionClass()
                     recognition.lang = 'ja-JP'
@@ -230,6 +256,13 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.stop()
+        }
+
+        if (isGeminiLiveActive) {
+            try {
+                stopGeminiStreaming();
+            } catch (e) { }
+            setIsGeminiLiveActive(false);
         }
 
         // Always stop SpeechRecognition
