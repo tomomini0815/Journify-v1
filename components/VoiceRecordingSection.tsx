@@ -58,6 +58,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const speechRecognitionRef = useRef<any>(null)
     const isRecordingRef = useRef(false)
     const lastFinalResultRef = useRef<string>('')
+    const recentFinalTextsRef = useRef<string[]>([])
     const [isAndroid, setIsAndroid] = useState(false)
 
     // Sync isRecordingRef
@@ -93,6 +94,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
         }
 
         lastFinalResultRef.current = ''
+        recentFinalTextsRef.current = []
 
         try {
             // ===================================================================
@@ -118,10 +120,11 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                     for (let i = event.resultIndex; i < event.results.length; i++) {
                         const result = event.results[i]
                         if (result.isFinal) {
-                            const text = result[0].transcript
-                            if (!isHallucination(text) && text !== lastFinalResultRef.current) {
+                            const text = result[0].transcript.trim()
+                            if (text && !isHallucination(text) && !recentFinalTextsRef.current.includes(text)) {
                                 finalText += text
-                                lastFinalResultRef.current = text
+                                recentFinalTextsRef.current.push(text)
+                                if (recentFinalTextsRef.current.length > 5) recentFinalTextsRef.current.shift()
                             }
                         } else {
                             interim += result[0].transcript
@@ -139,9 +142,8 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 }
 
                 recognition.onend = () => {
-                    if (isRecordingRef.current) {
-                        try { recognition.start() } catch (e) { }
-                    }
+                    // On Android: do NOT auto-restart to avoid the system notification sound.
+                    // continuous:true keeps it running for most cases.
                 }
 
                 speechRecognitionRef.current = recognition
@@ -209,10 +211,11 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                         for (let i = event.resultIndex; i < event.results.length; i++) {
                             const result = event.results[i]
                             if (result.isFinal) {
-                                const text = result[0].transcript
-                                if (!isHallucination(text) && text !== lastFinalResultRef.current) {
+                                const text = result[0].transcript.trim()
+                                if (text && !isHallucination(text) && !recentFinalTextsRef.current.includes(text)) {
                                     finalText += text
-                                    lastFinalResultRef.current = text
+                                    recentFinalTextsRef.current.push(text)
+                                    if (recentFinalTextsRef.current.length > 5) recentFinalTextsRef.current.shift()
                                 }
                             } else {
                                 interim += result[0].transcript

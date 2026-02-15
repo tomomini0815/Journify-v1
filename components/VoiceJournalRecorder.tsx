@@ -97,7 +97,7 @@ export default function VoiceJournalRecorder({
     const timerRef = useRef<NodeJS.Timeout | number | null>(null);
     const speechRecognitionRef = useRef<any>(null);
     const isRecordingRef = useRef(false);
-    const lastFinalResultRef = useRef<string>('');
+    const recentFinalTextsRef = useRef<string[]>([]);
     const [isBraveBrowser, setIsBraveBrowser] = useState(false);
 
     const [isAndroid, setIsAndroid] = useState(false);
@@ -259,7 +259,7 @@ export default function VoiceJournalRecorder({
         // This follows the successful pattern in Ainance.
         try {
             addLog("🏁 startRecording requested");
-            lastFinalResultRef.current = '';
+            recentFinalTextsRef.current = [];
 
             // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
             if (audioContextRef.current) {
@@ -302,10 +302,11 @@ export default function VoiceJournalRecorder({
                     let finalText = '';
                     for (let i = event.resultIndex; i < event.results.length; i++) {
                         if (event.results[i].isFinal) {
-                            const text = event.results[i][0].transcript;
-                            if (text !== lastFinalResultRef.current) {
+                            const text = event.results[i][0].transcript.trim();
+                            if (text && !recentFinalTextsRef.current.includes(text)) {
                                 finalText += text;
-                                lastFinalResultRef.current = text;
+                                recentFinalTextsRef.current.push(text);
+                                if (recentFinalTextsRef.current.length > 5) recentFinalTextsRef.current.shift();
                             }
                         } else {
                             interim += event.results[i][0].transcript;
@@ -326,15 +327,8 @@ export default function VoiceJournalRecorder({
 
                 recognition.onend = () => {
                     addLog("🔚 speech recognition ended");
-                    // Auto-restart if still recording
-                    if (isRecordingRef.current) {
-                        try {
-                            recognition.start();
-                            addLog("🔄 speech restarted");
-                        } catch (e) {
-                            addLog(`⚠️ restart failed: ${e}`);
-                        }
-                    }
+                    // On Android: do NOT auto-restart to avoid the system notification sound.
+                    // continuous:true should keep it running for most cases.
                 };
 
                 speechRecognitionRef.current = recognition;
@@ -433,10 +427,11 @@ export default function VoiceJournalRecorder({
                         let finalText = '';
                         for (let i = event.resultIndex; i < event.results.length; i++) {
                             if (event.results[i].isFinal) {
-                                const text = event.results[i][0].transcript;
-                                if (text !== lastFinalResultRef.current) {
+                                const text = event.results[i][0].transcript.trim();
+                                if (text && !recentFinalTextsRef.current.includes(text)) {
                                     finalText += text;
-                                    lastFinalResultRef.current = text;
+                                    recentFinalTextsRef.current.push(text);
+                                    if (recentFinalTextsRef.current.length > 5) recentFinalTextsRef.current.shift();
                                 }
                             } else {
                                 interim += event.results[i][0].transcript;
@@ -739,7 +734,7 @@ export default function VoiceJournalRecorder({
                         </div>
 
                         {/* Post-Recording Options */}
-                        {!isRecording && audioBlob && (
+                        {!isRecording && (audioBlob || transcript) && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
