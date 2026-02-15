@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGeminiLive } from "@/hooks/useGeminiLive";
+import { Capacitor } from "@capacitor/core";
+import { SpeechRecognition } from "@capacitor-community/speech-recognition";
 
 interface VoiceJournalRecorderProps {
     onComplete?: (journalId: string) => void;
@@ -102,15 +104,20 @@ export default function VoiceJournalRecorder({
     // Detect Brave browser and Android
     useEffect(() => {
         const checkBrowser = async () => {
-            if ((navigator as any).brave && await (navigator as any).brave.isBrave()) {
+            if (typeof window !== 'undefined' && (navigator as any).brave && await (navigator as any).brave.isBrave()) {
                 setIsBraveBrowser(true);
-                console.log('🦁 Brave browser detected');
+                addLog('🦁 Brave browser detected');
             }
-            // Simple Android detection
+
+            // Detection
+            const isNative = Capacitor.isNativePlatform();
+
             const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-            if (/android/i.test(userAgent)) {
+            const isAndroidSystem = /android/i.test(userAgent);
+
+            if (isAndroidSystem) {
                 setIsAndroid(true);
-                console.log('🤖 Android device detected');
+                addLog(`🤖 Android device detected (Native: ${isNative})`);
             }
         };
         checkBrowser();
@@ -232,80 +239,91 @@ export default function VoiceJournalRecorder({
             // Start MediaRecorder
             mediaRecorderRef.current.start(1000); // 1s chunks
 
-            // === Real-time transcription via Web Speech API ===
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            const isNative = Capacitor.isNativePlatform();
 
-            if (SpeechRecognition) {
+            // === Real-time transcription (Native Plugin for Android, Web API for others) ===
+            if (isAndroid && isNative) {
+                // native speech recognition
                 try {
-                    const recognition = new SpeechRecognition();
-                    recognition.lang = 'ja-JP';
+                    const permissions = await SpeechRecognition.checkPermissions();
+                    if (permissions.speechRecognition !== 'granted') {
+                        await SpeechRecognition.requestPermissions();
+                    }
 
-                    // Android Chrome often works better with continuous=true if handled correctly,
-                    // but many implementations use continuous=false with auto-restart for stability.
-                    // Based on Ainance, we'll try to provide a more robust setup.
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
-                    recognition.maxAlternatives = 1;
+                    await SpeechRecognition.start({
+                        language: "ja-JP",
+                        maxResults: 1,
+                        prompt: "お話しください",
+                        partialResults: true,
+                        popup: false,
+                    });
 
-                    recognition.onresult = (event: any) => {
-                        let interim = '';
-                        let finalText = '';
-
-                        for (let i = event.resultIndex; i < event.results.length; i++) {
-                            const result = event.results[i];
-                            if (result.isFinal) {
-                                finalText += result[0].transcript;
-                            } else {
-                                interim += result[0].transcript;
-                            }
+                    SpeechRecognition.addListener("partialResults", (data: any) => {
+                        if (data.matches && data.matches.length > 0) {
+                            setInterimTranscript(data.matches[0]);
                         }
-
-                        if (finalText) {
-                            setTranscript(prev => prev + finalText + ' ');
-                        }
-                        setInterimTranscript(interim);
-                    };
-
-                    recognition.onerror = (event: any) => {
-                        console.warn('SpeechRecognition error:', event.error);
-
-                        if (event.error === 'no-speech') {
-                            // Ignore
-                        } else if (event.error === 'network') {
-                            setInterimTranscript('(接続不安定...)');
-                        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                            setInterimTranscript('(音声認識へのアクセスが拒否されました)');
-                        } else {
-                            // Other errors, try to restart if recording
-                            if (isAndroid && mediaRecorderRef.current?.state === 'recording') {
-                                setTimeout(() => {
-                                    try { recognition.start(); } catch (e) { }
-                                }, 500);
-                            }
-                        }
-                    };
-
-                    recognition.onend = () => {
-                        // Auto-restart loop for Android OR if it stopped unexpectedly while recording
-                        // This ensures recording continues even if the browser stops recognition
-                        if (mediaRecorderRef.current?.state === 'recording' || isRecording) {
-                            try {
-                                recognition.start();
-                                console.log('🔄 Restarting speech recognition loop');
-                            } catch (e) { }
-                        }
-                    };
-
-                    speechRecognitionRef.current = recognition;
-                    recognition.start();
+                    });
 
                 } catch (error) {
-                    console.error('Failed to initialize SpeechRecognition:', error);
-                    setInterimTranscript('(音声認識の起動に失敗しました。録音は継続します)');
+                    addLog(`Native Speech Error: ${JSON.stringify(error)}`);
+                    setInterimTranscript('(ネイティブ認識エラー)');
                 }
             } else {
-                console.warn('Web Speech API not supported in this browser');
-                setInterimTranscript('(このブラウザはリアルタイム文字起こし未対応です)');
+                // Web Speech API fallback
+                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+                if (SpeechRecognitionWeb) {
+                    try {
+                        const recognition = new SpeechRecognitionWeb();
+                        recognition.lang = 'ja-JP';
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
+                        recognition.maxAlternatives = 1;
+
+                        recognition.onresult = (event: any) => {
+                            let interim = '';
+                            let finalText = '';
+
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                                const result = event.results[i];
+                                if (result.isFinal) {
+                                    finalText += result[0].transcript;
+                                } else {
+                                    interim += result[0].transcript;
+                                }
+                            }
+
+                            if (finalText) {
+                                setTranscript(prev => prev + finalText + ' ');
+                            }
+                            setInterimTranscript(interim);
+                        };
+
+                        recognition.onerror = (event: any) => {
+                            console.warn('SpeechRecognition error:', event.error);
+                            if (event.error === 'network') {
+                                setInterimTranscript('(接続不安定...)');
+                            }
+                        };
+
+                        recognition.onend = () => {
+                            if (mediaRecorderRef.current?.state === 'recording' || isRecording) {
+                                try {
+                                    recognition.start();
+                                } catch (e) { }
+                            }
+                        };
+
+                        speechRecognitionRef.current = recognition;
+                        recognition.start();
+
+                    } catch (error) {
+                        console.error('Failed to initialize SpeechRecognition:', error);
+                        setInterimTranscript('(音声認識の起動に失敗しました)');
+                    }
+                } else {
+                    setInterimTranscript('(このブラウザはリアルタイム文字起こし未対応です)');
+                }
             }
 
             setIsRecording(true);
@@ -335,12 +353,25 @@ export default function VoiceJournalRecorder({
         }
     };
 
-    const stopRecording = () => {
+    const stopRecording = async () => {
         if (isGeminiLiveActive) {
             try {
                 stopGeminiStreaming();
             } catch (e) { }
             setIsGeminiLiveActive(false);
+        }
+
+        const isNative = Capacitor.isNativePlatform();
+        if (isAndroid && isNative) {
+            try {
+                // Handle native transcription finalization
+                if (interimTranscript) {
+                    setTranscript(prev => prev + interimTranscript + ' ');
+                    setInterimTranscript("");
+                }
+                await SpeechRecognition.stop();
+                SpeechRecognition.removeAllListeners();
+            } catch (e) { }
         }
 
         if (mediaRecorderRef.current && isRecording) {
@@ -350,8 +381,6 @@ export default function VoiceJournalRecorder({
             if (timerRef.current) {
                 clearInterval(timerRef.current);
             }
-
-
         }
     };
 
