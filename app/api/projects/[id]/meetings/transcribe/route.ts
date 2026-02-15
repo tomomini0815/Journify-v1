@@ -45,11 +45,11 @@ export async function POST(
             )
         }
 
-        const { audioPath, audioData } = await req.json()
+        const { audioPath, audioData, existingTranscript } = await req.json()
 
-        if (!audioPath && !audioData) {
+        if (!audioPath && !audioData && !existingTranscript) {
             return NextResponse.json(
-                { error: "Audio path or data is required" },
+                { error: "Audio path, data, or transcript is required" },
                 { status: 400 }
             )
         }
@@ -192,6 +192,12 @@ export async function POST(
                         data: audioBase64
                     }
                 },
+                { text: systemPrompt }
+            ]
+        } else if (existingTranscript) {
+            // No audio, just use the provided transcript
+            requestParts = [
+                { text: `以下の文字起こしテキストの内容に基づいて、会議の詳細な議事録（エグゼクティブサマリー、議論ポイント、決定事項）を作成してください。\n\n文字起こしテキスト:\n${existingTranscript}` },
                 { text: systemPrompt }
             ]
         }

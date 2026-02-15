@@ -142,9 +142,10 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 }
 
                 recognition.onend = () => {
-                    // Do NOT auto-restart — it triggers Android system notification sound each time.
-                    // continuous:true handles most cases. If it does stop, the recording
-                    // state (timer) continues; the user just won't get more live transcription.
+                    // Re-enable auto-restart to ensure continuity, even with piron sounds
+                    if (isRecordingRef.current) {
+                        try { recognition.start() } catch (e) { }
+                    }
                 }
 
                 speechRecognitionRef.current = recognition
@@ -317,7 +318,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }
 
     const handleSave = async () => {
-        if (!audioBlob) return
+        if (!audioBlob && !transcript) return
         setIsProcessing(true)
 
         try {
@@ -338,18 +339,24 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 targetProjectId = newProject.id
             }
 
-            const mimeType = audioBlob.type
-            const ext = mimeType.includes("mp4") ? "mp4" : "webm"
-            const formData = new FormData()
-            formData.append("file", audioBlob, `meeting-recording.${ext}`)
-            const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
-            if (!uploadRes.ok) throw new Error("Failed to upload audio")
-            const uploadData = await uploadRes.json()
+            let uploadData = { url: '', filepath: '' }
+            if (audioBlob) {
+                const mimeType = audioBlob.type
+                const ext = mimeType.includes("mp4") ? "mp4" : "webm"
+                const formData = new FormData()
+                formData.append("file", audioBlob, `meeting-recording.${ext}`)
+                const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
+                if (!uploadRes.ok) throw new Error("Failed to upload audio")
+                uploadData = await uploadRes.json()
+            }
 
             const transcribeRes = await fetch(`/api/projects/${targetProjectId}/meetings/transcribe`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ audioPath: uploadData.filepath })
+                body: JSON.stringify({
+                    audioPath: uploadData.filepath,
+                    existingTranscript: transcript // Pass existing transcript to API if audio is missing
+                })
             })
             const transcribeData = transcribeRes.ok ? await transcribeRes.json() : {
                 title: "新しい議事録",
@@ -590,7 +597,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         </div>
 
                                         {/* Resume Recording Button */}
-                                        {!isRecording && (audioBlob || transcript) && (
+                                        {!isRecording && (audioBlob || hasTranscript) && (
                                             <button
                                                 onClick={resumeRecording}
                                                 disabled={isProcessing}
@@ -606,7 +613,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
                             {/* Action Buttons: Cancel + Save (2-column grid) */}
                             <AnimatePresence>
-                                {!isRecording && (audioBlob || transcript) && (
+                                {!isRecording && (audioBlob || hasTranscript) && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}

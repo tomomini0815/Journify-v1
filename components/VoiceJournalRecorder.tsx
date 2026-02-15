@@ -327,8 +327,15 @@ export default function VoiceJournalRecorder({
 
                 recognition.onend = () => {
                     addLog("🔚 speech recognition ended");
-                    // Do NOT auto-restart — it triggers Android system notification sound.
-                    // continuous:true handles most cases. Recording state continues.
+                    // Re-enable auto-restart to ensure continuity, even with piron sounds
+                    if (isRecordingRef.current) {
+                        addLog("🔄 attempting silent-ish restart...");
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            addLog(`⚠️ restart failed: ${e}`);
+                        }
+                    }
                 };
 
                 speechRecognitionRef.current = recognition;
@@ -648,7 +655,7 @@ export default function VoiceJournalRecorder({
         }
     };
 
-    // Removed fileInputRef and handleFileUpload as per instructions.
+    const hasTranscript = transcript || interimTranscript;
 
     if (compact) {
         return (
@@ -657,7 +664,7 @@ export default function VoiceJournalRecorder({
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
 
-                {!audioBlob && !isRecording && !transcript ? (
+                {!audioBlob && !isRecording && !hasTranscript ? (
                     // Initial State
                     <div className="flex items-center justify-between">
                         <div>
@@ -739,7 +746,7 @@ export default function VoiceJournalRecorder({
                         </div>
 
                         {/* Post-Recording Options */}
-                        {!isRecording && (audioBlob || transcript) && (
+                        {!isRecording && (audioBlob || hasTranscript) && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
