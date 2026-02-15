@@ -163,79 +163,9 @@ export default function VoiceJournalRecorder({
             return
         }
 
-        // --- Android Real-time Streaming Path ---
-        if (isAndroid) {
-            console.log("🚀 Starting Gemini Live Streaming for Android");
-            setIsRecording(true);
-            setRecordingTime(0);
-            setTranscript("");
-            setInterimTranscript("");
-
-            // Standard MediaRecorder for FILE SAVING (simultaneous with Streaming)
-            // We still need to save the file to upload it later as "proof" or audio log
-            // But we WON'T attach SpeechRecognition to it.
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                // We use a separate stream or same? 
-                // Gemini Hook uses its own getUserMedia. 
-                // Accessing microphone twice can be an issue.
-                // ideally useGeminiLive should expose the stream or we pass it in.
-                // For now, let's TRY simultaneous if possible, OR just trust Gemini Transcript and not save audio file?
-                // The user needs "Voice Journal", so valid audio file is expected by backend...
-
-                // REVISION: To get the File, we MUST use MediaRecorder.
-                // To get Realtime Transcript, we use Gemini Live.
-                // We can try to share the stream.
-
-                // Let's modify useGeminiLive to accept a stream, OR 
-                // simpler: Just launch Gemini Live. 
-                // ISSUE: If we don't save the audio file, we can't upload it.
-                // Solution: Launch MediaRecorder here as usual. Pass the stream to Gemini Hook?
-
-                // Let's rely on the plan: "Sequential Mode" was rejected. "Realtime" was requested.
-                // We will run MediaRecorder AND Gemini Live (via AudioWorklet).
-                // They both need AudioContext/Stream.
-
-                // Start Gemini Live
-                await startGeminiStreaming(stream);
-                setIsGeminiLiveActive(true);
-
-                // Start MediaRecorder for backup file
-                let mimeType = "audio/webm;codecs=opus"; // Default for Android
-                if (MediaRecorder.isTypeSupported("audio/mp4")) mimeType = "audio/mp4";
-
-                const mediaRecorder = new MediaRecorder(stream, { mimeType });
-                mediaRecorderRef.current = mediaRecorder;
-                chunksRef.current = [];
-
-                mediaRecorderRef.current.ondataavailable = (e) => {
-                    if (e.data.size > 0) chunksRef.current.push(e.data);
-                };
-
-                mediaRecorderRef.current.onstop = () => {
-                    const blob = new Blob(chunksRef.current, { type: mimeType });
-                    setAudioBlob(blob);
-                    stream.getTracks().forEach(track => track.stop());
-                };
-
-                mediaRecorderRef.current.start(1000);
-
-                // Timer
-                timerRef.current = setInterval(() => {
-                    setRecordingTime(prev => prev + 1);
-                }, 1000);
-
-                return; // Exit normal flow
-
-            } catch (e) {
-                console.error("Android Recording Setup Error:", e);
-                alert("録音の開始に失敗しました。");
-                setIsRecording(false);
-                return;
-            }
-        }
-
-        // --- Standard Web Speech API Path (iOS/Desktop) ---
+        // --- Standard Voice Recording Path (Unified) ---
+        // We use Web Speech API for real-time transcription and MediaRecorder for audio saving.
+        // This follows the successful pattern in Ainance.
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -310,9 +240,10 @@ export default function VoiceJournalRecorder({
                     const recognition = new SpeechRecognition();
                     recognition.lang = 'ja-JP';
 
-                    // Android Chrome often has issues with continuous=true
-                    // usage of continuous=false with auto-restart loop is more stable on Android
-                    recognition.continuous = !isAndroid;
+                    // Android Chrome often works better with continuous=true if handled correctly,
+                    // but many implementations use continuous=false with auto-restart for stability.
+                    // Based on Ainance, we'll try to provide a more robust setup.
+                    recognition.continuous = true;
                     recognition.interimResults = true;
                     recognition.maxAlternatives = 1;
 
@@ -356,10 +287,11 @@ export default function VoiceJournalRecorder({
 
                     recognition.onend = () => {
                         // Auto-restart loop for Android OR if it stopped unexpectedly while recording
-                        if (mediaRecorderRef.current?.state === 'recording') {
+                        // This ensures recording continues even if the browser stops recognition
+                        if (mediaRecorderRef.current?.state === 'recording' || isRecording) {
                             try {
                                 recognition.start();
-                                if (isAndroid) console.log('🔄 Android loop: Restarting speech recognition');
+                                console.log('🔄 Restarting speech recognition loop');
                             } catch (e) { }
                         }
                     };
@@ -404,8 +336,10 @@ export default function VoiceJournalRecorder({
     };
 
     const stopRecording = () => {
-        if (isAndroid && isGeminiLiveActive) {
-            stopGeminiStreaming();
+        if (isGeminiLiveActive) {
+            try {
+                stopGeminiStreaming();
+            } catch (e) { }
             setIsGeminiLiveActive(false);
         }
 
