@@ -162,9 +162,9 @@ export default function VoiceJournalRecorder({
         onTranscript: (text) => {
             setTranscript(prev => prev + text);
         },
+        onLog: addLog,
         onError: (err) => {
-            const msg = err instanceof Error ? err.message : JSON.stringify(err);
-            addLog(`Gemini Error: ${msg}`);
+            addLog(`Gemini Error: ${err}`);
             setInterimTranscript("(接続エラー)");
             // Fallback to normal?
         }

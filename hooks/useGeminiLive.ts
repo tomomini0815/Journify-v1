@@ -3,10 +3,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 interface UseGeminiLiveProps {
     apiKey: string;
     onTranscript: (text: string) => void;
+    onLog?: (msg: string) => void;
     onError?: (error: any) => void;
 }
 
-export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLiveProps) {
+export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGeminiLiveProps) {
     const [isStreaming, setIsStreaming] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
 
@@ -15,16 +16,22 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
     const workletNodeRef = useRef<AudioWorkletNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
+    const log = (msg: string) => {
+        if (onLog) onLog(msg);
+        console.log(`[GeminiLive] ${msg}`);
+    };
+
     const connect = useCallback(() => {
         if (websocketRef.current?.readyState === WebSocket.OPEN) return;
 
+        log("Connecting to Gemini Live WebSocket...");
         // Construct URL with API Key
         const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 
         const ws = new WebSocket(url);
 
         ws.onopen = () => {
-            console.log("Gemini Live WebSocket Connected");
+            log("WebSocket Connected");
             setIsConnected(true);
 
             // Send initial setup message
@@ -58,23 +65,25 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
                 }
             } catch (e) {
                 console.error("Error parsing WebSocket message:", e);
+                log("Error parsing WebSocket message: " + e);
             }
         };
 
         ws.onerror = (error) => {
             console.error("Gemini WebSocket Error:", error);
             if (onError) onError(error);
+            log("WebSocket Error occurred.");
             setIsConnected(false);
         };
 
         ws.onclose = () => {
-            console.log("Gemini WebSocket Closed");
+            log("WebSocket Closed");
             setIsConnected(false);
             setIsStreaming(false);
         };
 
         websocketRef.current = ws;
-    }, [apiKey, onTranscript, onError]);
+    }, [apiKey, onTranscript, onLog, onError]);
 
     const startStreaming = useCallback(async (existingStream?: MediaStream) => {
         if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
@@ -97,13 +106,23 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
 
             const audioContext = new AudioContext(); // Native sample rate
             audioContextRef.current = audioContext;
-            const sourceSampleRate = audioContext.sampleRate;
-            console.log(`AudioContext Sample Rate: ${sourceSampleRate}`);
 
+            // Explicit resume for Android/Chrome
+            if (audioContext.state === 'suspended') {
+                log("Resuming AudioContext...");
+                await audioContext.resume();
+            }
+
+            const sourceSampleRate = audioContext.sampleRate;
+            log(`AudioContext Rate: ${sourceSampleRate}`);
+
+            log("Loading audio-processor.js...");
             await audioContext.audioWorklet.addModule('/audio-processor.js');
+            log("Audio Worklet Loaded");
 
             const source = audioContext.createMediaStreamSource(stream);
             const processor = new AudioWorkletNode(audioContext, 'audio-processor');
+            log(`Worklet Node State: ${processor.parameters.get('isWorking') || 'started'}`);
 
             // Simple Downsampler State
             let bufferAccumulator = new Float32Array(0);
