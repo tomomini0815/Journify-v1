@@ -271,79 +271,17 @@ export default function VoiceJournalRecorder({
             // ===================================================================
             // ANDROID CHROME: Web Speech API has EXCLUSIVE mic access.
             // We CANNOT run getUserMedia + webkitSpeechRecognition at the same time.
-            // Strategy: Start speech recognition FIRST, record audio AFTER stop.
-            // ===================================================================
-            if (isAndroid && !isNative) {
-                addLog("📱 Android Chrome mode: Speech-first strategy");
-
-                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                if (!SpeechRecognitionWeb) {
-                    addLog("❌ Web Speech API not available");
-                    setInterimTranscript("(音声認識が利用できません)");
-                    return;
-                }
-
-                const recognition = new SpeechRecognitionWeb();
-                recognition.lang = 'ja-JP';
-                recognition.continuous = true;
-                recognition.interimResults = true;
-
-                recognition.onstart = () => addLog("🚀 web speech active (exclusive mic)");
-
-                recognition.onresult = (event: any) => {
-                    let interim = '';
-                    let finalText = '';
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                        else interim += event.results[i][0].transcript;
-                    }
-                    if (finalText) setTranscript(prev => prev + finalText + ' ');
-                    setInterimTranscript(interim);
-                };
-
-                recognition.onerror = (event: any) => {
-                    addLog(`❌ speech error: ${event.error}`);
-                    // "not-allowed" means mic permission denied
-                    // "aborted" means user or system stopped it
-                    if (event.error === 'not-allowed') {
-                        setInterimTranscript("(マイクの許可が必要です)");
-                    }
-                };
-
-                recognition.onend = () => {
-                    addLog("🔚 speech recognition ended");
-                    // Auto-restart if still recording
-                    if (isRecording) {
-                        try {
-                            recognition.start();
-                            addLog("🔄 speech restarted");
-                        } catch (e) {
-                            addLog(`⚠️ restart failed: ${e}`);
-                        }
-                    }
-                };
-
-                speechRecognitionRef.current = recognition;
-                recognition.start();
-
-                // Set recording state (no actual MediaRecorder on Android)
-                setIsRecording(true);
-                setRecordingTime(0);
-                const startTime = Date.now();
-                timerRef.current = window.setInterval(() => {
-                    setRecordingTime(Math.floor((Date.now() - startTime) / 1000));
-                }, 1000);
-
-                addLog("✅ Android recording started (speech-only mode)");
-                return;
-            }
-
-            // ===================================================================
-            // iOS / DESKTOP: getUserMedia + Web Speech API can coexist.
+            // Strategy: Use Gemini Live via WebSocket for real-time transcription.
             // ===================================================================
             addLog("🎙️ requesting getUserMedia...");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             addLog("✅ stream granted");
+
+            if (isAndroid && !isNative) {
+                addLog("📱 Android Chrome mode: Using Gemini Live (WebSocket)");
+                setIsGeminiLiveActive(true);
+                await startGeminiStreaming(stream);
+            }
 
             // MIME Type detection
             let mimeType = "";
