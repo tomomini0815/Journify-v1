@@ -156,7 +156,8 @@ export default function VoiceJournalRecorder({
         isStreaming: isGeminiStreaming,
         isConnected: isGeminiConnected,
         startStreaming: startGeminiStreaming,
-        stopStreaming: stopGeminiStreaming
+        stopStreaming: stopGeminiStreaming,
+        getCapturedAudio
     } = useGeminiLive({
         apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
         onTranscript: (text) => {
@@ -332,6 +333,16 @@ export default function VoiceJournalRecorder({
                 if (speechRecognitionRef.current) {
                     try { speechRecognitionRef.current.stop(); } catch (e) { }
                 }
+
+                // Fallback for Android Chrome: if chunks are empty, try Gemini Live capture
+                if (chunksRef.current.length === 0 && isAndroid) {
+                    addLog("⚠️ MediaRecorder chunks empty. Trying Gemini capture...");
+                    const fallbackBlob = getCapturedAudio();
+                    if (fallbackBlob) {
+                        addLog("✅ Fallback audio captured from Gemini stream");
+                        setAudioBlob(fallbackBlob);
+                    }
+                }
             };
 
             // Start MediaRecorder
@@ -408,17 +419,27 @@ export default function VoiceJournalRecorder({
     };
 
     const stopRecording = async () => {
+        addLog("🛑 stopRecording requested");
+
+        // 1. Stop MediaRecorder FIRST to ensure it yields the final blob chunks
+        if (mediaRecorderRef.current && isRecording) {
+            addLog("🎥 stopping MediaRecorder");
+            mediaRecorderRef.current.stop();
+        }
+
+        // 2. Stop Gemini Live (does not kill tracks anymore if we manage them)
         if (isGeminiLiveActive) {
+            addLog("💎 stopping Gemini Live");
             try {
                 stopGeminiStreaming();
             } catch (e) { }
             setIsGeminiLiveActive(false);
         }
 
+        // 3. Handle Native platform
         const isNative = Capacitor.isNativePlatform();
         if (isAndroid && isNative) {
             try {
-                // Handle native transcription finalization
                 if (interimTranscript) {
                     setTranscript(prev => prev + interimTranscript + ' ');
                     setInterimTranscript("");
@@ -428,29 +449,19 @@ export default function VoiceJournalRecorder({
             } catch (e) { }
         }
 
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-            stopVisualizer();
+        // 4. Timer cleanup and state reset
+        if (timerRef.current) {
+            clearInterval(timerRef.current as any);
+            timerRef.current = null;
+        }
 
-            if (timerRef.current) {
-                clearInterval(timerRef.current as any);
-            }
-        } else if (isRecording) {
-            // Android Chrome Case (No MediaRecorder)
-            // Move interim text to transcript before stopping
-            if (interimTranscript) {
-                setTranscript(prev => prev + interimTranscript + ' ');
-                setInterimTranscript('');
-            }
-            setIsRecording(false);
-            stopVisualizer();
-            if (timerRef.current) {
-                clearInterval(timerRef.current as any);
-            }
-            if (speechRecognitionRef.current) {
-                try { speechRecognitionRef.current.stop(); } catch (e) { }
-            }
+        // 5. Final state switch
+        setIsRecording(false);
+        stopVisualizer();
+
+        // Android Chrome Case cleanup (if web speech was used)
+        if (speechRecognitionRef.current) {
+            try { speechRecognitionRef.current.stop(); } catch (e) { }
         }
     };
 
@@ -977,13 +988,19 @@ export default function VoiceJournalRecorder({
                     )}
                 </AnimatePresence>
 
-                {/* Instructions */}
-                {!isRecording && !audioBlob && (
-                    <p className="text-white/40 text-sm">
-                        マイクボタンをタップして録音開始
-                    </p>
-                )}
-            </div>
+            </AnimatePresence>
+
+            {/* Diagnostics Log (Android Only) */}
+            {isAndroid && diagnostics.length > 0 && (
+                <div className="mt-8 max-w-md mx-auto bg-black/40 rounded-xl p-3 font-mono text-[10px] text-emerald-400/80 border border-emerald-500/20 text-left">
+                    <div className="flex items-center justify-between mb-1 opacity-60">
+                        <span>Diagnostic Logs:</span>
+                        <button onClick={() => setDiagnostics([])} className="hover:text-white">Clear</button>
+                    </div>
+                    {diagnostics.map((log, i) => <div key={i} className="truncate">{log}</div>)}
+                </div>
+            )}
         </div>
+        </div >
     );
 }

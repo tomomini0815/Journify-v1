@@ -15,6 +15,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
     const audioContextRef = useRef<AudioContext | null>(null);
     const workletNodeRef = useRef<AudioWorkletNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const capturedChunksRef = useRef<Int16Array[]>([]);
 
     const log = useCallback((msg: string) => {
         if (onLog) onLog(msg);
@@ -94,6 +95,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
         try {
             await connect();
             log("Connection confirmed. Starting media...");
+            capturedChunksRef.current = [];
 
             let stream = existingStream;
             if (!stream) {
@@ -166,6 +168,9 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
 
                     bufferAccumulator = new Float32Array(0);
 
+                    // Accumulate for fallback recording
+                    capturedChunksRef.current.push(new Int16Array(resampledData));
+
                     const base64Audio = arrayBufferToBase64(resampledData.buffer);
 
                     const msg = {
@@ -196,8 +201,10 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
     }, [connect, log, onError]);
 
     const stopStreaming = useCallback(() => {
+        // Only stop tracks if we created the stream here
+        // If it was passed from outside, let the owner handle lifecycle
         if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
+            // streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
         if (audioContextRef.current) {
@@ -212,13 +219,77 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
         setIsConnected(false);
     }, []);
 
+    const getCapturedAudio = useCallback(() => {
+        if (capturedChunksRef.current.length === 0) return null;
+
+        // Flatten Int16Arrays
+        const totalLength = capturedChunksRef.current.reduce((acc, chunk) => acc + chunk.length, 0);
+        const result = new Int16Array(totalLength);
+        let offset = 0;
+        for (const chunk of capturedChunksRef.current) {
+            result.set(chunk, offset);
+            offset += chunk.length;
+        }
+
+        // Return as WAV or Raw PCM
+        // For simplicity and compatibility with the current server, let's wrap in a basic WAV header
+        return createWavBlob(result, 16000);
+    }, []);
+
     return {
         isStreaming,
         isConnected,
         connect,
         startStreaming,
-        stopStreaming
+        stopStreaming,
+        getCapturedAudio
     };
+}
+
+// Helper: Simple WAV Header
+function createWavBlob(pcmData: Int16Array, sampleRate: number) {
+    const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+    const view = new DataView(buffer);
+
+    // RIFF identifier
+    writeString(view, 0, 'RIFF');
+    // file length
+    view.setUint32(4, 36 + pcmData.length * 2, true);
+    // RIFF type
+    writeString(view, 8, 'WAVE');
+    // format chunk identifier
+    writeString(view, 12, 'fmt ');
+    // format chunk length
+    view.setUint32(16, 16, true);
+    // sample format (1 is PCM)
+    view.setUint16(20, 1, true);
+    // channel count
+    view.setUint16(22, 1, true);
+    // sample rate
+    view.setUint32(24, sampleRate, true);
+    // byte rate (sampleRate * blockAlign)
+    view.setUint32(28, sampleRate * 2, true);
+    // block align (channelCount * bytesPerSample)
+    view.setUint16(32, 2, true);
+    // bits per sample
+    view.setUint16(34, 16, true);
+    // data chunk identifier
+    writeString(view, 36, 'data');
+    // data chunk length
+    view.setUint32(40, pcmData.length * 2, true);
+
+    // write PCM samples
+    for (let i = 0; i < pcmData.length; i++) {
+        view.setInt16(44 + i * 2, pcmData[i], true);
+    }
+
+    return new Blob([buffer], { type: 'audio/wav' });
+}
+
+function writeString(view: DataView, offset: number, string: string) {
+    for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
 }
 
 // Helper

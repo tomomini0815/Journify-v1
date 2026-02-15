@@ -59,6 +59,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const speechRecognitionRef = useRef<any>(null)
     const [isAndroid, setIsAndroid] = useState(false)
     const [isGeminiLiveActive, setIsGeminiLiveActive] = useState(false)
+    const [diagnostics, setDiagnostics] = useState<string[]>([])
     const lastProcessedIndexRef = useRef<number>(-1)
 
     // Android detection
@@ -72,7 +73,8 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
         isStreaming: isGeminiStreaming,
         isConnected: isGeminiConnected,
         startStreaming: startGeminiStreaming,
-        stopStreaming: stopGeminiStreaming
+        stopStreaming: stopGeminiStreaming,
+        getCapturedAudio
     } = useGeminiLive({
         apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
         onTranscript: (text) => {
@@ -94,7 +96,10 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }, [])
 
     const addLog = (msg: string) => {
-        console.log(`[MeetingRecorder] ${msg}`)
+        const time = new Date().toLocaleTimeString();
+        const entry = `[${time}] ${msg}`;
+        console.log(`[MeetingRecorder] ${entry}`)
+        setDiagnostics(prev => [...prev.slice(-4), entry]);
     }
 
     const startRecording = async (options?: { isResuming?: boolean }) => {
@@ -151,6 +156,16 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 // Stop SpeechRecognition when recording stops
                 if (speechRecognitionRef.current) {
                     try { speechRecognitionRef.current.stop() } catch (e) { }
+                }
+
+                // Fallback for Android Chrome
+                if (chunksRef.current.length === 0 && isAndroid) {
+                    addLog("⚠️ MediaRecorder chunks empty. Trying Gemini capture...");
+                    const fallbackBlob = getCapturedAudio();
+                    if (fallbackBlob) {
+                        addLog("✅ Fallback audio captured from Gemini stream");
+                        setAudioBlob(fallbackBlob);
+                    }
                 }
             }
 
@@ -247,32 +262,37 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }
 
     const stopRecording = () => {
+        addLog("🛑 stopRecording requested")
+
+        // 1. Stop MediaRecorder FIRST to ensure it yields the final blob chunks
+        if (mediaRecorderRef.current && isRecording) {
+            addLog("🎥 stopping MediaRecorder")
+            mediaRecorderRef.current.stop()
+        }
+
+        // 2. Stop Gemini Live (does not kill tracks anymore if we manage them)
         if (isGeminiLiveActive) {
+            addLog("💎 stopping Gemini Live")
             try {
                 stopGeminiStreaming();
             } catch (e) { }
             setIsGeminiLiveActive(false);
         }
 
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop()
-            setIsRecording(false)
-            if (timerRef.current) clearInterval(timerRef.current as any)
-        } else if (isRecording) {
-            // Android Chrome Case (No MediaRecorder)
-            if (interimTranscript) {
-                setTranscript(prev => prev + interimTranscript + ' ');
-                setInterimTranscript('');
-            }
-            setIsRecording(false);
-            if (timerRef.current) {
-                clearInterval(timerRef.current as any);
-            }
-            if (speechRecognitionRef.current) {
-                try { speechRecognitionRef.current.stop(); } catch (e) { }
-            }
+        // 3. Timer cleanup and state reset
+        if (timerRef.current) {
+            clearInterval(timerRef.current as any)
+            timerRef.current = null
         }
-    }
+
+        // 4. Final state switch
+        setIsRecording(false)
+
+        // Android Chrome Case cleanup (if web speech was used)
+        if (speechRecognitionRef.current) {
+            try { speechRecognitionRef.current.stop(); } catch (e) { }
+        }
+    };
 
     const cancelRecording = () => {
         setAudioBlob(null)
