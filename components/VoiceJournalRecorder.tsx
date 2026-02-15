@@ -97,6 +97,7 @@ export default function VoiceJournalRecorder({
     const timerRef = useRef<NodeJS.Timeout | number | null>(null);
     const speechRecognitionRef = useRef<any>(null);
     const isRecordingRef = useRef(false);
+    const lastFinalResultRef = useRef<string>('');
     const [isBraveBrowser, setIsBraveBrowser] = useState(false);
 
     const [isAndroid, setIsAndroid] = useState(false);
@@ -258,6 +259,7 @@ export default function VoiceJournalRecorder({
         // This follows the successful pattern in Ainance.
         try {
             addLog("🏁 startRecording requested");
+            lastFinalResultRef.current = '';
 
             // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
             if (audioContextRef.current) {
@@ -299,8 +301,15 @@ export default function VoiceJournalRecorder({
                     let interim = '';
                     let finalText = '';
                     for (let i = event.resultIndex; i < event.results.length; i++) {
-                        if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                        else interim += event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            const text = event.results[i][0].transcript;
+                            if (text !== lastFinalResultRef.current) {
+                                finalText += text;
+                                lastFinalResultRef.current = text;
+                            }
+                        } else {
+                            interim += event.results[i][0].transcript;
+                        }
                     }
                     if (finalText) setTranscript(prev => prev + finalText + ' ');
                     setInterimTranscript(interim);
@@ -423,8 +432,15 @@ export default function VoiceJournalRecorder({
                         let interim = '';
                         let finalText = '';
                         for (let i = event.resultIndex; i < event.results.length; i++) {
-                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                            else interim += event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                const text = event.results[i][0].transcript;
+                                if (text !== lastFinalResultRef.current) {
+                                    finalText += text;
+                                    lastFinalResultRef.current = text;
+                                }
+                            } else {
+                                interim += event.results[i][0].transcript;
+                            }
                         }
                         if (finalText) setTranscript(prev => prev + finalText + ' ');
                         setInterimTranscript(interim);

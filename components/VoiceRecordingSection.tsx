@@ -54,8 +54,22 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<Blob[]>([])
-    const timerRef = useRef<NodeJS.Timeout | null>(null)
+    const timerRef = useRef<NodeJS.Timeout | number | null>(null)
     const speechRecognitionRef = useRef<any>(null)
+    const isRecordingRef = useRef(false)
+    const lastFinalResultRef = useRef<string>('')
+    const [isAndroid, setIsAndroid] = useState(false)
+
+    // Sync isRecordingRef
+    useEffect(() => {
+        isRecordingRef.current = isRecording
+    }, [isRecording])
+
+    // Android detection
+    useEffect(() => {
+        const ua = navigator.userAgent || ''
+        if (/android/i.test(ua)) setIsAndroid(true)
+    }, [])
 
     // Cleanup on unmount
     useEffect(() => {
@@ -78,7 +92,78 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             return
         }
 
+        lastFinalResultRef.current = ''
+
         try {
+            // ===================================================================
+            // ANDROID CHROME: Web Speech API has EXCLUSIVE mic access.
+            // Strategy: Start speech recognition FIRST, NO MediaRecorder.
+            // ===================================================================
+            if (isAndroid) {
+                const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+                if (!SpeechRecognitionClass) {
+                    alert('お使いのブラウザは音声認識をサポートしていません。')
+                    return
+                }
+
+                const recognition = new SpeechRecognitionClass()
+                recognition.lang = 'ja-JP'
+                recognition.continuous = true
+                recognition.interimResults = true
+                recognition.maxAlternatives = 1
+
+                recognition.onresult = (event: any) => {
+                    let interim = ''
+                    let finalText = ''
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const result = event.results[i]
+                        if (result.isFinal) {
+                            const text = result[0].transcript
+                            if (!isHallucination(text) && text !== lastFinalResultRef.current) {
+                                finalText += text
+                                lastFinalResultRef.current = text
+                            }
+                        } else {
+                            interim += result[0].transcript
+                        }
+                    }
+                    if (finalText) setTranscript(prev => prev + finalText + ' ')
+                    setInterimTranscript(interim)
+                }
+
+                recognition.onerror = (event: any) => {
+                    console.warn('SpeechRecognition error:', event.error)
+                    if (event.error === 'not-allowed') {
+                        alert('マイクへのアクセスが拒否されました。')
+                    }
+                }
+
+                recognition.onend = () => {
+                    if (isRecordingRef.current) {
+                        try { recognition.start() } catch (e) { }
+                    }
+                }
+
+                speechRecognitionRef.current = recognition
+                recognition.start()
+
+                setIsRecording(true)
+                setRecordingTime(0)
+                if (!audioBlob) {
+                    setTranscript('')
+                }
+                setInterimTranscript('')
+
+                timerRef.current = window.setInterval(() => {
+                    setRecordingTime(prev => prev + 1)
+                }, 1000)
+
+                return
+            }
+
+            // ===================================================================
+            // iOS / DESKTOP: getUserMedia + Web Speech API can coexist.
+            // ===================================================================
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
             let mimeType = "audio/webm"
@@ -92,8 +177,6 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             mediaRecorderRef.current = mediaRecorder
             chunksRef.current = []
 
-            // Only collect audio chunks - NO partial API transcription
-            // (uses Web Speech API for real-time display, same as VoiceJournalRecorder)
             mediaRecorder.ondataavailable = (e) => {
                 if (e.data.size > 0) {
                     chunksRef.current.push(e.data)
@@ -104,22 +187,17 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 const blob = new Blob(chunksRef.current, { type: mimeType })
                 setAudioBlob(blob)
                 stream.getTracks().forEach(track => track.stop())
-
-                // Stop SpeechRecognition when recording stops
                 if (speechRecognitionRef.current) {
                     try { speechRecognitionRef.current.stop() } catch (e) { }
                 }
             }
 
-            // Start MediaRecorder (same timeslice as VoiceJournalRecorder)
             mediaRecorder.start(15000)
 
-            // === Initialize SpeechRecognition HERE (not in useEffect) ===
-            // This prevents stale closures and matches the working VoiceJournalRecorder pattern
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-            if (SpeechRecognition) {
+            const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+            if (SpeechRecognitionClass) {
                 try {
-                    const recognition = new SpeechRecognition()
+                    const recognition = new SpeechRecognitionClass()
                     recognition.lang = 'ja-JP'
                     recognition.continuous = true
                     recognition.interimResults = true
@@ -128,23 +206,19 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                     recognition.onresult = (event: any) => {
                         let interim = ''
                         let finalText = ''
-
                         for (let i = event.resultIndex; i < event.results.length; i++) {
                             const result = event.results[i]
                             if (result.isFinal) {
                                 const text = result[0].transcript
-                                // Anti-hallucination filter
-                                if (!isHallucination(text)) {
+                                if (!isHallucination(text) && text !== lastFinalResultRef.current) {
                                     finalText += text
+                                    lastFinalResultRef.current = text
                                 }
                             } else {
                                 interim += result[0].transcript
                             }
                         }
-
-                        if (finalText) {
-                            setTranscript(prev => prev + finalText + ' ')
-                        }
+                        if (finalText) setTranscript(prev => prev + finalText + ' ')
                         setInterimTranscript(interim)
                     }
 
@@ -157,17 +231,12 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                     try { recognition.start(); setInterimTranscript('') } catch (e) { }
                                 }
                             }, 2000)
-                        } else if (event.error === 'no-speech') {
-                            // Non-fatal - continue
                         }
                     }
 
-                    // Auto-restart when recognition ends (key fix from VoiceJournalRecorder)
                     recognition.onend = () => {
-                        if (mediaRecorderRef.current?.state === 'recording') {
-                            try { recognition.start() } catch (e) {
-                                console.warn('Failed to restart SpeechRecognition:', e)
-                            }
+                        if (isRecordingRef.current && mediaRecorderRef.current?.state === 'recording') {
+                            try { recognition.start() } catch (e) { }
                         }
                     }
 
@@ -175,13 +244,12 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                     recognition.start()
                 } catch (error) {
                     console.error('Failed to init SpeechRecognition:', error)
-                    setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)')
+                    setInterimTranscript('(リアルタイム文字起こしは利用できません)')
                 }
             }
 
             setIsRecording(true)
             setRecordingTime(0)
-            // Only clear transcript on fresh start (not resume)
             if (!audioBlob) {
                 setTranscript("")
             }
@@ -204,10 +272,19 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }
 
     const stopRecording = () => {
+        isRecordingRef.current = false
+
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop()
             setIsRecording(false)
-            if (timerRef.current) clearInterval(timerRef.current)
+            if (timerRef.current) clearInterval(timerRef.current as any)
+        } else if (isRecording) {
+            // Android Chrome (no MediaRecorder)
+            setIsRecording(false)
+            if (timerRef.current) clearInterval(timerRef.current as any)
+            if (speechRecognitionRef.current) {
+                try { speechRecognitionRef.current.stop() } catch (e) { }
+            }
         }
     }
 
