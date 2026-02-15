@@ -374,7 +374,22 @@ export default function VoiceJournalRecorder({
                     }
                 }
 
-                // 2. Web Speech API (Safari/Chrome)
+                // 2. Gemini Live (WebSocket Path) - HIGH PRIORITY FOR ANDROID CHROME
+                // Web Speech API often conflicts with MediaRecorder on Android,
+                // so we use raw PCM streaming to Gemini as the primary path.
+                if (isAndroid || !isNative) {
+                    addLog("🔥 trying Gemini Live (Hardware friendly)...");
+                    try {
+                        await startGeminiStreaming(stream);
+                        setIsGeminiLiveActive(true);
+                        addLog("🚀 Gemini Live active (Stream shared)");
+                        return; // Success
+                    } catch (e) {
+                        addLog(`⚠️ Gemini fallback failed: ${e}`);
+                    }
+                }
+
+                // 3. Web Speech API (Standard Fallback)
                 addLog("🌐 trying Web Speech API...");
                 const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
                 if (SpeechRecognitionWeb) {
@@ -414,16 +429,8 @@ export default function VoiceJournalRecorder({
                     }
                 }
 
-                // 3. Gemini Live (Ultimate Fallback via WebSocket)
-                addLog("🚀 trying Gemini Live fallback...");
-                try {
-                    await startGeminiStreaming(stream);
-                    setIsGeminiLiveActive(true);
-                    addLog("🔥 Gemini Live active");
-                } catch (e) {
-                    addLog(`❌ All systems failed: ${e}`);
-                    setInterimTranscript("(音声認識が利用できません)");
-                }
+                addLog("❌ All transcription systems failed.");
+                setInterimTranscript("(音声認識が利用できません)");
             };
 
             await startTranscriptionChain();
