@@ -55,13 +55,17 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<Blob[]>([])
-    const timerRef = useRef<NodeJS.Timeout | number | null>(null)
+    const timerRef = useRef<NodeJS.Timeout | null>(null)
     const speechRecognitionRef = useRef<any>(null)
-    const isRecordingRef = useRef(false)
-    const lastFinalResultRef = useRef<string>('')
-    const lastProcessedIndexRef = useRef<number>(-1)
     const [isAndroid, setIsAndroid] = useState(false)
     const [isGeminiLiveActive, setIsGeminiLiveActive] = useState(false)
+    const lastProcessedIndexRef = useRef<number>(-1)
+
+    // Android detection
+    useEffect(() => {
+        const ua = navigator.userAgent || ''
+        if (/android/i.test(ua)) setIsAndroid(true)
+    }, [])
 
     // --- Gemini Live Hook (Android Only) ---
     const {
@@ -79,17 +83,6 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             console.error(`Meeting Gemini Error: ${err}`);
         }
     });
-
-    // Sync isRecordingRef
-    useEffect(() => {
-        isRecordingRef.current = isRecording
-    }, [isRecording])
-
-    // Android detection
-    useEffect(() => {
-        const ua = navigator.userAgent || ''
-        if (/android/i.test(ua)) setIsAndroid(true)
-    }, [])
 
     // Cleanup on unmount
     useEffect(() => {
@@ -117,57 +110,10 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             return
         }
 
-        if (!isResuming) {
-            lastFinalResultRef.current = ''
-        }
-        // Always reset index for the new SpeechRecognition instance
-        lastProcessedIndexRef.current = -1
-
         try {
-            addLog("🏁 Starting recording...")
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            addLog("✅ Microhpone stream granted")
-
-            let mimeType = "audio/webm"
-            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-                mimeType = "audio/webm;codecs=opus"
-            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                mimeType = "audio/mp4"
-            }
-
-            const options = { mimeType }
-            try {
-                const mediaRecorder = new MediaRecorder(stream, options)
-                mediaRecorderRef.current = mediaRecorder
-            } catch (e) {
-                addLog(`⚠️ MediaRecorder init failed: ${e}`)
-                mediaRecorderRef.current = new MediaRecorder(stream)
-            }
-
-            if (!isResuming) {
-                chunksRef.current = []
-            }
-            if (mediaRecorderRef.current) {
-                mediaRecorderRef.current.ondataavailable = (e) => {
-                    if (e.data.size > 0) {
-                        chunksRef.current.push(e.data)
-                    }
-                }
-
-                mediaRecorderRef.current.onstop = () => {
-                    const finalMime = mediaRecorderRef.current?.mimeType || mimeType
-                    const blob = new Blob(chunksRef.current, { type: finalMime })
-                    setAudioBlob(blob)
-                    stream.getTracks().forEach(track => track.stop())
-
-                    if (speechRecognitionRef.current) {
-                        try { speechRecognitionRef.current.stop() } catch (e) { }
-                    }
-                }
-
-                mediaRecorderRef.current.start(15000)
-                addLog("🎙️ MediaRecorder started")
-            }
+            addLog("🎙️ requesting getUserMedia...");
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            addLog("✅ stream granted");
 
             // --- Android Chrome: Use Gemini Live instead of Web Speech API ---
             if (isAndroid) {
@@ -176,11 +122,48 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 await startGeminiStreaming(stream)
             }
 
-            // --- Speech Recognition (iOS/Desktop) ---
-            const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-            if (SpeechRecognitionClass && !isAndroid) {
+            let mimeType = "audio/webm"
+            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                mimeType = "audio/webm;codecs=opus"
+            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                mimeType = "audio/mp4"
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, { mimeType })
+            mediaRecorderRef.current = mediaRecorder
+            if (!isResuming) {
+                chunksRef.current = []
+            }
+
+            // Only collect audio chunks - NO partial API transcription
+            // (uses Web Speech API for real-time display, same as VoiceJournalRecorder)
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    chunksRef.current.push(e.data)
+                }
+            }
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunksRef.current, { type: mimeType })
+                setAudioBlob(blob)
+                stream.getTracks().forEach(track => track.stop())
+
+                // Stop SpeechRecognition when recording stops
+                if (speechRecognitionRef.current) {
+                    try { speechRecognitionRef.current.stop() } catch (e) { }
+                }
+            }
+
+            // Start MediaRecorder (same timeslice as VoiceJournalRecorder)
+            mediaRecorder.start(15000)
+
+            // === Initialize SpeechRecognition HERE (not in useEffect) ===
+            // This prevents stale closures and matches the working VoiceJournalRecorder pattern
+            // Skip on Android if Gemini Live is active
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+            if (SpeechRecognition && !isGeminiLiveActive) {
                 try {
-                    const recognition = new SpeechRecognitionClass()
+                    const recognition = new SpeechRecognition()
                     recognition.lang = 'ja-JP'
                     recognition.continuous = true
                     recognition.interimResults = true
@@ -189,43 +172,52 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                     recognition.onresult = (event: any) => {
                         let interim = ''
                         let finalText = ''
+
                         for (let i = event.resultIndex; i < event.results.length; i++) {
                             const result = event.results[i]
                             if (result.isFinal) {
                                 if (i > lastProcessedIndexRef.current) {
-                                    const text = result[0].transcript.trim()
+                                    const text = result[0].transcript.trim();
                                     if (text && !isHallucination(text)) {
-                                        finalText += text + ' '
+                                        finalText += text + ' ';
                                     }
-                                    lastProcessedIndexRef.current = i
+                                    lastProcessedIndexRef.current = i;
                                 }
                             } else {
                                 interim += result[0].transcript
                             }
                         }
-                        if (finalText) setTranscript(prev => prev + finalText)
+
+                        if (finalText) {
+                            setTranscript(prev => prev + finalText)
+                        }
                         setInterimTranscript(interim)
                     }
 
                     recognition.onerror = (event: any) => {
-                        addLog(`❌ SpeechRecognition error: ${event.error}`)
+                        console.warn('SpeechRecognition error:', event.error)
                         if (event.error === 'network') {
                             setInterimTranscript('(ネットワークエラー)')
+                            setTimeout(() => {
+                                if (mediaRecorderRef.current?.state === 'recording') {
+                                    try { recognition.start(); setInterimTranscript('') } catch (e) { }
+                                }
+                            }, 2000)
+                        } else if (event.error === 'no-speech') {
+                            // Non-fatal - continue
                         }
                     }
 
+                    // Auto-restart when recognition ends (key fix from VoiceJournalRecorder)
                     recognition.onend = () => {
                         addLog("🔚 web speech ended (No auto-restart)")
-                        // No restart to avoid repeated "piron" sounds on Android.
-                        // Recording continues via MediaRecorder even if this stops.
                     }
 
                     speechRecognitionRef.current = recognition
                     recognition.start()
-                    addLog("🌐 Web Speech API started")
                 } catch (error) {
                     console.error('Failed to init SpeechRecognition:', error)
-                    setInterimTranscript('(リアルタイム文字起こしは利用できません)')
+                    setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)')
                 }
             }
 
@@ -234,6 +226,8 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 setRecordingTime(0)
                 setTranscript("")
             }
+            // Reset index for the new SpeechRecognition instance
+            lastProcessedIndexRef.current = -1
             setInterimTranscript("")
 
             timerRef.current = setInterval(() => {
@@ -242,22 +236,17 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
         } catch (error: any) {
             console.error("Failed to start recording:", error)
-            const errorMessage = (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')
-                ? 'マイクへのアクセスが拒否されました。ブラウザの設定からマイクを許可してください。'
-                : (error.name === 'NotFoundError')
-                    ? 'マイクが見つかりませんでした。'
-                    : `録音を開始できませんでした: ${error.message}`
-            alert(errorMessage)
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                alert('マイクへのアクセスが拒否されました。ブラウザの設定からマイクを許可してください。')
+            } else if (error.name === 'NotFoundError') {
+                alert('マイクが見つかりませんでした。')
+            } else {
+                alert(`録音を開始できませんでした: ${error.message}`)
+            }
         }
     }
 
     const stopRecording = () => {
-        isRecordingRef.current = false
-
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop()
-        }
-
         if (isGeminiLiveActive) {
             try {
                 stopGeminiStreaming();
@@ -265,21 +254,23 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             setIsGeminiLiveActive(false);
         }
 
-        // Always stop SpeechRecognition
-        if (speechRecognitionRef.current) {
-            try { speechRecognitionRef.current.stop() } catch (e) { }
-        }
-
-        // Merge interim text if any (for Android or when Speech stops early)
-        if (interimTranscript) {
-            setTranscript(prev => prev + interimTranscript + ' ')
-            setInterimTranscript('')
-        }
-
-        setIsRecording(false)
-        if (timerRef.current) {
-            clearInterval(timerRef.current as any)
-            timerRef.current = null
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop()
+            setIsRecording(false)
+            if (timerRef.current) clearInterval(timerRef.current as any)
+        } else if (isRecording) {
+            // Android Chrome Case (No MediaRecorder)
+            if (interimTranscript) {
+                setTranscript(prev => prev + interimTranscript + ' ');
+                setInterimTranscript('');
+            }
+            setIsRecording(false);
+            if (timerRef.current) {
+                clearInterval(timerRef.current as any);
+            }
+            if (speechRecognitionRef.current) {
+                try { speechRecognitionRef.current.stop(); } catch (e) { }
+            }
         }
     }
 
@@ -291,7 +282,6 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }
 
     const resumeRecording = async () => {
-        // DO NOT setAudioBlob(null) here, keep it for reference or just let it be replaced later
         await startRecording({ isResuming: true })
     }
 
@@ -302,7 +292,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }
 
     const handleSave = async () => {
-        if (!audioBlob && !transcript) return
+        if (!audioBlob) return
         setIsProcessing(true)
 
         try {
@@ -323,24 +313,18 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 targetProjectId = newProject.id
             }
 
-            let uploadData = { url: '', filepath: '' }
-            if (audioBlob) {
-                const mimeType = audioBlob.type
-                const ext = mimeType.includes("mp4") ? "mp4" : "webm"
-                const formData = new FormData()
-                formData.append("file", audioBlob, `meeting-recording.${ext}`)
-                const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
-                if (!uploadRes.ok) throw new Error("Failed to upload audio")
-                uploadData = await uploadRes.json()
-            }
+            const mimeType = audioBlob.type
+            const ext = mimeType.includes("mp4") ? "mp4" : "webm"
+            const formData = new FormData()
+            formData.append("file", audioBlob, `meeting-recording.${ext}`)
+            const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
+            if (!uploadRes.ok) throw new Error("Failed to upload audio")
+            const uploadData = await uploadRes.json()
 
             const transcribeRes = await fetch(`/api/projects/${targetProjectId}/meetings/transcribe`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    audioPath: uploadData.filepath,
-                    existingTranscript: transcript // Pass existing transcript to API if audio is missing
-                })
+                body: JSON.stringify({ audioPath: uploadData.filepath })
             })
             const transcribeData = transcribeRes.ok ? await transcribeRes.json() : {
                 title: "新しい議事録",
@@ -425,27 +409,27 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                     <h3 className="text-lg font-bold text-white/90 tracking-tight">
                                         議事録を録音して要約
                                     </h3>
-                                    <p className="text-white/40 text-xs mt-0.5">
-                                        {!isRecording && !audioBlob && !transcript && "マイクをタップして録音開始"}
-                                        {isRecording && "リアルタイムで文字起こし中…"}
-                                        {!isRecording && (audioBlob || transcript) && "テキストを編集して保存できます"}
-                                    </p>
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-white/40 text-xs mt-0.5">
+                                            {!isRecording && !audioBlob && "マイクをタップして録音開始"}
+                                            {isRecording && "リアルタイムで文字起こし中…"}
+                                            {!isRecording && audioBlob && "テキストを編集して保存できます"}
+                                        </p>
+                                        {!isRecording && audioBlob && (
+                                            <button
+                                                onClick={() => resumeRecording()}
+                                                disabled={isProcessing}
+                                                className="flex items-center gap-2 px-3 py-1 text-xs font-medium text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-full transition-all disabled:opacity-40 whitespace-nowrap"
+                                            >
+                                                <RotateCcw className="w-3 h-3" />
+                                                <span>再開して追加</span>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {/* Resume Recording Button (Meeting Title Row) */}
-                                {!isRecording && audioBlob && (
-                                    <button
-                                        onClick={resumeRecording}
-                                        disabled={isProcessing}
-                                        className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-lg transition-all disabled:opacity-40 whitespace-nowrap"
-                                    >
-                                        <RotateCcw className="w-3 h-3" />
-                                        <span>再開</span>
-                                    </button>
-                                )}
-
                                 {/* Mic / Stop Button (top-right, only when not in recorded state) */}
-                                {(isRecording || (!audioBlob && !transcript)) && (
+                                {!audioBlob && (
                                     <div className="relative shrink-0">
                                         {isRecording && (
                                             <motion.div
@@ -456,7 +440,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         )}
                                         <motion.button
                                             whileTap={{ scale: 0.9 }}
-                                            onClick={() => isRecording ? stopRecording() : startRecording()}
+                                            onClick={isRecording ? stopRecording : () => startRecording()}
                                             disabled={isProcessing}
                                             className={`relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${isRecording
                                                 ? "bg-red-500 shadow-red-500/40"
@@ -592,13 +576,24 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                             )}
                                         </div>
 
+                                        {/* Resume Recording Button */}
+                                        {!isRecording && audioBlob && (
+                                            <button
+                                                onClick={resumeRecording}
+                                                disabled={isProcessing}
+                                                className="flex items-center gap-2 mt-2 px-3 py-2 text-xs font-medium text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all disabled:opacity-40"
+                                            >
+                                                <RotateCcw className="w-3 h-3" />
+                                                <span>録音を再開して追加</span>
+                                            </button>
+                                        )}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
                             {/* Action Buttons: Cancel + Save (2-column grid) */}
                             <AnimatePresence>
-                                {!isRecording && (audioBlob || hasTranscript) && (
+                                {!isRecording && audioBlob && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -639,6 +634,6 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                     </div>
                 )}
             </div>
-        </div >
+        </div>
     )
 }
