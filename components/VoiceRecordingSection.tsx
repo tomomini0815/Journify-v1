@@ -142,8 +142,14 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 }
 
                 recognition.onend = () => {
-                    // On Android: do NOT auto-restart to avoid the system notification sound.
-                    // continuous:true keeps it running for most cases.
+                    // Auto-restart with delay to avoid rapid system notification sounds
+                    if (isRecordingRef.current) {
+                        setTimeout(() => {
+                            if (isRecordingRef.current) {
+                                try { recognition.start() } catch (e) { }
+                            }
+                        }, 1000)
+                    }
                 }
 
                 speechRecognitionRef.current = recognition
@@ -283,6 +289,11 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             if (timerRef.current) clearInterval(timerRef.current as any)
         } else if (isRecording) {
             // Android Chrome (no MediaRecorder)
+            // Move interim text to transcript before stopping
+            if (interimTranscript) {
+                setTranscript(prev => prev + interimTranscript + ' ')
+                setInterimTranscript('')
+            }
             setIsRecording(false)
             if (timerRef.current) clearInterval(timerRef.current as any)
             if (speechRecognitionRef.current) {
@@ -429,14 +440,14 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         議事録を録音して要約
                                     </h3>
                                     <p className="text-white/40 text-xs mt-0.5">
-                                        {!isRecording && !audioBlob && "マイクをタップして録音開始"}
+                                        {!isRecording && !audioBlob && !transcript && "マイクをタップして録音開始"}
                                         {isRecording && "リアルタイムで文字起こし中…"}
-                                        {!isRecording && audioBlob && "テキストを編集して保存できます"}
+                                        {!isRecording && (audioBlob || transcript) && "テキストを編集して保存できます"}
                                     </p>
                                 </div>
 
                                 {/* Mic / Stop Button (top-right, only when not in recorded state) */}
-                                {!audioBlob && (
+                                {!audioBlob && !transcript && (
                                     <div className="relative shrink-0">
                                         {isRecording && (
                                             <motion.div
@@ -584,7 +595,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         </div>
 
                                         {/* Resume Recording Button */}
-                                        {!isRecording && audioBlob && (
+                                        {!isRecording && (audioBlob || transcript) && (
                                             <button
                                                 onClick={resumeRecording}
                                                 disabled={isProcessing}
@@ -600,7 +611,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
                             {/* Action Buttons: Cancel + Save (2-column grid) */}
                             <AnimatePresence>
-                                {!isRecording && audioBlob && (
+                                {!isRecording && (audioBlob || transcript) && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}

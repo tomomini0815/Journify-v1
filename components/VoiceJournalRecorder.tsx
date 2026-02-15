@@ -327,8 +327,19 @@ export default function VoiceJournalRecorder({
 
                 recognition.onend = () => {
                     addLog("🔚 speech recognition ended");
-                    // On Android: do NOT auto-restart to avoid the system notification sound.
-                    // continuous:true should keep it running for most cases.
+                    // Auto-restart with delay to avoid rapid system notification sounds
+                    if (isRecordingRef.current) {
+                        setTimeout(() => {
+                            if (isRecordingRef.current) {
+                                try {
+                                    recognition.start();
+                                    addLog("🔄 speech restarted (delayed)");
+                                } catch (e) {
+                                    addLog(`⚠️ restart failed: ${e}`);
+                                }
+                            }
+                        }, 1000);
+                    }
                 };
 
                 speechRecognitionRef.current = recognition;
@@ -519,6 +530,11 @@ export default function VoiceJournalRecorder({
             }
         } else if (isRecording) {
             // Android Chrome Case (No MediaRecorder)
+            // Move interim text to transcript before stopping
+            if (interimTranscript) {
+                setTranscript(prev => prev + interimTranscript + ' ');
+                setInterimTranscript('');
+            }
             setIsRecording(false);
             stopVisualizer();
             if (timerRef.current) {
@@ -652,7 +668,7 @@ export default function VoiceJournalRecorder({
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
 
-                {!audioBlob && !isRecording ? (
+                {!audioBlob && !isRecording && !transcript ? (
                     // Initial State
                     <div className="flex items-center justify-between">
                         <div>
