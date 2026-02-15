@@ -988,19 +988,17 @@ export default function VoiceJournalRecorder({
                     )}
                 </AnimatePresence>
 
-            </AnimatePresence>
-
-            {/* Diagnostics Log (Android Only) */}
-            {isAndroid && diagnostics.length > 0 && (
-                <div className="mt-8 max-w-md mx-auto bg-black/40 rounded-xl p-3 font-mono text-[10px] text-emerald-400/80 border border-emerald-500/20 text-left">
-                    <div className="flex items-center justify-between mb-1 opacity-60">
-                        <span>Diagnostic Logs:</span>
-                        <button onClick={() => setDiagnostics([])} className="hover:text-white">Clear</button>
+                {/* Diagnostics Log (Android Only) */}
+                {isAndroid && diagnostics.length > 0 && (
+                    <div className="mt-8 max-w-md mx-auto bg-black/40 rounded-xl p-3 font-mono text-[10px] text-emerald-400/80 border border-emerald-500/20 text-left">
+                        <div className="flex items-center justify-between mb-1 opacity-60">
+                            <span>Diagnostic Logs:</span>
+                            <button onClick={() => setDiagnostics([])} className="hover:text-white">Clear</button>
+                        </div>
+                        {diagnostics.map((log, i) => <div key={i} className="truncate">{log}</div>)}
                     </div>
-                    {diagnostics.map((log, i) => <div key={i} className="truncate">{log}</div>)}
-                </div>
-            )}
+                )}
+            </div>
         </div>
-        </div >
     );
 }
