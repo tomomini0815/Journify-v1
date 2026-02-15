@@ -255,7 +255,6 @@ export default function VoiceJournalRecorder({
             addLog("🏁 startRecording requested");
 
             // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
-            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
             if (audioContextRef.current) {
                 await audioContextRef.current.resume();
                 addLog("🔊 AudioContext resumed");
@@ -267,6 +266,81 @@ export default function VoiceJournalRecorder({
                 addLog("⚠️ No microphone hardware detected");
             }
 
+            const isNative = Capacitor.isNativePlatform();
+
+            // ===================================================================
+            // ANDROID CHROME: Web Speech API has EXCLUSIVE mic access.
+            // We CANNOT run getUserMedia + webkitSpeechRecognition at the same time.
+            // Strategy: Start speech recognition FIRST, record audio AFTER stop.
+            // ===================================================================
+            if (isAndroid && !isNative) {
+                addLog("📱 Android Chrome mode: Speech-first strategy");
+
+                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                if (!SpeechRecognitionWeb) {
+                    addLog("❌ Web Speech API not available");
+                    setInterimTranscript("(音声認識が利用できません)");
+                    return;
+                }
+
+                const recognition = new SpeechRecognitionWeb();
+                recognition.lang = 'ja-JP';
+                recognition.continuous = true;
+                recognition.interimResults = true;
+
+                recognition.onstart = () => addLog("🚀 web speech active (exclusive mic)");
+
+                recognition.onresult = (event: any) => {
+                    let interim = '';
+                    let finalText = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                        else interim += event.results[i][0].transcript;
+                    }
+                    if (finalText) setTranscript(prev => prev + finalText + ' ');
+                    setInterimTranscript(interim);
+                };
+
+                recognition.onerror = (event: any) => {
+                    addLog(`❌ speech error: ${event.error}`);
+                    // "not-allowed" means mic permission denied
+                    // "aborted" means user or system stopped it
+                    if (event.error === 'not-allowed') {
+                        setInterimTranscript("(マイクの許可が必要です)");
+                    }
+                };
+
+                recognition.onend = () => {
+                    addLog("🔚 speech recognition ended");
+                    // Auto-restart if still recording
+                    if (isRecording) {
+                        try {
+                            recognition.start();
+                            addLog("🔄 speech restarted");
+                        } catch (e) {
+                            addLog(`⚠️ restart failed: ${e}`);
+                        }
+                    }
+                };
+
+                speechRecognitionRef.current = recognition;
+                recognition.start();
+
+                // Set recording state (no actual MediaRecorder on Android)
+                setIsRecording(true);
+                setRecordingTime(0);
+                const startTime = Date.now();
+                timerRef.current = window.setInterval(() => {
+                    setRecordingTime(Math.floor((Date.now() - startTime) / 1000));
+                }, 1000);
+
+                addLog("✅ Android recording started (speech-only mode)");
+                return;
+            }
+
+            // ===================================================================
+            // iOS / DESKTOP: getUserMedia + Web Speech API can coexist.
+            // ===================================================================
             addLog("🎙️ requesting getUserMedia...");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             addLog("✅ stream granted");
@@ -275,8 +349,6 @@ export default function VoiceJournalRecorder({
             let mimeType = "";
 
             if (isAndroid) {
-                // Android preferred formats for stability
-                // 'audio/mp4' is often better supported on mobile Chrome for file playback compatibility
                 if (MediaRecorder.isTypeSupported("audio/mp4")) {
                     mimeType = "audio/mp4";
                 } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
@@ -285,7 +357,6 @@ export default function VoiceJournalRecorder({
                     mimeType = "audio/webm";
                 }
             } else {
-                // Desktop / iOS (Safari prefers mp4/aac, Chrome prefers webm)
                 if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
                     mimeType = "audio/webm;codecs=opus";
                 } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
@@ -293,17 +364,12 @@ export default function VoiceJournalRecorder({
                 }
             }
 
-            console.log(`Using MIME type: ${mimeType || 'default (browser decided)'}`);
-
-            // mimeTypeが空の場合はオプションを渡さない（ブラウザのデフォルトを使用）
             const options = mimeType ? { mimeType } : undefined;
 
             try {
                 const mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorderRef.current = mediaRecorder;
             } catch (e) {
-                console.warn('Failed to create MediaRecorder with options, trying default:', e);
-                // Fallback to default if specific mimeType fails
                 mediaRecorderRef.current = new MediaRecorder(stream);
             }
 
@@ -325,115 +391,56 @@ export default function VoiceJournalRecorder({
                 setAudioBlob(blob);
                 stream.getTracks().forEach(track => track.stop());
 
-                // Stop SpeechRecognition when recording stops
                 if (speechRecognitionRef.current) {
                     try { speechRecognitionRef.current.stop(); } catch (e) { }
                 }
             };
 
             // Start MediaRecorder
-            mediaRecorderRef.current.start(1000); // 1s chunks
+            mediaRecorderRef.current.start(1000);
 
             // Start Visualizer
             startVisualizer(stream);
             addLog("📊 visualizer started");
 
-            const isNative = Capacitor.isNativePlatform();
+            // Start Web Speech API (iOS/Desktop can use it alongside MediaRecorder)
+            addLog("🌐 trying Web Speech API...");
+            const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            if (SpeechRecognitionWeb) {
+                try {
+                    const recognition = new SpeechRecognitionWeb();
+                    recognition.lang = 'ja-JP';
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
 
-            // === SURPASSING LIMITS: Multi-Stage Recovery System ===
-            const startTranscriptionChain = async () => {
-                // 1. Native Capacitor (Android/iOS Native)
-                if (isNative) {
-                    addLog("🎯 trying native API...");
-                    try {
-                        const permissions = await SpeechRecognition.checkPermissions();
-                        addLog(`🔐 permission: ${permissions.speechRecognition}`);
-                        if (permissions.speechRecognition !== 'granted') {
-                            addLog("🔑 requesting permissions...");
-                            await SpeechRecognition.requestPermissions();
+                    recognition.onstart = () => addLog("🚀 web speech active");
+                    recognition.onresult = (event: any) => {
+                        let interim = '';
+                        let finalText = '';
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                            else interim += event.results[i][0].transcript;
                         }
+                        if (finalText) setTranscript(prev => prev + finalText + ' ');
+                        setInterimTranscript(interim);
+                    };
 
-                        addLog("🎤 native.start()");
-                        await SpeechRecognition.start({
-                            language: "ja-JP",
-                            maxResults: 1,
-                            prompt: "音声を入力中...",
-                            partialResults: true,
-                            popup: false,
-                        });
+                    recognition.onerror = (event: any) => {
+                        addLog(`❌ web speech error: ${event.error}`);
+                    };
 
-                        SpeechRecognition.addListener("partialResults", (data: any) => {
-                            if (data.matches && data.matches.length > 0) {
-                                setInterimTranscript(data.matches[0]);
-                            }
-                        });
-                        addLog("🚀 native transcription active");
-                        return; // Success
-                    } catch (e) {
-                        addLog(`⚠️ native failed: ${JSON.stringify(e)}`);
-                    }
+                    recognition.onend = () => {
+                        if (isRecording) {
+                            try { recognition.start(); } catch (e) { }
+                        }
+                    };
+
+                    speechRecognitionRef.current = recognition;
+                    recognition.start();
+                } catch (e) {
+                    addLog(`⚠️ web speech failed: ${e}`);
                 }
-
-                // 2. Gemini Live (WebSocket Path) - HIGH PRIORITY FOR ANDROID CHROME
-                // Web Speech API often conflicts with MediaRecorder on Android,
-                // so we use raw PCM streaming to Gemini as the primary path.
-                if (isAndroid || !isNative) {
-                    addLog("🔥 trying Gemini Live (Hardware friendly)...");
-                    try {
-                        await startGeminiStreaming(stream);
-                        setIsGeminiLiveActive(true);
-                        addLog("🚀 Gemini Live active (Stream shared)");
-                        return; // Success
-                    } catch (e) {
-                        addLog(`⚠️ Gemini fallback failed: ${e}`);
-                    }
-                }
-
-                // 3. Web Speech API (Standard Fallback)
-                addLog("🌐 trying Web Speech API...");
-                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                if (SpeechRecognitionWeb) {
-                    try {
-                        const recognition = new SpeechRecognitionWeb();
-                        recognition.lang = 'ja-JP';
-                        recognition.continuous = true;
-                        recognition.interimResults = true;
-
-                        recognition.onstart = () => addLog("🚀 web speech active");
-                        recognition.onresult = (event: any) => {
-                            let interim = '';
-                            let finalText = '';
-                            for (let i = event.resultIndex; i < event.results.length; i++) {
-                                if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                                else interim += event.results[i][0].transcript;
-                            }
-                            if (finalText) setTranscript(prev => prev + finalText + ' ');
-                            setInterimTranscript(interim);
-                        };
-
-                        recognition.onerror = (event: any) => {
-                            addLog(`❌ web speech error: ${event.error}`);
-                        };
-
-                        recognition.onend = () => {
-                            if (isRecording) {
-                                try { recognition.start(); } catch (e) { }
-                            }
-                        };
-
-                        speechRecognitionRef.current = recognition;
-                        recognition.start();
-                        return; // Success
-                    } catch (e) {
-                        addLog(`⚠️ web speech failed: ${e}`);
-                    }
-                }
-
-                addLog("❌ All transcription systems failed.");
-                setInterimTranscript("(音声認識が利用できません)");
-            };
-
-            await startTranscriptionChain();
+            }
 
             setIsRecording(true);
             setRecordingTime(0);
