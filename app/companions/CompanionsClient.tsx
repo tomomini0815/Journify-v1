@@ -84,10 +84,10 @@ export default function CompanionsClient() {
                     <p className="text-2xl text-white/40 mb-4">まだ仲間がいません</p>
                     <p className="text-white/60 mb-6">ガチャで最初の仲間を召喚しましょう！</p>
                     <button
-                        onClick={() => router.push('/dashboard')}
+                        onClick={() => router.push('/adventure')}
                         className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-bold hover:scale-105 transition-transform"
                     >
-                        ダッシュボードへ戻る
+                        ペットハウスへ戻る
                     </button>
                 </motion.div>
             ) : (

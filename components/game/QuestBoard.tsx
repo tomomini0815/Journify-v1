@@ -34,8 +34,8 @@ export function QuestBoard({ dailyQuests, weeklyQuests, onCompleteQuest, onClaim
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${isSolarpunk ? 'bg-gradient-to-br from-amber-400 to-orange-400 shadow-amber-400/30' :
-                            isCelestial ? 'bg-gradient-to-br from-indigo-500 to-purple-500 shadow-indigo-500/50 text-white' :
-                                'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/50'
+                        isCelestial ? 'bg-gradient-to-br from-indigo-500 to-purple-500 shadow-indigo-500/50 text-white' :
+                            'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/50'
                         }`}>
                         <span className="text-2xl">{isCelestial ? '🛸' : '📜'}</span>
                     </div>
@@ -56,8 +56,8 @@ export function QuestBoard({ dailyQuests, weeklyQuests, onCompleteQuest, onClaim
 
                 {/* Tab Switcher */}
                 <div className={`flex gap-2 p-1 rounded-xl border ${isSolarpunk ? 'bg-white/40 border-emerald-100' :
-                        isCelestial ? 'bg-indigo-900/40 border-indigo-500/30' :
-                            'bg-white/5 border-white/10'
+                    isCelestial ? 'bg-indigo-900/40 border-indigo-500/30' :
+                        'bg-white/5 border-white/10'
                     }`}>
                     <button
                         onClick={() => setActiveTab('daily')}
@@ -161,22 +161,22 @@ function QuestCard({ quest, index, onComplete, onClaim, variant = 'cyberpunk' }:
             transition={{ delay: index * 0.1 }}
             whileHover={{ scale: 1.02, y: -2 }}
             className={`group relative backdrop-blur-sm border rounded-2xl p-5 transition-all overflow-hidden ${isCompleted
-                    ? isSolarpunk
-                        ? 'border-emerald-500/50 bg-emerald-100/50'
-                        : isCelestial
-                            ? 'border-indigo-400/50 bg-indigo-500/20'
-                            : 'border-emerald-500/50 bg-emerald-500/10'
-                    : isSolarpunk
-                        ? 'bg-white/40 border-white/60 hover:border-emerald-400/60'
-                        : isCelestial
-                            ? 'bg-indigo-900/40 border-indigo-500/30 hover:border-indigo-400/50'
-                            : 'bg-white/5 border-white/10 hover:border-white/20'
+                ? isSolarpunk
+                    ? 'border-emerald-500/50 bg-emerald-100/50'
+                    : isCelestial
+                        ? 'border-indigo-400/50 bg-indigo-500/20'
+                        : 'border-emerald-500/50 bg-emerald-500/10'
+                : isSolarpunk
+                    ? 'bg-white/40 border-white/60 hover:border-emerald-400/60'
+                    : isCelestial
+                        ? 'bg-indigo-900/40 border-indigo-500/30 hover:border-indigo-400/50'
+                        : 'bg-white/5 border-white/10 hover:border-white/20'
                 }`}
         >
             {/* Background glow */}
             <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity ${isCompleted
-                    ? 'bg-gradient-to-br from-emerald-500/10 to-cyan-500/10'
-                    : 'bg-gradient-to-br from-amber-500/5 to-orange-500/5'
+                ? 'bg-gradient-to-br from-emerald-500/10 to-cyan-500/10'
+                : 'bg-gradient-to-br from-amber-500/5 to-orange-500/5'
                 }`} />
 
             <div className="relative">
@@ -185,8 +185,8 @@ function QuestCard({ quest, index, onComplete, onClaim, variant = 'cyberpunk' }:
                     <div className="flex items-start gap-3 flex-1">
                         {/* Icon */}
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${isCompleted
-                                ? isSolarpunk ? 'bg-emerald-200 text-emerald-700' : 'bg-emerald-500/20 border border-emerald-500/30'
-                                : isSolarpunk ? 'bg-white/60 text-emerald-800' : isCelestial ? 'bg-indigo-500/20 border border-indigo-400/30 text-indigo-300' : 'bg-white/10 border border-white/20'
+                            ? isSolarpunk ? 'bg-emerald-200 text-emerald-700' : 'bg-emerald-500/20 border border-emerald-500/30'
+                            : isSolarpunk ? 'bg-white/60 text-emerald-800' : isCelestial ? 'bg-indigo-500/20 border border-indigo-400/30 text-indigo-300' : 'bg-white/10 border border-white/20'
                             }`}>
                             {isCompleted ? '✅' : quest.icon}
                         </div>
@@ -195,8 +195,8 @@ function QuestCard({ quest, index, onComplete, onClaim, variant = 'cyberpunk' }:
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                                 <h3 className={`font-bold text-lg ${isCompleted
-                                        ? isSolarpunk ? 'text-emerald-800' : 'text-emerald-300'
-                                        : isSolarpunk ? 'text-emerald-900' : 'text-white'
+                                    ? isSolarpunk ? 'text-emerald-800' : 'text-emerald-300'
+                                    : isSolarpunk ? 'text-emerald-900' : 'text-white'
                                     }`}>
                                     {quest.title}
                                 </h3>
@@ -245,7 +245,7 @@ function QuestCard({ quest, index, onComplete, onClaim, variant = 'cyberpunk' }:
                     <div className="flex gap-4 text-sm">
                         <div className="flex items-center gap-1.5">
                             <span className="text-cyan-400">⚡</span>
-                            <span className={`${isSolarpunk ? 'text-emerald-800' : 'text-white/80'} font-semibold`}>+{quest.xpReward} XP</span>
+                            <span className={`${isSolarpunk ? 'text-emerald-800' : 'text-white/80'} font-semibold`}>+{quest.xpReward} クリスタル</span>
                         </div>
                         {quest.goldReward > 0 && (
                             <div className="flex items-center gap-1.5">
@@ -262,8 +262,8 @@ function QuestCard({ quest, index, onComplete, onClaim, variant = 'cyberpunk' }:
                             whileTap={{ scale: 0.95 }}
                             onClick={() => onClaim?.(quest.id)}
                             className={`px-4 py-2 rounded-xl font-semibold text-sm shadow-lg transition-shadow ${isSolarpunk
-                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/30'
-                                    : 'bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-emerald-500/50 hover:shadow-emerald-500/70'
+                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/30'
+                                : 'bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-emerald-500/50 hover:shadow-emerald-500/70'
                                 }`}
                         >
                             報酬を受け取る
@@ -279,10 +279,10 @@ function QuestCard({ quest, index, onComplete, onClaim, variant = 'cyberpunk' }:
                         </motion.button>
                     ) : (
                         <div className={`px-4 py-2 border rounded-xl text-sm ${isSolarpunk
-                                ? 'bg-white/40 border-emerald-100 text-emerald-800/40'
-                                : isCelestial
-                                    ? 'bg-indigo-900/40 border-indigo-500/30 text-indigo-300/40'
-                                    : 'bg-white/5 border-white/10 text-white/40'
+                            ? 'bg-white/40 border-emerald-100 text-emerald-800/40'
+                            : isCelestial
+                                ? 'bg-indigo-900/40 border-indigo-500/30 text-indigo-300/40'
+                                : 'bg-white/5 border-white/10 text-white/40'
                             }`}>
                             進行中
                         </div>

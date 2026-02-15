@@ -136,10 +136,10 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                 <div className="text-center">
                     <p className="text-2xl text-white/60 mb-4">仲間が見つかりません</p>
                     <button
-                        onClick={() => router.push('/companions')}
+                        onClick={() => router.push('/adventure')}
                         className="px-6 py-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
                     >
-                        一覧に戻る
+                        ペットハウスに戻る
                     </button>
                 </div>
             </div>
@@ -154,11 +154,11 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
             <div className="max-w-4xl mx-auto">
                 {/* Back Button */}
                 <button
-                    onClick={() => router.push('/companions')}
+                    onClick={() => router.push('/adventure')}
                     className="mb-6 flex items-center gap-2 text-white/60 hover:text-white transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5" />
-                    一覧に戻る
+                    ペットハウスに戻る
                 </button>
 
                 {/* Message */}

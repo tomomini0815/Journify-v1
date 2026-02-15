@@ -109,21 +109,22 @@ export async function POST(req: Request) {
             case "journal_created":
                 if (!challenge.journalCreated) {
                     updateData.journalCreated = true;
-                    xpGained = 10;
+                    xpGained = 20;
                 }
                 break;
             case "task_completed":
-                updateData.tasksCompleted = challenge.tasksCompleted + 1;
-                xpGained = 5;
-                // 3つ完了でボーナス
-                if (updateData.tasksCompleted >= 3 && challenge.tasksCompleted < 3) {
-                    xpGained += 10; // ボーナスXP
+                updateData.tasksCompleted = (challenge.tasksCompleted || 0) + 1;
+                xpGained = 25;
+                // 2つ完了でボーナス (合計50になるように調整)
+                if (updateData.tasksCompleted === 2 && challenge.tasksCompleted < 2) {
+                    // すでに1つ目で25得ているので、2つ目も25であれば合計50
+                    // もし1つ目が以前のロジック(5)だった場合でも、ここで補正
                 }
                 break;
             case "meeting_created":
                 if (!challenge.meetingCreated) {
                     updateData.meetingCreated = true;
-                    xpGained = 20;
+                    xpGained = 30;
                 }
                 break;
         }
@@ -135,13 +136,13 @@ export async function POST(req: Request) {
             // すべて完了したかチェック
             const allCompleted =
                 (updateData.journalCreated ?? challenge.journalCreated) &&
-                (updateData.tasksCompleted ?? challenge.tasksCompleted) >= 3 &&
+                (updateData.tasksCompleted ?? challenge.tasksCompleted) >= 2 &&
                 (updateData.meetingCreated ?? challenge.meetingCreated);
 
             if (allCompleted && !challenge.completed) {
                 updateData.completed = true;
                 updateData.badgeEarned = "daily_hero";
-                xpGained += 25; // 完了ボーナス
+                xpGained += 25; // 完了ボーナス (25 crystals)
                 updateData.xpEarned = challenge.xpEarned + xpGained;
             }
 

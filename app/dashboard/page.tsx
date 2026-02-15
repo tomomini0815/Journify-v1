@@ -476,34 +476,39 @@ export default async function DashboardPage() {
             </div>
 
 
-            {/* LifeQuest Adventure Link */}
+            {/* Pet Adventure Link */}
             {(settings?.enableAdventure ?? true) && (
                 <div className="mb-8">
                     <Link
                         href="/adventure"
-                        className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 border border-white/10 p-1 transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-cyan-500/10"
+                        className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 border border-white/10 p-1 transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-emerald-500/10"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                        <div className="relative flex items-center justify-between p-6">
+                        <div className="relative flex flex-col md:flex-row md:items-center justify-between p-6 gap-4">
                             <div className="flex items-center gap-4">
-                                <div className="relative w-16 h-16 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden">
-                                    <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">🚀</span>
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 to-transparent" />
+                                <div className="relative w-16 h-16 shrink-0 rounded-2xl bg-black/60 border border-white/20 flex items-center justify-center overflow-hidden group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-white/5">
+                                    <span className="text-5xl filter brightness-0 invert drop-shadow-[0_0_8px_rgba(255,255,255,1)] drop-shadow-[2px_2px_1px_rgba(0,0,0,0.9)] animate-glow-pulse">🐾</span>
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-                                        ADVENTURE MODE
-                                        <span className="text-xs font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">BETA</span>
+                                        PET ADVENTURE
+                                        <span className="text-xs font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">NEW</span>
                                     </h3>
                                     <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
-                                        ゲーム化された世界でタスクをこなし、アバターを育てよう（現在ベータ版として開発中）
+                                        クリスタルを集めて、かわいいペットを育てよう！お世話や冒険で絆が深まります。
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:border-cyan-500/50 group-hover:text-cyan-300 transition-all">
+                            <div className="hidden md:flex w-10 h-10 rounded-full bg-white/5 border border-white/10 items-center justify-center group-hover:bg-emerald-500/20 group-hover:border-emerald-500/50 group-hover:text-emerald-300 transition-all">
                                 →
+                            </div>
+
+                            {/* Mobile arrow */}
+                            <div className="md:hidden flex items-center justify-end text-emerald-400 font-bold text-sm">
+                                ペットハウスに行く →
                             </div>
                         </div>
                     </Link>

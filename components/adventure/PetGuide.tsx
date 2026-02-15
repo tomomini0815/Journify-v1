@@ -50,7 +50,7 @@ export function PetGuide({ isOpen, onClose }: PetGuideProps) {
                                 </p>
                                 <ul className="list-disc list-inside text-sm text-slate-400 space-y-1 ml-2">
                                     <li>ダッシュボードの「召喚」ボタンからガチャ画面へ</li>
-                                    <li>既に持っているペットが出た場合は、経験値(EXP)がもらえます</li>
+                                    <li>既に持っているペットが出た場合は、クリスタルがもらえます</li>
                                     <li>レアリティが高いペットほどステータスが高いかも？</li>
                                 </ul>
                             </div>
@@ -78,7 +78,7 @@ export function PetGuide({ isOpen, onClose }: PetGuideProps) {
                                         <span className="text-2xl">🎾</span> あそぶ
                                     </h4>
                                     <p className="text-sm text-slate-300">
-                                        遊ぶと <span className="text-blue-400">経験値(EXP)</span> が貯まりますが、エネルギーを消費します。
+                                        遊ぶと <span className="text-blue-400">クリスタル</span> が貯まりますが、エネルギーを消費します。
                                         なでなですると、少しだけ幸せになります。
                                     </p>
                                 </div>

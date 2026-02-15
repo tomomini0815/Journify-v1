@@ -2,21 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Circle, Zap, Trophy, TrendingUp } from "lucide-react";
+import { CheckCircle2, Circle, Zap, Trophy, TrendingUp, Gem } from "lucide-react";
 
 interface Challenge {
     id: string;
     journalCreated: boolean;
     tasksCompleted: number;
     meetingCreated: boolean;
-    xpEarned: number;
+    crystalsEarned: number;
     completed: boolean;
     badgeEarned: string | null;
 }
 
 interface UserStats {
     level: number;
-    totalXP: number;
+    totalCrystals: number;
     currentStreak: number;
 }
 
@@ -24,7 +24,7 @@ export default function DailyChallenges() {
     const [challenge, setChallenge] = useState<Challenge | null>(null);
     const [userStats, setUserStats] = useState<UserStats | null>(null);
     const [loading, setLoading] = useState(true);
-    const [showXPGain, setShowXPGain] = useState<number | null>(null);
+    const [showCrystalGain, setShowCrystalGain] = useState<number | null>(null);
 
     useEffect(() => {
         fetchChallenge();
@@ -49,36 +49,31 @@ export default function DailyChallenges() {
         {
             id: "journal",
             title: "ジャーナルを書く",
-            xp: 10,
+            crystals: 20,
             completed: challenge?.journalCreated || false,
             icon: "📝"
         },
         {
             id: "tasks",
-            title: "タスクを3つ完了",
-            xp: 15,
-            completed: (challenge?.tasksCompleted || 0) >= 3,
+            title: "タスクを2つ完了",
+            crystals: 50,
+            completed: (challenge?.tasksCompleted || 0) >= 2,
             progress: challenge?.tasksCompleted || 0,
-            total: 3,
+            total: 2,
             icon: "✅"
         },
         {
             id: "meeting",
             title: "議事録を1件作成",
-            xp: 20,
+            crystals: 30,
             completed: challenge?.meetingCreated || false,
             icon: "🎤"
         }
     ];
 
-    const totalPossibleXP = 45;
-    const earnedXP = challenge?.xpEarned || 0;
-    const progress = (earnedXP / totalPossibleXP) * 100;
-
-    // XP to next level
-    const xpForNextLevel = (userStats?.level || 1) * 100;
-    const xpProgress = ((userStats?.totalXP || 0) % 100);
-    const levelProgress = (xpProgress / 100) * 100;
+    const totalPossibleCrystals = 100; // 20 + 50 + 30
+    const earnedCrystals = challenge?.crystalsEarned || 0;
+    const progress = (earnedCrystals / totalPossibleCrystals) * 100;
 
     if (loading) {
         return (
@@ -106,38 +101,12 @@ export default function DailyChallenges() {
                         <Zap className="w-5 h-5 text-emerald-400" />
                         <h3 className="text-xl font-bold text-white">今日のチャレンジ</h3>
                     </div>
-                    {challenge?.completed && (
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="flex items-center gap-1 bg-emerald-500/20 px-3 py-1 rounded-full"
-                        >
-                            <Trophy className="w-4 h-4 text-emerald-400" />
-                            <span className="text-emerald-400 text-sm font-medium">完了！</span>
-                        </motion.div>
-                    )}
                 </div>
+                <p className="text-white/40 text-xs mt-1 mb-4 flex items-center gap-1.5">
+                    <span className="flex items-center justify-center w-5 h-5 bg-cyan-500/20 rounded text-[10px]">💡</span>
+                    クリスタルがたまるとペット飼育ができるようになります
+                </p>
 
-                {/* Level and XP */}
-                <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-blue-400" />
-                        <span className="text-white/60">レベル</span>
-                        <span className="text-white font-bold">{userStats?.level || 1}</span>
-                    </div>
-                    <div className="flex-1">
-                        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${levelProgress}%` }}
-                                className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
-                            />
-                        </div>
-                        <p className="text-white/40 text-xs mt-1">
-                            {xpProgress}/100 XP
-                        </p>
-                    </div>
-                </div>
             </div>
 
             {/* Challenges List */}
@@ -175,9 +144,9 @@ export default function DailyChallenges() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
-                                <Zap className="w-4 h-4 text-yellow-400" />
+                                <Zap className="w-4 h-4 text-cyan-400" />
                                 <span className={`font-bold ${item.completed ? "text-emerald-400" : "text-white/60"}`}>
-                                    +{item.xp}
+                                    +{item.crystals}
                                 </span>
                             </div>
                         </div>
@@ -189,7 +158,10 @@ export default function DailyChallenges() {
             <div className="relative z-10">
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-white/60 text-sm">進捗</span>
-                    <span className="text-white font-bold text-sm">{earnedXP}/{totalPossibleXP} XP</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-white font-bold text-sm">{earnedCrystals}/{totalPossibleCrystals}</span>
+                        <Gem className="w-4 h-4 text-cyan-400" />
+                    </div>
                 </div>
                 <div className="h-3 bg-white/10 rounded-full overflow-hidden">
                     <motion.div
@@ -199,27 +171,27 @@ export default function DailyChallenges() {
                     />
                 </div>
                 {challenge?.completed && (
-                    <p className="text-emerald-400 text-sm mt-2 font-medium">
-                        🏆 報酬: 限定バッジ "デイリーヒーロー" +25 XP ボーナス
+                    <p className="text-emerald-400 text-sm mt-2 font-medium flex items-center gap-1.5">
+                        🏆 報酬: 限定バッジ "デイリーヒーロー" +25 <Gem className="w-4 h-4 text-cyan-400" /> ボーナス
                     </p>
                 )}
             </div>
 
-            {/* XP Gain Animation */}
+            {/* Crystal Gain Animation */}
             <AnimatePresence>
-                {showXPGain && (
+                {showCrystalGain && (
                     <motion.div
                         initial={{ opacity: 0, y: 0, scale: 1 }}
                         animate={{ opacity: 1, y: -50, scale: 1.2 }}
                         exit={{ opacity: 0 }}
                         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
                     >
-                        <div className="text-3xl font-bold text-yellow-400">
-                            +{showXPGain} XP
+                        <div className="flex items-center gap-2 text-3xl font-bold text-cyan-400">
+                            +{showCrystalGain} <Gem className="w-8 h-8" />
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

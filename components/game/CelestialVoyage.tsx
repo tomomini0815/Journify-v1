@@ -302,7 +302,7 @@ export function CelestialVoyage() {
                                     <div className="flex justify-center gap-4 mb-8">
                                         <div className="bg-black/40 p-4 rounded-xl border border-white/10 min-w-[100px]">
                                             <div className="text-2xl">✨</div>
-                                            <div className="text-sm text-slate-300 font-mono mt-2">+{currentPlanet.rewards.xp} XP</div>
+                                            <div className="text-sm text-slate-300 font-mono mt-2">+{currentPlanet.rewards.xp} クリスタル</div>
                                         </div>
                                         <div className="bg-black/40 p-4 rounded-xl border border-white/10 min-w-[100px]">
                                             <div className="text-2xl">{currentPlanet.rewards.icon}</div>

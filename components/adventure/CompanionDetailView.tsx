@@ -206,7 +206,7 @@ export function CompanionDetailView({ companionId, onBack }: CompanionDetailView
                     {/* EXP Bar */}
                     <div className="mb-6">
                         <div className="flex justify-between text-sm text-white/60 mb-2">
-                            <span>EXP</span>
+                            <span>クリスタル</span>
                             <span>{companion.experience} / {expNeeded}</span>
                         </div>
                         <div className="h-3 bg-white/10 rounded-full overflow-hidden">
@@ -325,7 +325,7 @@ export function CompanionDetailView({ companionId, onBack }: CompanionDetailView
                         >
                             <div className="text-center">
                                 <span className="font-bold block mb-1">ボールで遊ぶ</span>
-                                <span className="text-xs text-white/60 text-center">+15 EXP -10 ⚡</span>
+                                <span className="text-xs text-white/60 text-center">+15 クリスタル -10 ⚡</span>
                             </div>
                         </button>
                     </div>

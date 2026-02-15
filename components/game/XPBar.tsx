@@ -68,7 +68,7 @@ export function XPBar({
                         レベル {level}
                     </span>
                     <span className="text-white/60">
-                        {displayXP.toLocaleString()} / {xpForNextLevel.toLocaleString()} XP
+                        {displayXP.toLocaleString()} / {xpForNextLevel.toLocaleString()} クリスタル
                     </span>
                 </div>
             )}

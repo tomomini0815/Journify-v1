@@ -58,7 +58,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const speechRecognitionRef = useRef<any>(null)
     const isRecordingRef = useRef(false)
     const lastFinalResultRef = useRef<string>('')
-    const recentFinalTextsRef = useRef<string[]>([])
+    const lastProcessedIndexRef = useRef<number>(-1)
     const [isAndroid, setIsAndroid] = useState(false)
 
     // Sync isRecordingRef
@@ -81,7 +81,12 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
         }
     }, [])
 
-    const startRecording = async () => {
+    const addLog = (msg: string) => {
+        console.log(`[MeetingRecorder] ${msg}`)
+    }
+
+    const startRecording = async (options?: { isResuming?: boolean }) => {
+        const isResuming = options?.isResuming || false
         // Security check
         if (typeof window !== 'undefined' && !window.isSecureContext) {
             alert('マイクはHTTPS接続またはlocalhostでのみ使用可能です。')
@@ -93,82 +98,16 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             return
         }
 
-        lastFinalResultRef.current = ''
-        recentFinalTextsRef.current = []
+        if (!isResuming) {
+            lastFinalResultRef.current = ''
+        }
+        // Always reset index for the new SpeechRecognition instance
+        lastProcessedIndexRef.current = -1
 
         try {
-            // ===================================================================
-            // ANDROID CHROME: Web Speech API has EXCLUSIVE mic access.
-            // Strategy: Start speech recognition FIRST, NO MediaRecorder.
-            // ===================================================================
-            if (isAndroid) {
-                const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-                if (!SpeechRecognitionClass) {
-                    alert('お使いのブラウザは音声認識をサポートしていません。')
-                    return
-                }
-
-                const recognition = new SpeechRecognitionClass()
-                recognition.lang = 'ja-JP'
-                recognition.continuous = true
-                recognition.interimResults = true
-                recognition.maxAlternatives = 1
-
-                recognition.onresult = (event: any) => {
-                    let interim = ''
-                    let finalText = ''
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        const result = event.results[i]
-                        if (result.isFinal) {
-                            const text = result[0].transcript.trim()
-                            if (text && !isHallucination(text) && !recentFinalTextsRef.current.includes(text)) {
-                                finalText += text
-                                recentFinalTextsRef.current.push(text)
-                                if (recentFinalTextsRef.current.length > 5) recentFinalTextsRef.current.shift()
-                            }
-                        } else {
-                            interim += result[0].transcript
-                        }
-                    }
-                    if (finalText) setTranscript(prev => prev + finalText + ' ')
-                    setInterimTranscript(interim)
-                }
-
-                recognition.onerror = (event: any) => {
-                    console.warn('SpeechRecognition error:', event.error)
-                    if (event.error === 'not-allowed') {
-                        alert('マイクへのアクセスが拒否されました。')
-                    }
-                }
-
-                recognition.onend = () => {
-                    // Re-enable auto-restart to ensure continuity, even with piron sounds
-                    if (isRecordingRef.current) {
-                        try { recognition.start() } catch (e) { }
-                    }
-                }
-
-                speechRecognitionRef.current = recognition
-                recognition.start()
-
-                setIsRecording(true)
-                setRecordingTime(0)
-                if (!audioBlob) {
-                    setTranscript('')
-                }
-                setInterimTranscript('')
-
-                timerRef.current = window.setInterval(() => {
-                    setRecordingTime(prev => prev + 1)
-                }, 1000)
-
-                return
-            }
-
-            // ===================================================================
-            // iOS / DESKTOP: getUserMedia + Web Speech API can coexist.
-            // ===================================================================
+            addLog("🏁 Starting recording...")
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            addLog("✅ Microhpone stream granted")
 
             let mimeType = "audio/webm"
             if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
@@ -177,27 +116,41 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 mimeType = "audio/mp4"
             }
 
-            const mediaRecorder = new MediaRecorder(stream, { mimeType })
-            mediaRecorderRef.current = mediaRecorder
-            chunksRef.current = []
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    chunksRef.current.push(e.data)
-                }
+            const options = { mimeType }
+            try {
+                const mediaRecorder = new MediaRecorder(stream, options)
+                mediaRecorderRef.current = mediaRecorder
+            } catch (e) {
+                addLog(`⚠️ MediaRecorder init failed: ${e}`)
+                mediaRecorderRef.current = new MediaRecorder(stream)
             }
 
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: mimeType })
-                setAudioBlob(blob)
-                stream.getTracks().forEach(track => track.stop())
-                if (speechRecognitionRef.current) {
-                    try { speechRecognitionRef.current.stop() } catch (e) { }
+            if (!isResuming) {
+                chunksRef.current = []
+            }
+            if (mediaRecorderRef.current) {
+                mediaRecorderRef.current.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        chunksRef.current.push(e.data)
+                    }
                 }
+
+                mediaRecorderRef.current.onstop = () => {
+                    const finalMime = mediaRecorderRef.current?.mimeType || mimeType
+                    const blob = new Blob(chunksRef.current, { type: finalMime })
+                    setAudioBlob(blob)
+                    stream.getTracks().forEach(track => track.stop())
+
+                    if (speechRecognitionRef.current) {
+                        try { speechRecognitionRef.current.stop() } catch (e) { }
+                    }
+                }
+
+                mediaRecorderRef.current.start(15000)
+                addLog("🎙️ MediaRecorder started")
             }
 
-            mediaRecorder.start(15000)
-
+            // --- Speech Recognition ---
             const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
             if (SpeechRecognitionClass) {
                 try {
@@ -213,40 +166,37 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                         for (let i = event.resultIndex; i < event.results.length; i++) {
                             const result = event.results[i]
                             if (result.isFinal) {
-                                const text = result[0].transcript.trim()
-                                if (text && !isHallucination(text) && !recentFinalTextsRef.current.includes(text)) {
-                                    finalText += text
-                                    recentFinalTextsRef.current.push(text)
-                                    if (recentFinalTextsRef.current.length > 5) recentFinalTextsRef.current.shift()
+                                if (i > lastProcessedIndexRef.current) {
+                                    const text = result[0].transcript.trim()
+                                    if (text && !isHallucination(text)) {
+                                        finalText += text + ' '
+                                    }
+                                    lastProcessedIndexRef.current = i
                                 }
                             } else {
                                 interim += result[0].transcript
                             }
                         }
-                        if (finalText) setTranscript(prev => prev + finalText + ' ')
+                        if (finalText) setTranscript(prev => prev + finalText)
                         setInterimTranscript(interim)
                     }
 
                     recognition.onerror = (event: any) => {
-                        console.warn('SpeechRecognition error:', event.error)
+                        addLog(`❌ SpeechRecognition error: ${event.error}`)
                         if (event.error === 'network') {
                             setInterimTranscript('(ネットワークエラー)')
-                            setTimeout(() => {
-                                if (mediaRecorderRef.current?.state === 'recording') {
-                                    try { recognition.start(); setInterimTranscript('') } catch (e) { }
-                                }
-                            }, 2000)
                         }
                     }
 
                     recognition.onend = () => {
-                        if (isRecordingRef.current && mediaRecorderRef.current?.state === 'recording') {
-                            try { recognition.start() } catch (e) { }
-                        }
+                        addLog("🔚 web speech ended (No auto-restart)")
+                        // No restart to avoid repeated "piron" sounds on Android.
+                        // Recording continues via MediaRecorder even if this stops.
                     }
 
                     speechRecognitionRef.current = recognition
                     recognition.start()
+                    addLog("🌐 Web Speech API started")
                 } catch (error) {
                     console.error('Failed to init SpeechRecognition:', error)
                     setInterimTranscript('(リアルタイム文字起こしは利用できません)')
@@ -254,8 +204,8 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             }
 
             setIsRecording(true)
-            setRecordingTime(0)
-            if (!audioBlob) {
+            if (!isResuming) {
+                setRecordingTime(0)
                 setTranscript("")
             }
             setInterimTranscript("")
@@ -266,35 +216,37 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
         } catch (error: any) {
             console.error("Failed to start recording:", error)
-            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                alert('マイクへのアクセスが拒否されました。ブラウザの設定からマイクを許可してください。')
-            } else if (error.name === 'NotFoundError') {
-                alert('マイクが見つかりませんでした。')
-            } else {
-                alert(`録音を開始できませんでした: ${error.message}`)
-            }
+            const errorMessage = (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')
+                ? 'マイクへのアクセスが拒否されました。ブラウザの設定からマイクを許可してください。'
+                : (error.name === 'NotFoundError')
+                    ? 'マイクが見つかりませんでした。'
+                    : `録音を開始できませんでした: ${error.message}`
+            alert(errorMessage)
         }
     }
 
     const stopRecording = () => {
         isRecordingRef.current = false
 
-        if (mediaRecorderRef.current && isRecording) {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.stop()
-            setIsRecording(false)
-            if (timerRef.current) clearInterval(timerRef.current as any)
-        } else if (isRecording) {
-            // Android Chrome (no MediaRecorder)
-            // Move interim text to transcript before stopping
-            if (interimTranscript) {
-                setTranscript(prev => prev + interimTranscript + ' ')
-                setInterimTranscript('')
-            }
-            setIsRecording(false)
-            if (timerRef.current) clearInterval(timerRef.current as any)
-            if (speechRecognitionRef.current) {
-                try { speechRecognitionRef.current.stop() } catch (e) { }
-            }
+        }
+
+        // Always stop SpeechRecognition
+        if (speechRecognitionRef.current) {
+            try { speechRecognitionRef.current.stop() } catch (e) { }
+        }
+
+        // Merge interim text if any (for Android or when Speech stops early)
+        if (interimTranscript) {
+            setTranscript(prev => prev + interimTranscript + ' ')
+            setInterimTranscript('')
+        }
+
+        setIsRecording(false)
+        if (timerRef.current) {
+            clearInterval(timerRef.current as any)
+            timerRef.current = null
         }
     }
 
@@ -306,9 +258,8 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }
 
     const resumeRecording = async () => {
-        // Keep existing transcript and audioBlob, restart recording to append
-        setAudioBlob(null)
-        await startRecording()
+        // DO NOT setAudioBlob(null) here, keep it for reference or just let it be replaced later
+        await startRecording({ isResuming: true })
     }
 
     const formatTime = (seconds: number) => {
@@ -448,6 +399,18 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                     </p>
                                 </div>
 
+                                {/* Resume Recording Button (Meeting Title Row) */}
+                                {!isRecording && audioBlob && (
+                                    <button
+                                        onClick={resumeRecording}
+                                        disabled={isProcessing}
+                                        className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-lg transition-all disabled:opacity-40 whitespace-nowrap"
+                                    >
+                                        <RotateCcw className="w-3 h-3" />
+                                        <span>再開</span>
+                                    </button>
+                                )}
+
                                 {/* Mic / Stop Button (top-right, only when not in recorded state) */}
                                 {(isRecording || (!audioBlob && !transcript)) && (
                                     <div className="relative shrink-0">
@@ -460,7 +423,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         )}
                                         <motion.button
                                             whileTap={{ scale: 0.9 }}
-                                            onClick={isRecording ? stopRecording : startRecording}
+                                            onClick={() => isRecording ? stopRecording() : startRecording()}
                                             disabled={isProcessing}
                                             className={`relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${isRecording
                                                 ? "bg-red-500 shadow-red-500/40"
@@ -596,17 +559,6 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                             )}
                                         </div>
 
-                                        {/* Resume Recording Button */}
-                                        {!isRecording && (audioBlob || hasTranscript) && (
-                                            <button
-                                                onClick={resumeRecording}
-                                                disabled={isProcessing}
-                                                className="flex items-center gap-2 mt-2 px-3 py-2 text-xs font-medium text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all disabled:opacity-40"
-                                            >
-                                                <RotateCcw className="w-3 h-3" />
-                                                <span>録音を再開して追加</span>
-                                            </button>
-                                        )}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -654,6 +606,6 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     )
 }

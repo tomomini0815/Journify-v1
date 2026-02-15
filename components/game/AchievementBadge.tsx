@@ -138,7 +138,7 @@ export function AchievementBadge({
                             <div className="text-xs text-white/60">報酬:</div>
                             <div className="flex gap-2 mt-1 text-xs">
                                 {achievement.xpReward > 0 && (
-                                    <span className="text-cyan-400">+{achievement.xpReward} XP</span>
+                                    <span className="text-cyan-400">+{achievement.xpReward} クリスタル</span>
                                 )}
                                 {achievement.statRewards && Object.entries(achievement.statRewards).map(([stat, value]) => (
                                     <span key={stat} className="text-purple-400">

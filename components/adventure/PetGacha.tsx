@@ -171,7 +171,7 @@ export function PetGacha({ isOpen, onClose, crystals, onSummonComplete }: PetGac
                                 {result.type === 'DUPLICATE' ? (
                                     <div className="mb-6 p-3 bg-amber-500/20 border border-amber-500/50 rounded-xl">
                                         <p className="text-amber-200 text-sm font-bold">既に仲間です！</p>
-                                        <p className="text-white text-xs">経験値 +500 EXP を獲得しました✨</p>
+                                        <p className="text-white text-xs">クリスタル +500 を獲得しました✨</p>
                                     </div>
                                 ) : (
                                     <p className="text-indigo-200 italic mb-8 max-w-xs mx-auto">

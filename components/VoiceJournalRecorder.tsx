@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Loader2, CheckCircle2 } from "lucide-react";
+import { Mic, Square, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGeminiLive } from "@/hooks/useGeminiLive";
 import { Capacitor } from "@capacitor/core";
@@ -97,7 +97,7 @@ export default function VoiceJournalRecorder({
     const timerRef = useRef<NodeJS.Timeout | number | null>(null);
     const speechRecognitionRef = useRef<any>(null);
     const isRecordingRef = useRef(false);
-    const recentFinalTextsRef = useRef<string[]>([]);
+    const lastProcessedIndexRef = useRef<number>(-1);
     const [isBraveBrowser, setIsBraveBrowser] = useState(false);
 
     const [isAndroid, setIsAndroid] = useState(false);
@@ -242,7 +242,8 @@ export default function VoiceJournalRecorder({
         };
     }, []);
 
-    const startRecording = async () => {
+    const startRecording = async (options?: { isResuming?: boolean }) => {
+        const isResuming = options?.isResuming || false;
         // Check for Secure Context (HTTPS or localhost)
         if (typeof window !== 'undefined' && !window.isSecureContext) {
             alert('セキュリティ上の理由により、マイクの使用はHTTPS接続またはlocalhostでのみ許可されています。')
@@ -259,7 +260,6 @@ export default function VoiceJournalRecorder({
         // This follows the successful pattern in Ainance.
         try {
             addLog("🏁 startRecording requested");
-            recentFinalTextsRef.current = [];
 
             // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
             if (audioContextRef.current) {
@@ -278,79 +278,12 @@ export default function VoiceJournalRecorder({
             // ===================================================================
             // ANDROID CHROME: Web Speech API has EXCLUSIVE mic access.
             // We CANNOT run getUserMedia + webkitSpeechRecognition at the same time.
-            // Strategy: Start speech recognition FIRST, record audio AFTER stop.
+            // Strategy: Attempt to run both Speech Recognition and MediaRecorder.
             // ===================================================================
             if (isAndroid && !isNative) {
-                addLog("📱 Android Chrome mode: Speech-first strategy");
-
-                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                if (!SpeechRecognitionWeb) {
-                    addLog("❌ Web Speech API not available");
-                    setInterimTranscript("(音声認識が利用できません)");
-                    return;
-                }
-
-                const recognition = new SpeechRecognitionWeb();
-                recognition.lang = 'ja-JP';
-                recognition.continuous = true;
-                recognition.interimResults = true;
-
-                recognition.onstart = () => addLog("🚀 web speech active (exclusive mic)");
-
-                recognition.onresult = (event: any) => {
-                    let interim = '';
-                    let finalText = '';
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        if (event.results[i].isFinal) {
-                            const text = event.results[i][0].transcript.trim();
-                            if (text && !recentFinalTextsRef.current.includes(text)) {
-                                finalText += text;
-                                recentFinalTextsRef.current.push(text);
-                                if (recentFinalTextsRef.current.length > 5) recentFinalTextsRef.current.shift();
-                            }
-                        } else {
-                            interim += event.results[i][0].transcript;
-                        }
-                    }
-                    if (finalText) setTranscript(prev => prev + finalText + ' ');
-                    setInterimTranscript(interim);
-                };
-
-                recognition.onerror = (event: any) => {
-                    addLog(`❌ speech error: ${event.error}`);
-                    // "not-allowed" means mic permission denied
-                    // "aborted" means user or system stopped it
-                    if (event.error === 'not-allowed') {
-                        setInterimTranscript("(マイクの許可が必要です)");
-                    }
-                };
-
-                recognition.onend = () => {
-                    addLog("🔚 speech recognition ended");
-                    // Re-enable auto-restart to ensure continuity, even with piron sounds
-                    if (isRecordingRef.current) {
-                        addLog("🔄 attempting silent-ish restart...");
-                        try {
-                            recognition.start();
-                        } catch (e) {
-                            addLog(`⚠️ restart failed: ${e}`);
-                        }
-                    }
-                };
-
-                speechRecognitionRef.current = recognition;
-                recognition.start();
-
-                // Set recording state (no actual MediaRecorder on Android)
-                setIsRecording(true);
-                setRecordingTime(0);
-                const startTime = Date.now();
-                timerRef.current = window.setInterval(() => {
-                    setRecordingTime(Math.floor((Date.now() - startTime) / 1000));
-                }, 1000);
-
-                addLog("✅ Android recording started (speech-only mode)");
-                return;
+                addLog("📱 Android Chrome mode: Attempting Speech + MediaRecorder (Hybrid)");
+                // In some Android versions, both can coexist. If they conflict, 
+                // Speech will fire an error, but MediaRecorder should keep the audio.
             }
 
             // ===================================================================
@@ -385,14 +318,21 @@ export default function VoiceJournalRecorder({
                 const mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorderRef.current = mediaRecorder;
             } catch (e) {
-                mediaRecorderRef.current = new MediaRecorder(stream);
+                addLog(`⚠️ MediaRecorder init failed: ${e}`);
+                if (!isAndroid) {
+                    mediaRecorderRef.current = new MediaRecorder(stream);
+                } else {
+                    addLog("📱 Android: Proceeding with Speech-only if MediaRecorder failed");
+                }
             }
 
             if (!mediaRecorderRef.current) {
                 throw new Error("MediaRecorder failed to initialize");
             }
 
-            chunksRef.current = [];
+            if (!isResuming) {
+                chunksRef.current = [];
+            }
 
             mediaRecorderRef.current.ondataavailable = (e) => {
                 if (e.data.size > 0) {
@@ -434,17 +374,18 @@ export default function VoiceJournalRecorder({
                         let finalText = '';
                         for (let i = event.resultIndex; i < event.results.length; i++) {
                             if (event.results[i].isFinal) {
-                                const text = event.results[i][0].transcript.trim();
-                                if (text && !recentFinalTextsRef.current.includes(text)) {
-                                    finalText += text;
-                                    recentFinalTextsRef.current.push(text);
-                                    if (recentFinalTextsRef.current.length > 5) recentFinalTextsRef.current.shift();
+                                if (i > lastProcessedIndexRef.current) {
+                                    const text = event.results[i][0].transcript.trim();
+                                    if (text) {
+                                        finalText += text + ' ';
+                                    }
+                                    lastProcessedIndexRef.current = i;
                                 }
                             } else {
                                 interim += event.results[i][0].transcript;
                             }
                         }
-                        if (finalText) setTranscript(prev => prev + finalText + ' ');
+                        if (finalText) setTranscript(prev => prev + finalText);
                         setInterimTranscript(interim);
                     };
 
@@ -453,9 +394,8 @@ export default function VoiceJournalRecorder({
                     };
 
                     recognition.onend = () => {
-                        if (isRecordingRef.current) {
-                            try { recognition.start(); } catch (e) { }
-                        }
+                        addLog("🔚 web speech ended (No auto-restart)");
+                        // No restart here to avoid repeated system sounds.
                     };
 
                     speechRecognitionRef.current = recognition;
@@ -466,8 +406,12 @@ export default function VoiceJournalRecorder({
             }
 
             setIsRecording(true);
-            setRecordingTime(0);
-            setTranscript("");
+            if (!isResuming) {
+                setRecordingTime(0);
+                setTranscript("");
+            }
+            // Reset index for the new SpeechRecognition instance (even if resuming)
+            lastProcessedIndexRef.current = -1;
             setInterimTranscript("");
 
             // Timer start
@@ -490,6 +434,10 @@ export default function VoiceJournalRecorder({
 
             alert(errorMessage);
         }
+    };
+
+    const resumeRecording = async () => {
+        await startRecording({ isResuming: true });
     };
 
     const stopRecording = async () => {
@@ -673,7 +621,7 @@ export default function VoiceJournalRecorder({
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={startRecording}
+                                onClick={() => startRecording()}
                                 className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                             >
                                 <Mic className="w-6 h-6" />
@@ -683,12 +631,6 @@ export default function VoiceJournalRecorder({
                 ) : (
                     // Recording or Post-Recording State
                     <div className="space-y-6">
-                        {/* Diagnostics Overlay (Android Only) */}
-                        {isAndroid && diagnostics.length > 0 && (
-                            <div className="bg-black/40 rounded-xl p-2 font-mono text-[9px] text-emerald-400/80 border border-emerald-500/20 mb-2">
-                                {diagnostics.map((log, i) => <div key={i}>{log}</div>)}
-                            </div>
-                        )}
                         {/* Header */}
                         <div className="flex items-center justify-between">
                             <div>
@@ -697,6 +639,19 @@ export default function VoiceJournalRecorder({
                                     {isRecording ? "録音中..." : "小さな記録が、見える景色を変えていく"}
                                 </p>
                             </div>
+
+                            {/* Resume Recording Button (Compact Title Bar) */}
+                            {!isRecording && audioBlob && (
+                                <button
+                                    onClick={resumeRecording}
+                                    disabled={isProcessing}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition-all disabled:opacity-40 whitespace-nowrap"
+                                >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>再開</span>
+                                </button>
+                            )}
+
                             {isRecording && (
                                 <div className="flex items-center gap-3">
                                     <div className="text-emerald-400 font-mono font-bold">
@@ -719,7 +674,7 @@ export default function VoiceJournalRecorder({
                                     <canvas ref={canvasRef} width={300} height={40} className="w-full h-full opacity-60" />
                                 </div>
                             )}
-                            <div className={isRecording ? "mt-12" : ""}>
+                            <div>
                                 {isRecording ? (
                                     <p className="text-white/80 leading-relaxed text-sm">
                                         {transcript}
@@ -865,8 +820,8 @@ export default function VoiceJournalRecorder({
                                     </div>
                                 </div>
 
-                                {/* Actions */}
-                                <div className="flex flex-wrap gap-4 pt-2">
+                                {/* Resume Recording Button */}
+                                <div className="flex justify-start">
                                     <button
                                         onClick={cancelRecording}
                                         className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-colors border border-white/10 whitespace-nowrap"
@@ -898,7 +853,20 @@ export default function VoiceJournalRecorder({
 
     return (
         <div className="rounded-2xl bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 p-8 backdrop-blur-xl">
-            <div className="text-center">
+            <div className="text-center relative">
+                {/* Resume Recording Button (Standard Title Bar) */}
+                {!isRecording && audioBlob && (
+                    <div className="absolute top-0 right-0">
+                        <button
+                            onClick={resumeRecording}
+                            disabled={isProcessing}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-full transition-all disabled:opacity-40 whitespace-nowrap"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                            <span>続きから録音</span>
+                        </button>
+                    </div>
+                )}
                 <h3 className="text-2xl font-bold text-white mb-2">音声ジャーナル</h3>
                 <p className="text-white/60 mb-8">ワンタップで思いを記録</p>
 
@@ -919,7 +887,7 @@ export default function VoiceJournalRecorder({
                     )}
 
                     <motion.button
-                        onClick={isRecording ? stopRecording : startRecording}
+                        onClick={() => isRecording ? stopRecording() : startRecording()}
                         disabled={isProcessing}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -1044,6 +1012,6 @@ export default function VoiceJournalRecorder({
                     </p>
                 )}
             </div>
-        </div>
+        </div >
     );
 }
