@@ -94,8 +94,9 @@ export default function VoiceJournalRecorder({
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<NodeJS.Timeout | number | null>(null);
     const speechRecognitionRef = useRef<any>(null);
+    const isRecordingRef = useRef(false);
     const [isBraveBrowser, setIsBraveBrowser] = useState(false);
 
     const [isAndroid, setIsAndroid] = useState(false);
@@ -226,6 +227,10 @@ export default function VoiceJournalRecorder({
         analyserRef.current = null;
     };
 
+    useEffect(() => {
+        isRecordingRef.current = isRecording;
+    }, [isRecording]);
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
@@ -313,7 +318,7 @@ export default function VoiceJournalRecorder({
                 recognition.onend = () => {
                     addLog("🔚 speech recognition ended");
                     // Auto-restart if still recording
-                    if (isRecording) {
+                    if (isRecordingRef.current) {
                         try {
                             recognition.start();
                             addLog("🔄 speech restarted");
@@ -430,7 +435,7 @@ export default function VoiceJournalRecorder({
                     };
 
                     recognition.onend = () => {
-                        if (isRecording) {
+                        if (isRecordingRef.current) {
                             try { recognition.start(); } catch (e) { }
                         }
                     };
@@ -490,13 +495,26 @@ export default function VoiceJournalRecorder({
             } catch (e) { }
         }
 
+        // Trigger immediate ref update to prevent auto-restart race conditions in onend
+        isRecordingRef.current = false;
+
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
             stopVisualizer();
 
             if (timerRef.current) {
-                clearInterval(timerRef.current);
+                clearInterval(timerRef.current as any);
+            }
+        } else if (isRecording) {
+            // Android Chrome Case (No MediaRecorder)
+            setIsRecording(false);
+            stopVisualizer();
+            if (timerRef.current) {
+                clearInterval(timerRef.current as any);
+            }
+            if (speechRecognitionRef.current) {
+                try { speechRecognitionRef.current.stop(); } catch (e) { }
             }
         }
     };
