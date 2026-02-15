@@ -142,14 +142,9 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 }
 
                 recognition.onend = () => {
-                    // Auto-restart with delay to avoid rapid system notification sounds
-                    if (isRecordingRef.current) {
-                        setTimeout(() => {
-                            if (isRecordingRef.current) {
-                                try { recognition.start() } catch (e) { }
-                            }
-                        }, 1000)
-                    }
+                    // Do NOT auto-restart — it triggers Android system notification sound each time.
+                    // continuous:true handles most cases. If it does stop, the recording
+                    // state (timer) continues; the user just won't get more live transcription.
                 }
 
                 speechRecognitionRef.current = recognition
@@ -447,7 +442,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                 </div>
 
                                 {/* Mic / Stop Button (top-right, only when not in recorded state) */}
-                                {!audioBlob && !transcript && (
+                                {(isRecording || (!audioBlob && !transcript)) && (
                                     <div className="relative shrink-0">
                                         {isRecording && (
                                             <motion.div

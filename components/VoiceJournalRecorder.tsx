@@ -327,19 +327,8 @@ export default function VoiceJournalRecorder({
 
                 recognition.onend = () => {
                     addLog("🔚 speech recognition ended");
-                    // Auto-restart with delay to avoid rapid system notification sounds
-                    if (isRecordingRef.current) {
-                        setTimeout(() => {
-                            if (isRecordingRef.current) {
-                                try {
-                                    recognition.start();
-                                    addLog("🔄 speech restarted (delayed)");
-                                } catch (e) {
-                                    addLog(`⚠️ restart failed: ${e}`);
-                                }
-                            }
-                        }, 1000);
-                    }
+                    // Do NOT auto-restart — it triggers Android system notification sound.
+                    // continuous:true handles most cases. Recording state continues.
                 };
 
                 speechRecognitionRef.current = recognition;
