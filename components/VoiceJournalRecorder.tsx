@@ -101,6 +101,12 @@ export default function VoiceJournalRecorder({
     const [isAndroid, setIsAndroid] = useState(false);
     const [isGeminiLiveActive, setIsGeminiLiveActive] = useState(false);
 
+    // Visualizer state & refs
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+
     // Detect Brave browser and Android
     useEffect(() => {
         const checkBrowser = async () => {
@@ -149,12 +155,69 @@ export default function VoiceJournalRecorder({
         }
     });
 
-    // Cleanup SpeechRecognition on unmount
+    // --- Visualizer Drawing ---
+    const startVisualizer = (stream: MediaStream) => {
+        if (!canvasRef.current) return;
+
+        try {
+            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            const audioContext = new AudioContextClass();
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+
+            analyser.fftSize = 256;
+            source.connect(analyser);
+
+            audioContextRef.current = audioContext;
+            analyserRef.current = analyser;
+
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const draw = () => {
+                animationFrameRef.current = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i] / 2;
+                    ctx.fillStyle = `rgb(16, 185, 129, ${barHeight / 100})`; // Emerald color
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            };
+
+            draw();
+        } catch (e) {
+            console.error("Visualizer error:", e);
+        }
+    };
+
+    const stopVisualizer = () => {
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        if (audioContextRef.current) {
+            audioContextRef.current.close().catch(() => { });
+        }
+        audioContextRef.current = null;
+        analyserRef.current = null;
+    };
+
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             if (speechRecognitionRef.current) {
                 try { speechRecognitionRef.current.stop(); } catch (e) { }
             }
+            stopVisualizer();
         };
     }, []);
 
@@ -239,92 +302,88 @@ export default function VoiceJournalRecorder({
             // Start MediaRecorder
             mediaRecorderRef.current.start(1000); // 1s chunks
 
+            // Start Visualizer (Visual Proof of Input)
+            startVisualizer(stream);
+
             const isNative = Capacitor.isNativePlatform();
 
-            // === Real-time transcription (Native Plugin for Android, Web API for others) ===
-            if (isAndroid && isNative) {
-                // native speech recognition
-                try {
-                    const permissions = await SpeechRecognition.checkPermissions();
-                    if (permissions.speechRecognition !== 'granted') {
-                        await SpeechRecognition.requestPermissions();
-                    }
-
-                    await SpeechRecognition.start({
-                        language: "ja-JP",
-                        maxResults: 1,
-                        prompt: "お話しください",
-                        partialResults: true,
-                        popup: false,
-                    });
-
-                    SpeechRecognition.addListener("partialResults", (data: any) => {
-                        if (data.matches && data.matches.length > 0) {
-                            setInterimTranscript(data.matches[0]);
+            // === SURPASSING LIMITS: Multi-Stage Recovery System ===
+            const startTranscriptionChain = async () => {
+                // 1. Native Capacitor (Android/iOS Native)
+                if (isNative) {
+                    addLog("🎯 Attempting Native Speech Recognition...");
+                    try {
+                        const permissions = await SpeechRecognition.checkPermissions();
+                        if (permissions.speechRecognition !== 'granted') {
+                            await SpeechRecognition.requestPermissions();
                         }
-                    });
 
-                } catch (error) {
-                    addLog(`Native Speech Error: ${JSON.stringify(error)}`);
-                    setInterimTranscript('(ネイティブ認識エラー)');
+                        await SpeechRecognition.start({
+                            language: "ja-JP",
+                            maxResults: 1,
+                            prompt: "記録中...",
+                            partialResults: true,
+                            popup: false,
+                        });
+
+                        SpeechRecognition.addListener("partialResults", (data: any) => {
+                            if (data.matches && data.matches.length > 0) {
+                                setInterimTranscript(data.matches[0]);
+                            }
+                        });
+                        return; // Success
+                    } catch (e) {
+                        addLog(`⚠️ Native Failed: ${JSON.stringify(e)}`);
+                    }
                 }
-            } else {
-                // Web Speech API fallback
-                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
+                // 2. Web Speech API (Safari/Chrome)
+                addLog("🌐 Attempting Web Speech API...");
+                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
                 if (SpeechRecognitionWeb) {
                     try {
                         const recognition = new SpeechRecognitionWeb();
                         recognition.lang = 'ja-JP';
                         recognition.continuous = true;
                         recognition.interimResults = true;
-                        recognition.maxAlternatives = 1;
 
                         recognition.onresult = (event: any) => {
                             let interim = '';
                             let finalText = '';
-
                             for (let i = event.resultIndex; i < event.results.length; i++) {
-                                const result = event.results[i];
-                                if (result.isFinal) {
-                                    finalText += result[0].transcript;
-                                } else {
-                                    interim += result[0].transcript;
-                                }
+                                if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                                else interim += event.results[i][0].transcript;
                             }
-
-                            if (finalText) {
-                                setTranscript(prev => prev + finalText + ' ');
-                            }
+                            if (finalText) setTranscript(prev => prev + finalText + ' ');
                             setInterimTranscript(interim);
                         };
 
-                        recognition.onerror = (event: any) => {
-                            console.warn('SpeechRecognition error:', event.error);
-                            if (event.error === 'network') {
-                                setInterimTranscript('(接続不安定...)');
-                            }
-                        };
-
                         recognition.onend = () => {
-                            if (mediaRecorderRef.current?.state === 'recording' || isRecording) {
-                                try {
-                                    recognition.start();
-                                } catch (e) { }
+                            if (isRecording) {
+                                try { recognition.start(); } catch (e) { }
                             }
                         };
 
                         speechRecognitionRef.current = recognition;
                         recognition.start();
-
-                    } catch (error) {
-                        console.error('Failed to initialize SpeechRecognition:', error);
-                        setInterimTranscript('(音声認識の起動に失敗しました)');
+                        return; // Success
+                    } catch (e) {
+                        addLog(`⚠️ Web Speech Failed: ${e}`);
                     }
-                } else {
-                    setInterimTranscript('(このブラウザはリアルタイム文字起こし未対応です)');
                 }
-            }
+
+                // 3. Gemini Live (Ultimate Fallback via WebSocket)
+                addLog("🚀 Attempting Gemini Live Fallback...");
+                try {
+                    await startGeminiStreaming(stream);
+                    setIsGeminiLiveActive(true);
+                } catch (e) {
+                    addLog(`❌ Gemini Failed: ${e}`);
+                    setInterimTranscript("(音声認識が利用できません)");
+                }
+            };
+
+            await startTranscriptionChain();
 
             setIsRecording(true);
             setRecordingTime(0);
@@ -377,6 +436,7 @@ export default function VoiceJournalRecorder({
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
+            stopVisualizer();
 
             if (timerRef.current) {
                 clearInterval(timerRef.current);
@@ -497,68 +557,7 @@ export default function VoiceJournalRecorder({
         }
     };
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        // Reset previous state
-        setAudioBlob(null);
-        setTranscript("");
-        setInterimTranscript("");
-
-        setIsProcessing(true);
-
-        try {
-            // 1. Upload
-            const formData = new FormData();
-            formData.append("file", file);
-
-            const uploadRes = await fetch("/api/upload", {
-                method: "POST",
-                body: formData
-            });
-
-            if (!uploadRes.ok) {
-                let errorDetails = "Unknown error";
-                try {
-                    const errorData = await uploadRes.json();
-                    errorDetails = errorData.error || errorData.details || JSON.stringify(errorData);
-                } catch (e) {
-                    errorDetails = await uploadRes.text();
-                }
-                throw new Error(errorDetails);
-            }
-            const uploadData = await uploadRes.json();
-
-            // 2. Create Journal (Server-side transcription)
-            const createRes = await fetch("/api/voice-journal/create", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    audioPath: uploadData.filepath,
-                    transcript: "", // Let server handle it
-                    mood: localMood,
-                    tags: localTags
-                })
-            });
-
-            if (!createRes.ok) throw new Error("Analysis failed");
-            const result = await createRes.json();
-
-            if (onComplete) onComplete(result.id);
-            router.push("/journal?tab=voice");
-
-        } catch (error: any) {
-            console.error(error);
-            alert(`エラーが発生しました: ${error.message}`);
-        } finally {
-            setIsProcessing(false);
-            // Reset input
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        }
-    };
+    // Removed fileInputRef and handleFileUpload as per instructions.
 
     if (compact) {
         return (
@@ -575,21 +574,6 @@ export default function VoiceJournalRecorder({
                             <p className="text-white/40 text-sm">小さな記録が、見える景色を変えていく</p>
                         </div>
                         <div className="flex gap-2">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="audio/*"
-                                className="hidden"
-                                onChange={handleFileUpload}
-                            />
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isProcessing}
-                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:bg-white/20 transition-all"
-                                title="ファイルをアップロード"
-                            >
-                                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-xs">📂</span>}
-                            </button>
                             <button
                                 onClick={startRecording}
                                 className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
@@ -624,30 +608,37 @@ export default function VoiceJournalRecorder({
                             )}
                         </div>
 
-                        {/* Transcript Area */}
-                        <div className="bg-white/5 rounded-2xl p-4 min-h-[100px] max-h-[200px] overflow-y-auto border border-white/5 relative">
-                            {isRecording ? (
-                                <p className="text-white/80 leading-relaxed text-sm">
-                                    {transcript}
-                                    <span className="text-white/40">{interimTranscript}</span>
-                                    {!transcript && !interimTranscript && (
-                                        <span className="text-white/30 italic">録音中... (AIが文字起こし中)</span>
-                                    )}
-                                </p>
-                            ) : (
-                                <>
-                                    <textarea
-                                        value={transcript}
-                                        onChange={(e) => setTranscript(e.target.value)}
-                                        placeholder="音声がここに表示されます。録音後に編集できます。"
-                                        className="w-full bg-transparent text-white/80 leading-relaxed text-sm resize-none focus:outline-none placeholder:text-white/30 placeholder:italic min-h-[80px]"
-                                        rows={4}
-                                    />
-                                    {transcript && (
-                                        <span className="absolute bottom-2 right-3 text-[10px] text-white/20">✏️ 編集可能</span>
-                                    )}
-                                </>
+                        {/* Visualizer & Transcript Area */}
+                        <div className="bg-white/5 rounded-2xl p-4 min-h-[120px] max-h-[220px] overflow-y-auto border border-white/5 relative">
+                            {isRecording && (
+                                <div className="absolute top-0 left-0 w-full h-12 overflow-hidden px-4 pt-2">
+                                    <canvas ref={canvasRef} width={300} height={40} className="w-full h-full opacity-60" />
+                                </div>
                             )}
+                            <div className={isRecording ? "mt-12" : ""}>
+                                {isRecording ? (
+                                    <p className="text-white/80 leading-relaxed text-sm">
+                                        {transcript}
+                                        <span className="text-white/40">{interimTranscript}</span>
+                                        {!transcript && !interimTranscript && (
+                                            <span className="text-white/30 italic">声を待っています...</span>
+                                        )}
+                                    </p>
+                                ) : (
+                                    <>
+                                        <textarea
+                                            value={transcript}
+                                            onChange={(e) => setTranscript(e.target.value)}
+                                            placeholder="音声がここに表示されます。録音後に編集できます。"
+                                            className="w-full bg-transparent text-white/80 leading-relaxed text-sm resize-none focus:outline-none placeholder:text-white/30 placeholder:italic min-h-[100px]"
+                                            rows={4}
+                                        />
+                                        {transcript && (
+                                            <span className="absolute bottom-2 right-3 text-[10px] text-white/20">✏️ 編集可能</span>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
 
                         {/* Post-Recording Options */}
@@ -809,28 +800,6 @@ export default function VoiceJournalRecorder({
 
                 {/* Recording Button */}
                 <div className="relative inline-block mb-6">
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="audio/*"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                    />
-
-                    {/* Fallback Button for Android/Issues */}
-                    {!isRecording && !isProcessing && (
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute -right-16 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 p-2 transition-all flex flex-col items-center gap-1"
-                            title="ファイルを選択してアップロード"
-                        >
-                            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10">
-                                <span className="text-lg">📂</span>
-                            </div>
-                            <span className="text-[10px] whitespace-nowrap">アップロード</span>
-                        </button>
-                    )}
-
                     {isRecording && (
                         <motion.div
                             animate={{
@@ -850,15 +819,13 @@ export default function VoiceJournalRecorder({
                         disabled={isProcessing}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all ${isRecording
-                            ? "bg-red-500 hover:bg-red-600"
-                            : "bg-gradient-to-br from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600"
-                            } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+                        className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl transition-all relative z-10 ${isRecording
+                                ? "bg-red-500 shadow-red-500/40"
+                                : "bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-emerald-500/40"
+                            }`}
                     >
-                        {isProcessing ? (
-                            <Loader2 className="w-12 h-12 text-white animate-spin" />
-                        ) : isRecording ? (
-                            <Square className="w-12 h-12 text-white" />
+                        {isRecording ? (
+                            <Square className="w-12 h-12 text-white fill-current" />
                         ) : (
                             <Mic className="w-12 h-12 text-white" />
                         )}
