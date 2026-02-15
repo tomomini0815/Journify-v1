@@ -16,89 +16,89 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
     const workletNodeRef = useRef<AudioWorkletNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
-    const log = (msg: string) => {
+    const log = useCallback((msg: string) => {
         if (onLog) onLog(msg);
         console.log(`[GeminiLive] ${msg}`);
-    };
+    }, [onLog]);
 
     const connect = useCallback(() => {
-        if (websocketRef.current?.readyState === WebSocket.OPEN) return;
+        return new Promise<void>((resolve, reject) => {
+            if (websocketRef.current?.readyState === WebSocket.OPEN) {
+                resolve();
+                return;
+            }
 
-        log("Connecting to Gemini Live WebSocket...");
-        // Construct URL with API Key
-        const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+            log(`Connecting (Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'})...`);
+            const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 
-        const ws = new WebSocket(url);
+            const ws = new WebSocket(url);
 
-        ws.onopen = () => {
-            log("WebSocket Connected");
-            setIsConnected(true);
+            ws.onopen = () => {
+                log("WebSocket Opened. Sending setup...");
+                setIsConnected(true);
 
-            // Send initial setup message
-            const setupMsg = {
-                setup: {
-                    model: "models/gemini-2.0-flash-exp",
-                    generationConfig: {
-                        responseModalities: ["TEXT"]
+                const setupMsg = {
+                    setup: {
+                        model: "models/gemini-2.0-flash-exp"
                     }
-                }
+                };
+                ws.send(JSON.stringify(setupMsg));
+                resolve();
             };
-            ws.send(JSON.stringify(setupMsg));
-        };
 
-        ws.onmessage = async (event) => {
-            try {
-                let data;
-                if (event.data instanceof Blob) {
-                    data = JSON.parse(await event.data.text());
-                } else {
-                    data = JSON.parse(event.data);
-                }
+            ws.onmessage = async (event) => {
+                try {
+                    let data;
+                    if (event.data instanceof Blob) {
+                        data = JSON.parse(await event.data.text());
+                    } else {
+                        data = JSON.parse(event.data);
+                    }
 
-                if (data.serverContent?.modelTurn?.parts) {
-                    const parts = data.serverContent.modelTurn.parts;
-                    for (const part of parts) {
-                        if (part.text) {
-                            onTranscript(part.text);
+                    if (data.setupComplete) log("✅ Setup Complete");
+                    if (data.serverContent?.turnComplete) log("🏁 Turn Complete");
+                    if (data.serverContent?.interrupted) log("🚫 Interrupted");
+                    if (data.error) log(`❌ Server Error: ${JSON.stringify(data.error)}`);
+
+                    if (data.serverContent?.modelTurn?.parts) {
+                        const parts = data.serverContent.modelTurn.parts;
+                        for (const part of parts) {
+                            if (part.text) {
+                                onTranscript(part.text);
+                            }
                         }
                     }
+                } catch (e) {
+                    log("Error parsing message: " + e);
                 }
-            } catch (e) {
-                console.error("Error parsing WebSocket message:", e);
-                log("Error parsing WebSocket message: " + e);
-            }
-        };
+            };
 
-        ws.onerror = (error) => {
-            console.error("Gemini WebSocket Error:", error);
-            if (onError) onError(error);
-            log("WebSocket Error occurred.");
-            setIsConnected(false);
-        };
+            ws.onerror = (error) => {
+                log(`❌ WebSocket Error`);
+                if (onError) onError(error);
+                setIsConnected(false);
+                reject(error);
+            };
 
-        ws.onclose = () => {
-            log("WebSocket Closed");
-            setIsConnected(false);
-            setIsStreaming(false);
-        };
+            ws.onclose = (ev) => {
+                log(`🔌 WebSocket Closed: code=${ev.code}, reason=${ev.reason || 'no reason'}`);
+                setIsConnected(false);
+                setIsStreaming(false);
+            };
 
-        websocketRef.current = ws;
-    }, [apiKey, onTranscript, onLog, onError]);
+            websocketRef.current = ws;
+        });
+    }, [apiKey, onTranscript, log, onError]);
 
     const startStreaming = useCallback(async (existingStream?: MediaStream) => {
-        if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) {
-            connect();
-        }
-
         try {
+            await connect();
+            log("Connection confirmed. Starting media...");
+
             let stream = existingStream;
             if (!stream) {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        channelCount: 1,
-                        // We do NOT force 16k here, let browser decide native rate (e.g. 48k)
-                        // echoCancellation: true // Optional, good for mobile
-                    }
+                    audio: { channelCount: 1 }
                 });
             }
 
@@ -164,8 +164,6 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                         resampledData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                     }
 
-                    // Reset accumulator (simplification: we drop sub-sample remainder to avoid drift blocking)
-                    // Ideally we keep the remainder, but for live transcription this is usually fine.
                     bufferAccumulator = new Float32Array(0);
 
                     const base64Audio = arrayBufferToBase64(resampledData.buffer);
@@ -192,10 +190,10 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             setIsStreaming(true);
 
         } catch (err) {
-            console.error("Failed to start audio stream:", err);
+            log(`Failed to start audio stream: ${err}`);
             if (onError) onError(err);
         }
-    }, [connect, onError]);
+    }, [connect, log, onError]);
 
     const stopStreaming = useCallback(() => {
         if (streamRef.current) {
@@ -203,7 +201,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             streamRef.current = null;
         }
         if (audioContextRef.current) {
-            audioContextRef.current.close();
+            audioContextRef.current.close().catch(() => { });
             audioContextRef.current = null;
         }
         if (websocketRef.current) {
