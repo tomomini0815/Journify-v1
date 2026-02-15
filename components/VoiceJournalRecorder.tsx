@@ -101,11 +101,19 @@ export default function VoiceJournalRecorder({
     const [isAndroid, setIsAndroid] = useState(false);
     const [isGeminiLiveActive, setIsGeminiLiveActive] = useState(false);
 
-    // Visualizer state & refs
+    // Diagnostics & Visualizer
+    const [diagnostics, setDiagnostics] = useState<string[]>([]);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const animationFrameRef = useRef<number | null>(null);
+
+    const addLog = (msg: string) => {
+        const time = new Date().toLocaleTimeString();
+        const entry = `[${time}] ${msg}`;
+        console.log(entry);
+        setDiagnostics(prev => [...prev.slice(-4), entry]); // Keep last 5
+    };
 
     // Detect Brave browser and Android
     useEffect(() => {
@@ -129,11 +137,18 @@ export default function VoiceJournalRecorder({
         checkBrowser();
     }, []);
 
-    // --- Debug Helper ---
-    const [debugLogs, setDebugLogs] = useState<string[]>([]);
-    const addLog = (msg: string) => {
-        console.log(msg);
-        setDebugLogs(prev => [...prev.slice(-4), msg]); // Keep last 5
+    // --- Device Check ---
+    const checkDevices = async () => {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const mics = devices.filter(d => d.kind === 'audioinput');
+            addLog(`🎤 mics found: ${mics.length}`);
+            mics.forEach(m => addLog(`   - ${m.label || 'unlabeled mic'}`));
+            return mics.length > 0;
+        } catch (e) {
+            addLog(`❌ device check error: ${e}`);
+            return false;
+        }
     };
 
     // --- Gemini Live Hook (Android Only) ---
@@ -237,7 +252,24 @@ export default function VoiceJournalRecorder({
         // We use Web Speech API for real-time transcription and MediaRecorder for audio saving.
         // This follows the successful pattern in Ainance.
         try {
+            addLog("🏁 startRecording requested");
+
+            // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
+            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            if (audioContextRef.current) {
+                await audioContextRef.current.resume();
+                addLog("🔊 AudioContext resumed");
+            }
+
+            // 2. Hardware and Permission Check
+            const hasMics = await checkDevices();
+            if (!hasMics) {
+                addLog("⚠️ No microphone hardware detected");
+            }
+
+            addLog("🎙️ requesting getUserMedia...");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            addLog("✅ stream granted");
 
             // MIME Type detection
             let mimeType = "";
@@ -302,8 +334,9 @@ export default function VoiceJournalRecorder({
             // Start MediaRecorder
             mediaRecorderRef.current.start(1000); // 1s chunks
 
-            // Start Visualizer (Visual Proof of Input)
+            // Start Visualizer
             startVisualizer(stream);
+            addLog("📊 visualizer started");
 
             const isNative = Capacitor.isNativePlatform();
 
@@ -311,17 +344,20 @@ export default function VoiceJournalRecorder({
             const startTranscriptionChain = async () => {
                 // 1. Native Capacitor (Android/iOS Native)
                 if (isNative) {
-                    addLog("🎯 Attempting Native Speech Recognition...");
+                    addLog("🎯 trying native API...");
                     try {
                         const permissions = await SpeechRecognition.checkPermissions();
+                        addLog(`🔐 permission: ${permissions.speechRecognition}`);
                         if (permissions.speechRecognition !== 'granted') {
+                            addLog("🔑 requesting permissions...");
                             await SpeechRecognition.requestPermissions();
                         }
 
+                        addLog("🎤 native.start()");
                         await SpeechRecognition.start({
                             language: "ja-JP",
                             maxResults: 1,
-                            prompt: "記録中...",
+                            prompt: "音声を入力中...",
                             partialResults: true,
                             popup: false,
                         });
@@ -331,14 +367,15 @@ export default function VoiceJournalRecorder({
                                 setInterimTranscript(data.matches[0]);
                             }
                         });
+                        addLog("🚀 native transcription active");
                         return; // Success
                     } catch (e) {
-                        addLog(`⚠️ Native Failed: ${JSON.stringify(e)}`);
+                        addLog(`⚠️ native failed: ${JSON.stringify(e)}`);
                     }
                 }
 
                 // 2. Web Speech API (Safari/Chrome)
-                addLog("🌐 Attempting Web Speech API...");
+                addLog("🌐 trying Web Speech API...");
                 const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
                 if (SpeechRecognitionWeb) {
                     try {
@@ -347,6 +384,7 @@ export default function VoiceJournalRecorder({
                         recognition.continuous = true;
                         recognition.interimResults = true;
 
+                        recognition.onstart = () => addLog("🚀 web speech active");
                         recognition.onresult = (event: any) => {
                             let interim = '';
                             let finalText = '';
@@ -356,6 +394,10 @@ export default function VoiceJournalRecorder({
                             }
                             if (finalText) setTranscript(prev => prev + finalText + ' ');
                             setInterimTranscript(interim);
+                        };
+
+                        recognition.onerror = (event: any) => {
+                            addLog(`❌ web speech error: ${event.error}`);
                         };
 
                         recognition.onend = () => {
@@ -368,17 +410,18 @@ export default function VoiceJournalRecorder({
                         recognition.start();
                         return; // Success
                     } catch (e) {
-                        addLog(`⚠️ Web Speech Failed: ${e}`);
+                        addLog(`⚠️ web speech failed: ${e}`);
                     }
                 }
 
                 // 3. Gemini Live (Ultimate Fallback via WebSocket)
-                addLog("🚀 Attempting Gemini Live Fallback...");
+                addLog("🚀 trying Gemini Live fallback...");
                 try {
                     await startGeminiStreaming(stream);
                     setIsGeminiLiveActive(true);
+                    addLog("🔥 Gemini Live active");
                 } catch (e) {
-                    addLog(`❌ Gemini Failed: ${e}`);
+                    addLog(`❌ All systems failed: ${e}`);
                     setInterimTranscript("(音声認識が利用できません)");
                 }
             };
@@ -585,6 +628,12 @@ export default function VoiceJournalRecorder({
                 ) : (
                     // Recording or Post-Recording State
                     <div className="space-y-6">
+                        {/* Diagnostics Overlay (Android Only) */}
+                        {isAndroid && diagnostics.length > 0 && (
+                            <div className="bg-black/40 rounded-xl p-2 font-mono text-[9px] text-emerald-400/80 border border-emerald-500/20 mb-2">
+                                {diagnostics.map((log, i) => <div key={i}>{log}</div>)}
+                            </div>
+                        )}
                         {/* Header */}
                         <div className="flex items-center justify-between">
                             <div>
@@ -820,8 +869,8 @@ export default function VoiceJournalRecorder({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl transition-all relative z-10 ${isRecording
-                                ? "bg-red-500 shadow-red-500/40"
-                                : "bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-emerald-500/40"
+                            ? "bg-red-500 shadow-red-500/40"
+                            : "bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-emerald-500/40"
                             }`}
                     >
                         {isRecording ? (
