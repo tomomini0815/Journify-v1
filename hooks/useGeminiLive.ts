@@ -103,12 +103,10 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                 log("WebSocket Opened. Sending setup...");
                 setIsConnected(true);
 
+                // Simplify setup to defaults to avoid config errors
                 const setupMsg = {
                     setup: {
-                        model: "models/gemini-2.0-flash-exp",
-                        generationConfig: {
-                            responseModalities: ["TEXT"]
-                        }
+                        model: "models/gemini-2.0-flash-exp"
                     }
                 };
                 ws.send(JSON.stringify(setupMsg));
@@ -146,10 +144,11 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             };
 
             ws.onclose = (ev) => {
-                log(`🔌 WebSocket Closed: code=${ev.code}`);
+                const reason = ev.reason ? ` Reason: ${ev.reason}` : '';
+                log(`🔌 WebSocket Closed: code=${ev.code}${reason}`);
                 setIsConnected(false);
                 setIsStreaming(false);
-                setDebugInfo(prev => ({ ...prev, status: `Closed: ${ev.code}` }));
+                setDebugInfo(prev => ({ ...prev, status: `Closed:${ev.code}${reason}` }));
             };
 
             websocketRef.current = ws;
