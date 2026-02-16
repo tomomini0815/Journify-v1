@@ -109,6 +109,10 @@ export async function POST(
                 // Production: Download from Supabase Storage URL
                 console.log(`Downloading audio from URL: ${audioPath}`)
                 try {
+                    let mimeType = "audio/webm";
+                    if (audioPath.endsWith(".wav")) mimeType = "audio/wav";
+                    else if (audioPath.endsWith(".mp4")) mimeType = "audio/mp4";
+
                     const response = await fetch(audioPath)
                     if (!response.ok) {
                         throw new Error(`Failed to download audio: ${response.status}`)
@@ -120,7 +124,7 @@ export async function POST(
                     requestParts = [
                         {
                             inlineData: {
-                                mimeType: "audio/webm",
+                                mimeType: mimeType,
                                 data: audioBase64
                             }
                         },
@@ -135,10 +139,15 @@ export async function POST(
                 console.log(`Using local file: ${audioPath}`)
 
                 try {
+                    // Detect MIME type
+                    let mimeType = "audio/webm";
+                    if (audioPath.endsWith(".wav")) mimeType = "audio/wav";
+                    else if (audioPath.endsWith(".mp4")) mimeType = "audio/mp4";
+
                     // Upload to Google AI File Manager
-                    console.log(`Uploading file to Gemini: ${audioPath}`)
+                    console.log(`Uploading file to Gemini (${mimeType}): ${audioPath}`)
                     const uploadResponse = await fileManager.uploadFile(audioPath, {
-                        mimeType: "audio/webm",
+                        mimeType: mimeType,
                         displayName: `Meeting Audio ${new Date().toISOString()}`
                     })
 
@@ -171,10 +180,15 @@ export async function POST(
                     // Fallback to reading file and sending base64 (if small enough)
                     const audioBuffer = await readFile(audioPath)
                     audioBase64 = audioBuffer.toString('base64')
+
+                    let mimeType = "audio/webm";
+                    if (audioPath.endsWith(".wav")) mimeType = "audio/wav";
+                    else if (audioPath.endsWith(".mp4")) mimeType = "audio/mp4";
+
                     requestParts = [
                         {
                             inlineData: {
-                                mimeType: "audio/webm",
+                                mimeType: mimeType,
                                 data: audioBase64
                             }
                         },
@@ -185,10 +199,15 @@ export async function POST(
 
         } else if (audioData) {
             audioBase64 = audioData.replace(/^data:.+;base64,/, "")
+            // Detect from base64 header or default to webm
+            let mimeType = "audio/webm";
+            const headerMatch = audioData.match(/^data:(.+);base64,/);
+            if (headerMatch) mimeType = headerMatch[1];
+
             requestParts = [
                 {
                     inlineData: {
-                        mimeType: "audio/webm",
+                        mimeType: mimeType,
                         data: audioBase64
                     }
                 },

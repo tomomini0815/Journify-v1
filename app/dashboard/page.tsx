@@ -37,10 +37,22 @@ function getMoodEmoji(mood: number | null | undefined): string {
 // Cached data fetching functions
 const getCachedJournalData = unstable_cache(
     async (userId: string) => {
+        const now = new Date();
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        // 30 days ago for happiness trend
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
         return await Promise.all([
-            // Journal count
+            // This month count
             prisma.journalEntry.count({
-                where: { userId },
+                where: { userId, createdAt: { gte: thisMonthStart } },
+            }),
+            // Last month count (for trend)
+            prisma.journalEntry.count({
+                where: { userId, createdAt: { gte: lastMonthStart, lt: thisMonthStart } },
             }),
             // Recent journals
             prisma.journalEntry.findMany({
@@ -54,17 +66,24 @@ const getCachedJournalData = unstable_cache(
                 orderBy: { createdAt: "desc" },
                 take: 3,
             }),
-            // Happiness data
+            // Happiness data (last 30 days)
             prisma.journalEntry.findMany({
                 where: {
                     userId,
                     mood: { gt: 0 },
-                    createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+                    createdAt: { gte: thirtyDaysAgo }
                 },
-                select: {
-                    mood: true,
-                    createdAt: true
+                select: { mood: true, createdAt: true },
+                orderBy: { createdAt: "asc" }
+            }),
+            // Previous Happiness data (30-60 days ago for trend)
+            prisma.journalEntry.findMany({
+                where: {
+                    userId,
+                    mood: { gt: 0 },
+                    createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
                 },
+                select: { mood: true, createdAt: true },
                 orderBy: { createdAt: "asc" }
             }),
             // All journal dates for streak
@@ -126,7 +145,17 @@ import { StatsSkeleton, ChartsSkeleton, RecentJournalsSkeleton, GoalProgressSkel
 // ... (keep cached data fetching functions)
 
 async function StatsSection({ userId }: { userId: string }) {
-    const [[journalCount, , , allJournalDates], [goalCount]] = await Promise.all([
+    const [
+        [
+            thisMonthCount,
+            lastMonthCount,
+            ,
+            journalEntries,
+            prevJournalEntries,
+            allJournalDates
+        ],
+        [goalCount]
+    ] = await Promise.all([
         getCachedJournalData(userId),
         getCachedGoalData(userId)
     ])
@@ -134,6 +163,7 @@ async function StatsSection({ userId }: { userId: string }) {
     // Calculate streak
     let streak = 0
     if (allJournalDates.length > 0) {
+        // ... (streak calculation remains same)
         const uniqueDates = new Set(
             allJournalDates.map(j => new Date(j.createdAt).toISOString().split('T')[0])
         )
@@ -147,35 +177,42 @@ async function StatsSection({ userId }: { userId: string }) {
 
         if (uniqueDates.has(todayStr) || uniqueDates.has(yesterdayStr)) {
             let checkDate = new Date(today)
-
-            if (!uniqueDates.has(todayStr)) {
-                checkDate = yesterday
-            }
+            if (!uniqueDates.has(todayStr)) checkDate = yesterday
 
             while (true) {
                 const dateStr = checkDate.toISOString().split('T')[0]
                 if (uniqueDates.has(dateStr)) {
                     streak++
                     checkDate.setDate(checkDate.getDate() - 1)
-                } else {
-                    break
-                }
+                } else break
             }
         }
     }
 
-    // Calculate average happiness (need journal entries for this, fetching again but cached)
-    const [, , journalEntries] = await getCachedJournalData(userId)
-    const totalMood = journalEntries.reduce((sum: number, entry) => sum + (entry.mood || 0), 0)
-    const averageHappiness = journalEntries.length > 0
-        ? Math.round((totalMood / journalEntries.length / 5) * 100)
-        : 0
+    // Calculate happiness average and trend
+    const calculateAvg = (entries: { mood: number | null }[]) => {
+        const total = entries.reduce((sum, e) => sum + (e.mood || 0), 0)
+        return entries.length > 0 ? (total / entries.length / 5) * 100 : 0
+    }
+
+    const currentAvg = calculateAvg(journalEntries)
+    const prevAvg = calculateAvg(prevJournalEntries)
+
+    const happinessTrend = prevAvg > 0
+        ? `${currentAvg >= prevAvg ? '+' : ''}${Math.round(((currentAvg - prevAvg) / prevAvg) * 100)}%`
+        : "+0%"
+
+    // Calculate journal count trend
+    const journalDiff = thisMonthCount - lastMonthCount
+    const journalTrend = `${journalDiff >= 0 ? '+' : ''}${journalDiff}`
 
     const stats = {
-        journalCount,
+        journalCount: thisMonthCount,
+        journalTrend,
         goalCount,
         streak,
-        happiness: averageHappiness,
+        happiness: Math.round(currentAvg),
+        happinessTrend,
     }
 
     return <DashboardStats stats={stats} />
@@ -183,7 +220,18 @@ async function StatsSection({ userId }: { userId: string }) {
 
 async function ChartsSection({ userId }: { userId: string }) {
     try {
-        const [[, , journalEntries], , lifeBalanceEntries] = await Promise.all([
+        const [
+            [
+                ,
+                ,
+                ,
+                journalEntries,
+                ,
+
+            ],
+            ,
+            lifeBalanceEntries
+        ] = await Promise.all([
             getCachedJournalData(userId),
             getCachedGoalData(userId),
             getCachedLifeBalanceData(userId)
@@ -252,7 +300,7 @@ async function ChartsSection({ userId }: { userId: string }) {
 }
 
 async function RecentJournalsSection({ userId }: { userId: string }) {
-    const [, recentJournals] = await getCachedJournalData(userId)
+    const [, , recentJournals] = await getCachedJournalData(userId)
 
     return (
         <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">

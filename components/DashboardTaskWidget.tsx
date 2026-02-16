@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Calendar, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calendar, ChevronRight, CheckCircle2, AlertCircle, Plus, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 type Task = {
     id: string;
@@ -20,6 +21,8 @@ type Task = {
 export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month'>('today');
+    const [newTaskTitle, setNewTaskTitle] = useState('');
+    const [isAdding, setIsAdding] = useState(false);
 
     // Helper: compute date range for each tab
     const getDateRange = (tab: 'today' | 'week' | 'month') => {
@@ -126,6 +129,39 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
         }
     };
 
+    const handleAddTask = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newTaskTitle.trim() || isAdding) return;
+
+        setIsAdding(true);
+        try {
+            const today = new Date().toISOString();
+            // Default to today if on Today tab, otherwise no date
+            const scheduledDate = activeTab === 'today' ? today : null;
+
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: newTaskTitle.trim(),
+                    scheduledDate,
+                    status: 'todo',
+                    priority: 'medium'
+                }),
+            });
+
+            if (!res.ok) throw new Error('Failed to add task');
+
+            setNewTaskTitle('');
+            router.refresh(); // Refresh server component data
+        } catch (error) {
+            console.error('Add task error:', error);
+            alert('タスクの追加に失敗しました');
+        } finally {
+            setIsAdding(false);
+        }
+    };
+
     return (
         <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
@@ -157,6 +193,29 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                     </button>
                 ))}
             </div>
+
+            {/* Quick Add Form */}
+            <form onSubmit={handleAddTask} className="relative mb-4">
+                <Input
+                    type="text"
+                    placeholder="新しいタスクを入力..."
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    disabled={isAdding}
+                    className="pr-12 bg-white/5 border-white/10 focus:border-emerald-500/50"
+                />
+                <button
+                    type="submit"
+                    disabled={!newTaskTitle.trim() || isAdding}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-emerald-400 hover:text-emerald-300 disabled:opacity-30 transition-all"
+                >
+                    {isAdding ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <Plus className="w-4 h-4" />
+                    )}
+                </button>
+            </form>
 
             <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
                 {displayTasks.map((task) => {

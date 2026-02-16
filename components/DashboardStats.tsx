@@ -44,9 +44,13 @@ export function StatCard({ icon: Icon, label, value, trend, delay }: StatCardPro
 interface DashboardStatsProps {
     stats: {
         journalCount: number
+        journalTrend?: string
         goalCount: number
+        goalTrend?: string
         streak: number
+        streakTrend?: string
         happiness: number
+        happinessTrend?: string
     }
 }
 
@@ -59,28 +63,28 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
                 icon={BookOpen}
                 label="今月の記録数"
                 value={stats.journalCount}
-                trend="+3"
+                trend={stats.journalTrend || "+0"}
                 delay={0.1}
             />
             <StatCard
                 icon={Target}
                 label="進行中の目標"
                 value={stats.goalCount}
-                trend="→"
+                trend={stats.goalTrend || "→"}
                 delay={0.2}
             />
             <StatCard
                 icon={TrendingUp}
                 label="平均幸福度"
                 value={stats.happiness}
-                trend="+5%"
+                trend={stats.happinessTrend || "+0%"}
                 delay={0.3}
             />
             <StatCard
                 icon={Calendar}
                 label="連続日数"
                 value={stats.streak}
-                trend="+2"
+                trend={stats.streakTrend || "+0"}
                 delay={0.4}
             />
         </div>

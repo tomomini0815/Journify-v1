@@ -134,14 +134,23 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
     const hasData = chartData.length > 0
 
     // Stats calculation
-    let stats = { current: 0, average: 0, trend: 0 }
+    let stats = { current: 0, average: 0, trend: 0, min: 0, max: 0 }
     if (hasData) {
         const currentVal = chartData[chartData.length - 1].value
-        const startVal = chartData[0].value
+        const values = chartData.map(d => d.value)
+        const average = Math.round(values.reduce((sum, v) => sum + v, 0) / values.length)
+
+        // Refined trend: compare current value with the average of the first 25% of the data
+        const firstQuarterCount = Math.max(1, Math.floor(chartData.length * 0.25))
+        const firstQuarterAvg = chartData.slice(0, firstQuarterCount).reduce((sum, d) => sum + d.value, 0) / firstQuarterCount
+        const trend = firstQuarterAvg !== 0 ? Math.round(((currentVal - firstQuarterAvg) / firstQuarterAvg) * 100) : 0
+
         stats = {
             current: currentVal,
-            average: Math.round(chartData.reduce((sum: number, item: any) => sum + item.value, 0) / chartData.length),
-            trend: startVal !== 0 ? Math.round(((currentVal - startVal) / startVal) * 100) : 0
+            average,
+            trend,
+            min: Math.min(...values),
+            max: Math.max(...values)
         }
     }
 
@@ -291,19 +300,22 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
                     </p>
                 </div>
                 <div>
-                    <p className="text-white/60 text-xs mb-1">平均</p>
+                    <p className="text-white/60 text-xs mb-1">平均 / 最高</p>
                     <p
                         className="text-xl sm:text-2xl font-bold"
                         style={{ color: currentTheme.stroke }}
                     >
-                        {stats.average}
+                        {stats.average} <span className="text-xs font-normal opacity-50">/ {stats.max}</span>
                     </p>
                 </div>
                 <div>
-                    <p className="text-white/60 text-xs mb-1">トレンド</p>
-                    <div className="flex items-baseline gap-1">
-                        <p className={`text-xl sm:text-2xl font-bold ${stats.trend >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {stats.trend >= 0 ? '+' : ''}{stats.trend}%
+                    <p className="text-white/60 text-xs mb-1">最低 / トレンド</p>
+                    <div className="flex items-baseline gap-2">
+                        <p className="text-xl sm:text-2xl font-bold text-white/40">
+                            {stats.min}
+                        </p>
+                        <p className={`text-lg sm:text-xl font-bold ${stats.trend >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {stats.trend >= 0 ? '↑' : '↓'} {Math.abs(stats.trend)}%
                         </p>
                     </div>
                 </div>

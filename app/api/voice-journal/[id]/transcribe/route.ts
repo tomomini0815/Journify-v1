@@ -52,8 +52,23 @@ export async function POST(
         let tags: string[] = [];
 
         try {
-            const audioFile = await readFile(voiceJournal.audioUrl);
-            const audioBase64 = audioFile.toString("base64");
+            let audioBase64 = "";
+            let mimeType = "audio/webm";
+
+            if (voiceJournal.audioUrl.startsWith("http")) {
+                console.log(`Downloading audio for re-transcription: ${voiceJournal.audioUrl}`);
+                const response = await fetch(voiceJournal.audioUrl);
+                if (!response.ok) throw new Error(`Failed to download audio: ${response.status}`);
+                const arrayBuffer = await response.arrayBuffer();
+                audioBase64 = Buffer.from(arrayBuffer).toString("base64");
+            } else {
+                const audioFile = await readFile(voiceJournal.audioUrl);
+                audioBase64 = audioFile.toString("base64");
+            }
+
+            // Detect MIME type
+            if (voiceJournal.audioUrl.endsWith(".wav")) mimeType = "audio/wav";
+            else if (voiceJournal.audioUrl.endsWith(".mp4")) mimeType = "audio/mp4";
 
             const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
@@ -74,7 +89,7 @@ JSONのみを出力してください。`;
                 prompt,
                 {
                     inlineData: {
-                        mimeType: "audio/webm", // Assuming webm as per upload logic
+                        mimeType: mimeType,
                         data: audioBase64
                     }
                 }

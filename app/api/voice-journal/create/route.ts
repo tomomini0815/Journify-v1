@@ -104,8 +104,29 @@ JSONのみを返し、他の説明は不要です。`;
         else {
             console.log("Transcript missing, utilizing server-side audio processing with Gemini...");
             try {
-                const audioFile = await readFile(audioPath);
-                const audioBase64 = audioFile.toString("base64");
+                let audioBase64 = "";
+                let mimeType = "audio/webm"; // Default
+
+                if (audioPath.startsWith("http")) {
+                    // Production: Download from URL
+                    console.log(`Downloading audio for transcription: ${audioPath}`);
+                    const response = await fetch(audioPath);
+                    if (!response.ok) throw new Error(`Failed to download audio: ${response.status}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    audioBase64 = Buffer.from(arrayBuffer).toString("base64");
+
+                    // Detect MIME from URL extension
+                    if (audioPath.endsWith(".wav")) mimeType = "audio/wav";
+                    else if (audioPath.endsWith(".mp4")) mimeType = "audio/mp4";
+                } else {
+                    // Development: Read from local filesystem
+                    const audioFile = await readFile(audioPath);
+                    audioBase64 = audioFile.toString("base64");
+
+                    // Detect MIME from path extension
+                    if (audioPath.endsWith(".wav")) mimeType = "audio/wav";
+                    else if (audioPath.endsWith(".mp4")) mimeType = "audio/mp4";
+                }
 
                 const genAI = new GoogleGenerativeAI(apiKey);
                 const modelsToTry = ["gemini-2.0-flash-lite", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-3-flash-preview"];
@@ -136,7 +157,7 @@ JSONのみを返し、他の説明は不要です。`;
                                 prompt,
                                 {
                                     inlineData: {
-                                        mimeType: "audio/webm",
+                                        mimeType: mimeType,
                                         data: audioBase64
                                     }
                                 }
