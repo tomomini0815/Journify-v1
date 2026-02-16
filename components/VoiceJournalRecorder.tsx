@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useGeminiLive } from "@/hooks/useGeminiLive";
 import { Capacitor } from "@capacitor/core";
 import { SpeechRecognition } from "@capacitor-community/speech-recognition";
 
