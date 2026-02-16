@@ -149,26 +149,29 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             }
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: mimeType })
-                addLog(`📦 Meeting MediaRecorder stopped. Chunks: ${chunksRef.current.length}, Size: ${Math.round(blob.size / 1024)} KB`);
-                setAudioBlob(blob)
+                const rawBlob = new Blob(chunksRef.current, { type: mimeType })
+                addLog(`📦 Meeting MediaRecorder stopped. Chunks: ${chunksRef.current.length}, Size: ${Math.round(rawBlob.size / 1024)} KB`);
+
+                // Fallback/Priority logic for Android Chrome
+                if (isAndroid) {
+                    addLog("🔄 Android detected: Attempting to retrieve Gemini capture data (WAV)...");
+                    const geminiBlob = getCapturedAudio();
+                    if (geminiBlob && geminiBlob.size > 1000) {
+                        addLog(`✅ Using Gemini capture: ${Math.round(geminiBlob.size / 1024)} KB (WAV)`);
+                        setAudioBlob(geminiBlob);
+                    } else {
+                        addLog("⚠️ Gemini capture empty or too small, using raw MediaRecorder blob.");
+                        setAudioBlob(rawBlob);
+                    }
+                } else {
+                    setAudioBlob(rawBlob);
+                }
+
                 stream.getTracks().forEach(track => track.stop())
 
                 // Stop SpeechRecognition when recording stops
                 if (speechRecognitionRef.current) {
                     try { speechRecognitionRef.current.stop() } catch (e) { }
-                }
-
-                // Fallback for Android Chrome: if chunks are empty OR tiny, try Gemini Live capture
-                if (isAndroid && (chunksRef.current.length === 0 || blob.size < 1000)) {
-                    addLog("⚠️ MediaRecorder likely failed (empty/tiny). Trying Gemini capture...");
-                    const fallbackBlob = getCapturedAudio();
-                    if (fallbackBlob) {
-                        addLog(`✅ Fallback audio captured from Gemini stream: ${Math.round(fallbackBlob.size / 1024)} KB`);
-                        setAudioBlob(fallbackBlob);
-                    } else {
-                        addLog("❌ Gemini capture also returned no data");
-                    }
                 }
             }
 

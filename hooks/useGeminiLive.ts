@@ -16,6 +16,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
     const workletNodeRef = useRef<AudioWorkletNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const capturedChunksRef = useRef<Int16Array[]>([]);
+    const bufferAccumulatorRef = useRef<Float32Array>(new Float32Array(0));
 
     const log = useCallback((msg: string) => {
         if (onLog) onLog(msg);
@@ -132,8 +133,8 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             const processor = new AudioWorkletNode(audioContext, 'audio-processor');
             log(`Worklet Node State: ${processor.parameters.get('isWorking') || 'started'}`);
 
-            // Simple Downsampler State
-            let bufferAccumulator = new Float32Array(0);
+            // Resampler State via Ref
+            bufferAccumulatorRef.current = new Float32Array(0);
 
             processor.port.onmessage = (event) => {
                 if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) return;
@@ -141,17 +142,17 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                 const inputData = event.data; // Float32Array at native rate
 
                 // Append to accumulator
-                const newBuffer = new Float32Array(bufferAccumulator.length + inputData.length);
-                newBuffer.set(bufferAccumulator);
-                newBuffer.set(inputData, bufferAccumulator.length);
-                bufferAccumulator = newBuffer;
+                const newBuffer = new Float32Array(bufferAccumulatorRef.current.length + inputData.length);
+                newBuffer.set(bufferAccumulatorRef.current);
+                newBuffer.set(inputData, bufferAccumulatorRef.current.length);
+                bufferAccumulatorRef.current = newBuffer;
 
                 // Target: 16000Hz
                 const targetSampleRate = 16000;
                 const ratio = sourceSampleRate / targetSampleRate;
 
                 // Process if we have enough for at least ~20ms
-                const outputLength = Math.floor(bufferAccumulator.length / ratio);
+                const outputLength = Math.floor(bufferAccumulatorRef.current.length / ratio);
 
                 if (outputLength > 0) {
                     const resampledData = new Int16Array(outputLength);
@@ -160,11 +161,11 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                         // Linear Interpolation
                         const originalIndex = i * ratio;
                         const index1 = Math.floor(originalIndex);
-                        const index2 = Math.min(index1 + 1, bufferAccumulator.length - 1);
+                        const index2 = Math.min(index1 + 1, bufferAccumulatorRef.current.length - 1);
                         const weight = originalIndex - index1;
 
-                        const val1 = bufferAccumulator[index1];
-                        const val2 = bufferAccumulator[index2];
+                        const val1 = bufferAccumulatorRef.current[index1];
+                        const val2 = bufferAccumulatorRef.current[index2];
                         const value = val1 + (val2 - val1) * weight;
 
                         // Float to PCM Int16
@@ -172,9 +173,9 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                         resampledData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                     }
 
-                    // Keep the REMAINDER instead of clearing everything
+                    // Keep the REMAINDER
                     const usedInputLength = Math.floor(outputLength * ratio);
-                    bufferAccumulator = bufferAccumulator.slice(usedInputLength);
+                    bufferAccumulatorRef.current = bufferAccumulatorRef.current.slice(usedInputLength);
 
                     // Accumulate for fallback recording
                     capturedChunksRef.current.push(new Int16Array(resampledData));
@@ -229,6 +230,27 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
     }, []);
 
     const getCapturedAudio = useCallback(() => {
+        // Flush any remaining partial buffer
+        if (bufferAccumulatorRef.current.length > 0) {
+            log(`🧽 Flushing remainder of buffer: ${bufferAccumulatorRef.current.length} samples`);
+            const targetSampleRate = 16000;
+            const sourceSampleRate = audioContextRef.current?.sampleRate || 48000;
+            const ratio = sourceSampleRate / targetSampleRate;
+            const outputLength = Math.floor(bufferAccumulatorRef.current.length / ratio);
+
+            if (outputLength > 0) {
+                const resampledData = new Int16Array(outputLength);
+                for (let i = 0; i < outputLength; i++) {
+                    const originalIndex = i * ratio;
+                    const index = Math.floor(originalIndex);
+                    const s = Math.max(-1, Math.min(1, bufferAccumulatorRef.current[index]));
+                    resampledData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+                capturedChunksRef.current.push(resampledData);
+            }
+            bufferAccumulatorRef.current = new Float32Array(0);
+        }
+
         if (capturedChunksRef.current.length === 0) return null;
 
         // Flatten Int16Arrays
@@ -240,10 +262,8 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             offset += chunk.length;
         }
 
-        // Return as WAV or Raw PCM
-        // For simplicity and compatibility with the current server, let's wrap in a basic WAV header
         return createWavBlob(result, 16000);
-    }, []);
+    }, [log]);
 
     return {
         isStreaming,
