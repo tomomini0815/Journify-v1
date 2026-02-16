@@ -137,28 +137,25 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             bufferAccumulatorRef.current = new Float32Array(0);
 
             processor.port.onmessage = (event) => {
-                if (!websocketRef.current || websocketRef.current.readyState !== WebSocket.OPEN) return;
-
                 const inputData = event.data; // Float32Array at native rate
 
-                // Append to accumulator
+                // 1. Append to accumulator
                 const newBuffer = new Float32Array(bufferAccumulatorRef.current.length + inputData.length);
                 newBuffer.set(bufferAccumulatorRef.current);
                 newBuffer.set(inputData, bufferAccumulatorRef.current.length);
                 bufferAccumulatorRef.current = newBuffer;
 
-                // Target: 16000Hz
+                // Target: 16000Hz (Fixed)
                 const targetSampleRate = 16000;
                 const ratio = sourceSampleRate / targetSampleRate;
 
-                // Process if we have enough for at least ~20ms
+                // 2. Resample logic (Required for both WebSocket and Local storage)
                 const outputLength = Math.floor(bufferAccumulatorRef.current.length / ratio);
 
                 if (outputLength > 0) {
                     const resampledData = new Int16Array(outputLength);
 
                     for (let i = 0; i < outputLength; i++) {
-                        // Linear Interpolation
                         const originalIndex = i * ratio;
                         const index1 = Math.floor(originalIndex);
                         const index2 = Math.min(index1 + 1, bufferAccumulatorRef.current.length - 1);
@@ -168,7 +165,6 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                         const val2 = bufferAccumulatorRef.current[index2];
                         const value = val1 + (val2 - val1) * weight;
 
-                        // Float to PCM Int16
                         const s = Math.max(-1, Math.min(1, value));
                         resampledData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                     }
@@ -177,23 +173,24 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                     const usedInputLength = Math.floor(outputLength * ratio);
                     bufferAccumulatorRef.current = bufferAccumulatorRef.current.slice(usedInputLength);
 
-                    // Accumulate for fallback recording
+                    // 3. ALWAYS accumulate for local fallback recording
                     capturedChunksRef.current.push(new Int16Array(resampledData));
 
-                    const base64Audio = arrayBufferToBase64(resampledData.buffer);
-
-                    const msg = {
-                        realtimeInput: {
-                            mediaChunks: [
-                                {
-                                    mimeType: "audio/pcm;rate=16000",
-                                    data: base64Audio
-                                }
-                            ]
-                        }
-                    };
-
-                    websocketRef.current.send(JSON.stringify(msg));
+                    // 4. Send to WebSocket ONLY if established
+                    if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+                        const base64Audio = arrayBufferToBase64(resampledData.buffer);
+                        const msg = {
+                            realtimeInput: {
+                                mediaChunks: [
+                                    {
+                                        mimeType: "audio/pcm;rate=16000",
+                                        data: base64Audio
+                                    }
+                                ]
+                            }
+                        };
+                        websocketRef.current.send(JSON.stringify(msg));
+                    }
                 }
             };
 
