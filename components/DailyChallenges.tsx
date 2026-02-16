@@ -9,7 +9,7 @@ interface Challenge {
     journalCreated: boolean;
     tasksCompleted: number;
     meetingCreated: boolean;
-    crystalsEarned: number;
+    xpEarned: number; // Corrected from crystalsEarned to match DB
     completed: boolean;
     badgeEarned: string | null;
 }
@@ -72,7 +72,7 @@ export default function DailyChallenges() {
     ];
 
     const totalPossibleCrystals = 100; // 20 + 50 + 30
-    const earnedCrystals = challenge?.crystalsEarned || 0;
+    const earnedCrystals = challenge?.xpEarned || 0; // Use xpEarned
     const progress = (earnedCrystals / totalPossibleCrystals) * 100;
 
     if (loading) {
@@ -96,20 +96,43 @@ export default function DailyChallenges() {
 
             {/* Header */}
             <div className="relative z-10 mb-6">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-emerald-400" />
-                        <h3 className="text-xl font-bold text-white">今日のチャレンジ</h3>
-                    </div>
+                <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-emerald-400" />
+                    <h3 className="text-xl font-bold text-white">今日のチャレンジ</h3>
                 </div>
-                <p className="text-white/40 text-xs mt-1 mb-4 flex items-center gap-1.5">
-                    <span className="flex items-center justify-center w-5 h-5 bg-cyan-500/20 rounded text-[10px]">💡</span>
-                    クリスタルがたまるとペット飼育ができるようになります
-                </p>
-
             </div>
 
-            {/* Challenges List */}
+            <p className="text-white/40 text-xs mt-1 mb-4 flex items-center gap-1.5">
+                <span className="flex items-center justify-center w-5 h-5 bg-cyan-500/20 rounded text-[10px]">💡</span>
+                クリスタルがたまるとペット飼育ができるようになります
+            </p>
+
+            {/* Progress Bar (Moved Here) */}
+            <div className="relative z-10 mb-6">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                        <span className="text-white/60 text-sm">進捗</span>
+                        {userStats && (
+                            <div className="flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                                <span className="text-xs text-cyan-400 font-bold">所持: {userStats.totalCrystals}</span>
+                                <Gem className="w-3 h-3 text-cyan-400" />
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-white font-bold text-sm">{earnedCrystals}/{totalPossibleCrystals}</span>
+                        <Gem className="w-4 h-4 text-cyan-400" />
+                    </div>
+                </div>
+                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-500"
+                    />
+                </div>
+            </div>
+
             <div className="relative z-10 space-y-3 mb-4">
                 {challenges.map((item, index) => (
                     <motion.div
@@ -153,29 +176,11 @@ export default function DailyChallenges() {
                     </motion.div>
                 ))}
             </div>
-
-            {/* Progress Bar */}
-            <div className="relative z-10">
-                <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/60 text-sm">進捗</span>
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-white font-bold text-sm">{earnedCrystals}/{totalPossibleCrystals}</span>
-                        <Gem className="w-4 h-4 text-cyan-400" />
-                    </div>
-                </div>
-                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-500"
-                    />
-                </div>
-                {challenge?.completed && (
-                    <p className="text-emerald-400 text-sm mt-2 font-medium flex items-center gap-1.5">
-                        🏆 報酬: 限定バッジ "デイリーヒーロー" +25 <Gem className="w-4 h-4 text-cyan-400" /> ボーナス
-                    </p>
-                )}
-            </div>
+            {challenge?.completed && (
+                <p className="text-emerald-400 text-sm mt-2 font-medium flex items-center gap-1.5 relative z-10">
+                    🏆 報酬: 限定バッジ "デイリーヒーロー" +25 <Gem className="w-4 h-4 text-cyan-400" /> ボーナス
+                </p>
+            )}
 
             {/* Crystal Gain Animation */}
             <AnimatePresence>
@@ -192,6 +197,7 @@ export default function DailyChallenges() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div >
+        </div>
     );
 }
+

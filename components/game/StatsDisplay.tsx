@@ -20,10 +20,11 @@ interface StatsDisplayProps {
         currentStreak: number
     }
     compact?: boolean
+    hideLevel?: boolean
     variant?: 'cyberpunk' | 'solarpunk' | 'celestial'
 }
 
-export function StatsDisplay({ stats, compact = false, variant = 'cyberpunk' }: StatsDisplayProps) {
+export function StatsDisplay({ stats, compact = false, hideLevel = false, variant = 'cyberpunk' }: StatsDisplayProps) {
     const isSolarpunk = variant === 'solarpunk'
     const isCelestial = variant === 'celestial'
     const levelInfo = getLevelInfo(stats.totalXP)
@@ -50,24 +51,26 @@ export function StatsDisplay({ stats, compact = false, variant = 'cyberpunk' }: 
                 }
             >
                 <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg ${isSolarpunk ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-emerald-500/30' :
+                    {!hideLevel && (
+                        <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg ${isSolarpunk ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-emerald-500/30' :
                                 isCelestial ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-indigo-500/50' :
                                     'bg-gradient-to-br from-cyan-500 to-emerald-500 text-white shadow-cyan-500/50'
-                            }`}>
-                            {stats.level}
+                                }`}>
+                                {stats.level}
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg">
+                                    {isCelestial ? 'Rank ' : 'レベル '}{stats.level}
+                                </h3>
+                                <p className="text-xs opacity-60">
+                                    {isSolarpunk ? 'Gardener' : isCelestial ? 'Captain' : '勇者'}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-lg">
-                                {isCelestial ? 'Rank ' : 'レベル '}{stats.level}
-                            </h3>
-                            <p className="text-xs opacity-60">
-                                {isSolarpunk ? 'Gardener' : isCelestial ? 'Captain' : '勇者'}
-                            </p>
-                        </div>
-                    </div>
+                    )}
 
-                    <div className="flex gap-4 text-sm">
+                    <div className={`flex gap-4 text-sm ${hideLevel ? 'w-full justify-around' : ''}`}>
                         <div className="text-center">
                             <div className={`font-semibold ${isSolarpunk ? 'text-amber-600' : 'text-amber-400'}`}>{stats.gold.toLocaleString()}</div>
                             <div className="opacity-40 text-xs">ゴールド</div>
@@ -79,13 +82,15 @@ export function StatsDisplay({ stats, compact = false, variant = 'cyberpunk' }: 
                     </div>
                 </div>
 
-                <XPBar
-                    currentXP={levelInfo.currentXP}
-                    xpForNextLevel={levelInfo.xpForNextLevel}
-                    level={stats.level}
-                    size="md"
-                    showLabel={false}
-                />
+                {!hideLevel && (
+                    <XPBar
+                        currentXP={levelInfo.currentXP}
+                        xpForNextLevel={levelInfo.xpForNextLevel}
+                        level={stats.level}
+                        size="md"
+                        showLabel={false}
+                    />
+                )}
             </motion.div>
         )
     }
@@ -107,15 +112,15 @@ export function StatsDisplay({ stats, compact = false, variant = 'cyberpunk' }: 
                     {/* Level Badge */}
                     <motion.div
                         className={`relative w-20 h-20 rounded-full flex items-center justify-center shadow-2xl ${isSolarpunk ? 'bg-gradient-to-br from-emerald-400 to-teal-500 shadow-emerald-500/30' :
-                                isCelestial ? 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/50 border border-indigo-300/30' :
-                                    'bg-gradient-to-br from-cyan-500 via-emerald-500 to-cyan-500 shadow-cyan-500/50'
+                            isCelestial ? 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/50 border border-indigo-300/30' :
+                                'bg-gradient-to-br from-cyan-500 via-emerald-500 to-cyan-500 shadow-cyan-500/50'
                             }`}
                         whileHover={{ scale: 1.05, rotate: 5 }}
                         transition={{ type: 'spring', stiffness: 300 }}
                     >
                         <div className={`absolute inset-0 rounded-full blur-xl animate-pulse ${isSolarpunk ? 'bg-emerald-400/40' :
-                                isCelestial ? 'bg-indigo-500/40' :
-                                    'bg-gradient-to-br from-cyan-400/50 to-emerald-400/50'
+                            isCelestial ? 'bg-indigo-500/40' :
+                                'bg-gradient-to-br from-cyan-400/50 to-emerald-400/50'
                             }`} />
                         <span className="relative text-4xl font-bold text-white drop-shadow-lg">
                             {stats.level}
@@ -182,10 +187,10 @@ export function StatsDisplay({ stats, compact = false, variant = 'cyberpunk' }: 
                         transition={{ delay: index * 0.1 }}
                         whileHover={{ scale: 1.02, y: -2 }}
                         className={`group relative backdrop-blur-sm border rounded-2xl p-4 hover:border-opacity-100 transition-all cursor-pointer overflow-hidden ${isSolarpunk
-                                ? "bg-white/40 border-white/40 hover:border-emerald-400/50"
-                                : isCelestial
-                                    ? "bg-indigo-900/40 border-indigo-500/30 hover:border-indigo-400/50"
-                                    : "bg-white/5 border-white/10 hover:border-white/20"
+                            ? "bg-white/40 border-white/40 hover:border-emerald-400/50"
+                            : isCelestial
+                                ? "bg-indigo-900/40 border-indigo-500/30 hover:border-indigo-400/50"
+                                : "bg-white/5 border-white/10 hover:border-white/20"
                             }`}
                     >
                         {/* Background gradient on hover */}

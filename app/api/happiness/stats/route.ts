@@ -69,13 +69,15 @@ export async function GET(request: Request) {
             }
         })
 
-        // 日ごとに集計
-        const dailyMap = new Map<string, { total: number, count: number }>()
-
         journals.forEach(journal => {
             if (journal.mood === null) return
 
-            const dateKey = journal.createdAt.toISOString().split('T')[0]
+            // ローカルの日付（YYYY-MM-DD）を使用
+            const dateObj = journal.createdAt
+            const year = dateObj.getFullYear()
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+            const day = String(dateObj.getDate()).padStart(2, '0')
+            const dateKey = `${year}-${month}-${day}`
 
             if (!dailyMap.has(dateKey)) {
                 dailyMap.set(dateKey, { total: 0, count: 0 })

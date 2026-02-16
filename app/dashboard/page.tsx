@@ -263,7 +263,12 @@ async function ChartsSection({ userId }: { userId: string }) {
             if (!entry.mood || !entry.createdAt) return
             const dateObj = new Date(entry.createdAt)
             if (isNaN(dateObj.getTime())) return
-            const dateKey = dateObj.toISOString().split('T')[0]
+
+            // ローカルの日付（YYYY-MM-DD）を使用
+            const year = dateObj.getFullYear()
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+            const day = String(dateObj.getDate()).padStart(2, '0')
+            const dateKey = `${year}-${month}-${day}`
 
             if (!dailyMap.has(dateKey)) {
                 dailyMap.set(dateKey, { total: 0, count: 0 })
@@ -487,10 +492,16 @@ export default async function DashboardPage() {
 
     const settings = await getCachedUserSettings(user.id)
 
+    const userStats = await prisma.userStats.findUnique({
+        where: { userId: user.id }
+    })
+
     return (
         <DashboardLayout>
             {/* Welcome Section */}
             <DashboardGreeting />
+
+
 
 
 

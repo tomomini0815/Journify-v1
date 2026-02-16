@@ -74,10 +74,47 @@ export async function POST(request: Request) {
             },
         })
 
+        // デイリーチャレンジを更新
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        await prisma.dailyChallenge.upsert({
+            where: {
+                userId_date: {
+                    userId: user.id,
+                    date: today
+                }
+            },
+            create: {
+                userId: user.id,
+                date: today,
+                journalCreated: true,
+                xpEarned: 20
+            },
+            update: {
+                journalCreated: true,
+                xpEarned: { increment: 20 }
+            }
+        });
+
+        // XPを付与
+        await prisma.userStats.upsert({
+            where: { userId: user.id },
+            create: {
+                userId: user.id,
+                totalXP: 20,
+                totalJournals: 1
+            },
+            update: {
+                totalXP: { increment: 20 },
+                totalJournals: { increment: 1 }
+            }
+        });
+
 
         // Revalidate dashboard cache to show new journal immediately
-        revalidateTag('dashboard', 'max')
-        revalidateTag('journal', 'max')
+        revalidateTag('dashboard', 'layout')
+        revalidateTag('journal', 'layout')
         revalidatePath('/dashboard')
 
         return NextResponse.json(journal)

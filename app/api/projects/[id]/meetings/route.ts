@@ -41,6 +41,42 @@ export async function POST(
             }
         })
 
+        // デイリーチャレンジを更新
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        await prisma.dailyChallenge.upsert({
+            where: {
+                userId_date: {
+                    userId: user.id,
+                    date: today
+                }
+            },
+            create: {
+                userId: user.id,
+                date: today,
+                meetingCreated: true,
+                xpEarned: 30
+            },
+            update: {
+                meetingCreated: true,
+                xpEarned: { increment: 30 }
+            }
+        });
+
+        // XPを付与
+        await prisma.userStats.upsert({
+            where: { userId: user.id },
+            create: {
+                userId: user.id,
+                totalXP: 30,
+                totalJournals: 0 // Not a journal
+            },
+            update: {
+                totalXP: { increment: 30 }
+            }
+        });
+
         return NextResponse.json(meetingLog)
     } catch (error) {
         console.error("Failed to create meeting log:", error)

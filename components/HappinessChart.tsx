@@ -99,9 +99,9 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
             // 初期ロード時かつ1ヶ月の場合は初期データを使用（あれば）
             if (range === "1M" && initialData && initialData.length > 0 && chartData.length === 0) {
                 const formatted = initialData.map((d: any) => ({
-                    date: new Date(d.date).toLocaleDateString(),
+                    date: d.date, // keep ISO/raw date string
                     value: d.score,
-                    originalDate: d.date // ソートや比較用
+                    originalDate: d.date
                 }))
                 setChartData(formatted)
                 return
@@ -114,7 +114,7 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
                 if (response.ok) {
                     const result = await response.json()
                     const formatted = result.data.map((d: any) => ({
-                        date: new Date(d.date).toLocaleDateString(),
+                        date: d.date, // keep raw date string
                         value: d.score,
                         originalDate: d.date
                     }))
@@ -173,13 +173,19 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
 
     // 日付フォーマッター
     const formatDate = (dateStr: string) => {
+        // "2026-02-16" のような文字列を考慮
         const date = new Date(dateStr)
+        if (isNaN(date.getTime())) return dateStr
+
+        const month = date.getMonth() + 1
+        const day = date.getDate()
+
         if (range === "1W" || range === "1M") {
-            return `${date.getMonth() + 1}/${date.getDate()}`
+            return `${month}/${day}`
         } else if (range === "3M" || range === "6M") {
-            return `${date.getMonth() + 1}/${date.getDate()}`
+            return `${month}/${day}`
         } else {
-            return `${date.getFullYear()}/${date.getMonth() + 1}`
+            return `${date.getFullYear()}/${month}`
         }
     }
 

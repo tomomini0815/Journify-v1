@@ -48,12 +48,42 @@ export async function GET(req: Request) {
             });
         }
 
+        // Count tasks completed TODAY
+        const completedTasksCount = await prisma.task.count({
+            where: {
+                userId: user.id,
+                status: 'done',
+                updatedAt: {
+                    gte: today,
+                    lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // 達成状況に基づいてXP/クリスタルを再計算
+        let recalculatedXP = 0;
+        if (challenge?.journalCreated) recalculatedXP += 20;
+        recalculatedXP += Math.min(completedTasksCount || 0, 2) * 25; // 最大50
+        if (challenge?.meetingCreated) recalculatedXP += 30;
+
+        // Sync challenge if different
+        if (challenge && (challenge.tasksCompleted !== completedTasksCount || challenge.xpEarned !== recalculatedXP)) {
+            challenge = await prisma.dailyChallenge.update({
+                where: { id: challenge.id },
+                data: {
+                    tasksCompleted: completedTasksCount,
+                    xpEarned: recalculatedXP
+                }
+            });
+        }
+
         return NextResponse.json({
             challenge,
             userStats: {
                 level: userStats.level,
                 totalXP: userStats.totalXP,
-                currentStreak: userStats.currentStreak
+                currentStreak: userStats.currentStreak,
+                totalCrystals: userStats.crystals
             }
         });
 
@@ -157,10 +187,12 @@ export async function POST(req: Request) {
                 create: {
                     userId: user.id,
                     totalXP: xpGained,
+                    crystals: xpGained, // Initialize crystals
                     level: 1
                 },
                 update: {
-                    totalXP: { increment: xpGained }
+                    totalXP: { increment: xpGained },
+                    crystals: { increment: xpGained } // Increment crystals
                 }
             });
 

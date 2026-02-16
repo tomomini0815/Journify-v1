@@ -248,11 +248,11 @@ JSONのみを返し、他の説明は不要です。`;
                 userId: user.id,
                 date: today,
                 journalCreated: true,
-                xpEarned: 10
+                xpEarned: 20
             },
             update: {
                 journalCreated: true,
-                xpEarned: { increment: 10 }
+                xpEarned: { increment: 20 }
             }
         });
 
@@ -261,11 +261,11 @@ JSONのみを返し、他の説明は不要です。`;
             where: { userId: user.id },
             create: {
                 userId: user.id,
-                totalXP: 10,
+                totalXP: 20,
                 totalJournals: 1
             },
             update: {
-                totalXP: { increment: 10 },
+                totalXP: { increment: 20 },
                 totalJournals: { increment: 1 }
             }
         });

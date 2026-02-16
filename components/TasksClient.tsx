@@ -51,7 +51,11 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         .filter(t => !t.projectId) // Filter out project tasks
         .map(t => ({
             ...t,
+            // Normalize status: existing status OR keys off completed boolean
             status: t.status || (t.completed ? 'done' : 'todo'),
+            // completed boolean is derivative, but we keep it for strict typing if needed, 
+            // though we will rely on status for logic.
+            completed: t.status === 'done' || t.completed,
             priority: t.priority || 'medium',
             createdAt: new Date(t.createdAt),
             updatedAt: new Date(t.updatedAt),
@@ -469,18 +473,42 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         }
 
         const date = task.scheduledDate instanceof Date ? task.scheduledDate : new Date(task.scheduledDate)
-        const now = new Date()
+        const dateTimestamp = date.getTime()
 
-        // Check if task was completed *today*
-        const isCompletedToday = task.status === 'done' && isToday(task.updatedAt)
+        // Normalize "Today" to 00:00:00 for strict date comparison
+        const todayStart = new Date()
+        todayStart.setHours(0, 0, 0, 0)
+        const todayEnd = new Date(todayStart)
+        todayEnd.setHours(23, 59, 59, 999)
+
+        // "Overdue" means scheduled strictly before Today's start AND not done
+        const isOverdue = date < todayStart && task.status !== 'done'
+
+        // "Scheduled Today" means falls within today (regardless of exact time)
+        const isScheduledToday = date >= todayStart && date <= todayEnd
+
+        // Check if task was completed *today* (based on updatedAt)
+        // If updatedAt is missing, fallback to createdAt or treat as not completed today
+        const completedDate = task.updatedAt instanceof Date ? task.updatedAt : new Date(task.updatedAt)
+        const isCompletedToday = task.status === 'done' &&
+            completedDate >= todayStart && completedDate <= todayEnd
 
         switch (activeScope) {
             case 'today':
-                return isToday(date) || (date < now && task.status !== 'done') || isCompletedToday
+                // Show if:
+                // 1. Scheduled for Today (Todo, In-Progress, OR Done)
+                // 2. Overdue (Todo or In-Progress)
+                // 3. Completed Today (regardless of original schedule, optional but good for "What I did today")
+                return isScheduledToday || isOverdue || isCompletedToday
             case 'week':
-                return isThisWeek(date) || (date < now && task.status !== 'done') || isCompletedToday
+                // Use existing helper
+                const scheduledThisWeek = isThisWeek(date)
+                // Also include overdue tasks in week view so they don't disappear
+                return scheduledThisWeek || isOverdue || (isCompletedToday && isThisWeek(completedDate))
             case 'month':
-                return isThisMonth(date) || (date < now && task.status !== 'done') || isCompletedToday
+                // Use existing helper
+                const scheduledThisMonth = isThisMonth(date)
+                return scheduledThisMonth || isOverdue || (isCompletedToday && isThisMonth(completedDate))
             case 'all':
                 return true
             default:
