@@ -104,7 +104,7 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
             console.log(`Connecting to Gemini API with model: ${currentModel}...`);
             setDebugInfo(prev => ({ ...prev, status: `Connecting (${currentModel})...`, currentModel }));
 
-            const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+            const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 
             const ws = new WebSocket(url);
 
