@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Mic, Square, Loader2, CheckCircle2, FileText, X, RotateCcw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useGeminiLive } from "@/hooks/useGeminiLive"
 import VoiceJournalRecorder from "./VoiceJournalRecorder"
 
 interface VoiceRecordingSectionProps {
@@ -58,9 +57,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const timerRef = useRef<NodeJS.Timeout | null>(null)
     const speechRecognitionRef = useRef<any>(null)
     const [isAndroid, setIsAndroid] = useState(false)
-    const [isGeminiLiveActive, setIsGeminiLiveActive] = useState(false)
     const [diagnostics, setDiagnostics] = useState<string[]>([])
-    const lastProcessedIndexRef = useRef<number>(-1)
 
     // Android detection
     useEffect(() => {
@@ -69,22 +66,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }, [])
 
     // --- Gemini Live Hook (Android Only) ---
-    const {
-        isStreaming: isGeminiStreaming,
-        isConnected: isGeminiConnected,
-        startStreaming: startGeminiStreaming,
-        stopStreaming: stopGeminiStreaming,
-        getCapturedAudio
-    } = useGeminiLive({
-        apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
-        onTranscript: (text) => {
-            setTranscript(prev => prev + text);
-        },
-        onLog: (msg) => console.log(`[Meeting Gemini] ${msg}`),
-        onError: (err) => {
-            console.error(`Meeting Gemini Error: ${err}`);
-        }
-    });
+    // --- Gemini Live integration removed as we unify to standard Web Speech API ---
 
     // Cleanup on unmount
     useEffect(() => {
@@ -120,183 +102,121 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             addLog("✅ stream granted");
 
-            // --- Android Chrome: Use Gemini Live instead of Web Speech API ---
-            if (isAndroid) {
-                addLog("📱 Android Chrome detected: Using Gemini Live path")
-                setIsGeminiLiveActive(true)
-                await startGeminiStreaming(stream, { isResuming })
-            }
-
-            let mimeType = "audio/webm"
+            let mimeType = "audio/webm";
             if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                mimeType = "audio/mp4"
+                mimeType = "audio/mp4";
             } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-                mimeType = "audio/webm;codecs=opus"
+                mimeType = "audio/webm;codecs=opus";
             }
 
-            const mediaRecorder = new MediaRecorder(stream, { mimeType })
-            mediaRecorderRef.current = mediaRecorder
+            const mediaRecorder = new MediaRecorder(stream, { mimeType });
+            mediaRecorderRef.current = mediaRecorder;
             if (!isResuming) {
-                chunksRef.current = []
+                chunksRef.current = [];
             }
 
-            // Only collect audio chunks - NO partial API transcription
-            // (uses Web Speech API for real-time display, same as VoiceJournalRecorder)
             mediaRecorder.ondataavailable = (e) => {
                 if (e.data.size > 0) {
-                    chunksRef.current.push(e.data)
+                    chunksRef.current.push(e.data);
                 }
-            }
+            };
 
             mediaRecorder.onstop = () => {
-                const rawBlob = new Blob(chunksRef.current, { type: mimeType })
+                const rawBlob = new Blob(chunksRef.current, { type: mimeType });
                 addLog(`📦 Meeting MediaRecorder stopped. Chunks: ${chunksRef.current.length}, Size: ${Math.round(rawBlob.size / 1024)} KB`);
+                setAudioBlob(rawBlob);
 
-                // Fallback/Priority logic for Android Chrome
-                if (isAndroid) {
-                    addLog("🔄 Android detected: Attempting to retrieve Gemini capture data (WAV)...");
-                    const geminiBlob = getCapturedAudio();
-                    if (geminiBlob && geminiBlob.size > 1000) {
-                        addLog(`✅ Using Gemini capture: ${Math.round(geminiBlob.size / 1024)} KB (WAV)`);
-                        setAudioBlob(geminiBlob);
-                    } else {
-                        addLog("⚠️ Gemini capture empty or too small, using raw MediaRecorder blob.");
-                        setAudioBlob(rawBlob);
-                    }
-                } else {
-                    setAudioBlob(rawBlob);
-                }
+                stream.getTracks().forEach(track => track.stop());
 
-                stream.getTracks().forEach(track => track.stop())
-
-                // Stop SpeechRecognition when recording stops
                 if (speechRecognitionRef.current) {
-                    try { speechRecognitionRef.current.stop() } catch (e) { }
+                    try { speechRecognitionRef.current.stop(); } catch (e) { }
                 }
-            }
+            };
 
-            // Start MediaRecorder (same timeslice as VoiceJournalRecorder)
-            mediaRecorder.start(15000)
+            // Start MediaRecorder
+            mediaRecorder.start(15000);
 
-            // Start SpeechRecognition (Skip on Android to avoid mic conflict)
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-            if (isAndroid) {
-                addLog("ℹ️ Skipping Web Speech on Android (using Gemini)");
-            } else if (SpeechRecognition) {
+            // Start SpeechRecognition (Unified)
+            const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            if (SpeechRecognitionWeb) {
                 try {
-                    const recognition = new SpeechRecognition()
-                    recognition.lang = 'ja-JP'
-                    recognition.continuous = true
-                    recognition.interimResults = true
-                    recognition.maxAlternatives = 1
+                    const recognition = new SpeechRecognitionWeb();
+                    recognition.lang = 'ja-JP';
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
 
                     recognition.onresult = (event: any) => {
-                        let interim = ''
-                        let finalText = ''
+                        let interim = '';
+                        let finalText = '';
 
                         for (let i = event.resultIndex; i < event.results.length; i++) {
-                            const result = event.results[i]
-                            if (result.isFinal) {
-                                if (i > lastProcessedIndexRef.current) {
-                                    const text = result[0].transcript.trim();
-                                    if (text && !isHallucination(text)) {
-                                        finalText += text + ' ';
-                                    }
-                                    lastProcessedIndexRef.current = i;
-                                }
-                            } else {
-                                interim += result[0].transcript
-                            }
+                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                            else interim += event.results[i][0].transcript;
                         }
 
-                        if (finalText) {
-                            setTranscript(prev => prev + finalText)
-                        }
-                        setInterimTranscript(interim)
-                    }
+                        if (finalText) setTranscript(prev => prev + finalText + ' ');
+                        setInterimTranscript(interim);
+                    };
 
                     recognition.onerror = (event: any) => {
-                        console.warn('SpeechRecognition error:', event.error)
-                        if (event.error === 'network') {
-                            setInterimTranscript('(ネットワークエラー)')
-                            setTimeout(() => {
-                                if (mediaRecorderRef.current?.state === 'recording') {
-                                    try { recognition.start(); setInterimTranscript('') } catch (e) { }
-                                }
-                            }, 2000)
-                        } else if (event.error === 'no-speech') {
-                            // Non-fatal - continue
-                        }
-                    }
+                        console.warn('SpeechRecognition error:', event.error);
+                    };
 
-                    // Auto-restart when recognition ends (key fix from VoiceJournalRecorder)
                     recognition.onend = () => {
-                        addLog("🔚 web speech ended (No auto-restart)")
-                    }
+                        if (isRecording) {
+                            try { recognition.start(); } catch (e) { }
+                        }
+                    };
 
-                    speechRecognitionRef.current = recognition
-                    recognition.start()
+                    speechRecognitionRef.current = recognition;
+                    recognition.start();
                 } catch (error) {
-                    console.error('Failed to init SpeechRecognition:', error)
-                    setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)')
+                    console.error('Failed to init SpeechRecognition:', error);
+                    setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)');
                 }
             }
 
-            setIsRecording(true)
+            setIsRecording(true);
             if (!isResuming) {
-                setRecordingTime(0)
-                setTranscript("")
+                setRecordingTime(0);
+                setTranscript("");
             }
-            // Reset index for the new SpeechRecognition instance
-            lastProcessedIndexRef.current = -1
-            setInterimTranscript("")
+            setInterimTranscript("");
 
             timerRef.current = setInterval(() => {
-                setRecordingTime(prev => prev + 1)
-            }, 1000)
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
 
         } catch (error: any) {
-            console.error("Failed to start recording:", error)
+            console.error("Failed to start recording:", error);
             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                alert('マイクへのアクセスが拒否されました。ブラウザの設定からマイクを許可してください。')
+                alert('マイクへのアクセスが拒否されました。ブラウザの設定からマイクを許可してください。');
             } else if (error.name === 'NotFoundError') {
-                alert('マイクが見つかりませんでした。')
+                alert('マイクが見つかりませんでした。');
             } else {
-                alert(`録音を開始できませんでした: ${error.message}`)
+                alert(`録音を開始できませんでした: ${error.message}`);
             }
         }
-    }
+    };
 
     const stopRecording = () => {
-        addLog("🛑 stopRecording requested")
+        addLog("🛑 stopRecording requested");
 
-        // 0. Stop timer first
         if (timerRef.current) {
-            clearInterval(timerRef.current as any)
-            timerRef.current = null
+            clearInterval(timerRef.current as any);
+            timerRef.current = null;
         }
 
-        // 1. Stop Gemini Live FIRST on Android to ensure data is settled for fallback
-        if (isGeminiLiveActive) {
-            addLog("💎 stopping Gemini Live")
-            try {
-                stopGeminiStreaming();
-            } catch (e) { }
-            setIsGeminiLiveActive(false);
-        }
-
-        // 2. Stop MediaRecorder (this triggers onstop fallback)
         if (mediaRecorderRef.current && isRecording) {
-            addLog("🎥 stopping MediaRecorder")
-            mediaRecorderRef.current.stop()
+            addLog("🎥 stopping MediaRecorder");
+            mediaRecorderRef.current.stop();
         }
 
-        // 3. Final state switch
-        setIsRecording(false)
+        setIsRecording(false);
 
-        // Android Chrome Case cleanup (if web speech was used)
         if (speechRecognitionRef.current) {
             try { speechRecognitionRef.current.stop(); } catch (e) { }
+            speechRecognitionRef.current = null;
         }
     };
 

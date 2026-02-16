@@ -157,47 +157,21 @@ export default function VoiceJournalRecorder({
         }
     };
 
-    // --- Gemini Live Hook (Android Only) ---
-    const {
-        isStreaming: isGeminiStreaming,
-        isConnected: isGeminiConnected,
-        startStreaming: startGeminiStreaming,
-        stopStreaming: stopGeminiStreaming,
-        getCapturedAudio,
-        analyser: geminiAnalyser
-    } = useGeminiLive({
-        apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
-        onTranscript: (text) => {
-            setTranscript(prev => prev + text);
-        },
-        onLog: addLog,
-        onError: (err) => {
-            addLog(`Gemini Error: ${err}`);
-            setInterimTranscript("(接続エラー)");
-            // Fallback to normal?
-        }
-    });
+    // --- Speech Recognition Setup ---
+    // Note: useGeminiLive is removed here as we unify to standard Web Speech API.
 
     // --- Visualizer Drawing ---
     const startVisualizer = (stream: MediaStream) => {
         if (!canvasRef.current) return;
 
         try {
-            let analyser = geminiAnalyser;
-
-            if (!analyser) {
-                const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-                const audioContext = new AudioContextClass();
-                const source = audioContext.createMediaStreamSource(stream);
-                analyser = audioContext.createAnalyser();
-                if (analyser) {
-                    analyser.fftSize = 256;
-                    source.connect(analyser);
-                    audioContextRef.current = audioContext;
-                }
-            }
-
-            if (!analyser) return;
+            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            const audioContext = new AudioContextClass();
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+            audioContextRef.current = audioContext;
             analyserRef.current = analyser;
 
             const canvas = canvasRef.current;
@@ -208,8 +182,8 @@ export default function VoiceJournalRecorder({
             const dataArray = new Uint8Array(bufferLength);
 
             const draw = () => {
-                if (!analyser) return;
-                analyser.getByteFrequencyData(dataArray);
+                if (!analyserRef.current) return;
+                analyserRef.current.getByteFrequencyData(dataArray);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -223,6 +197,7 @@ export default function VoiceJournalRecorder({
                     ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                     x += barWidth + 1;
                 }
+                animationFrameRef.current = requestAnimationFrame(draw);
             };
 
             draw();
@@ -262,15 +237,10 @@ export default function VoiceJournalRecorder({
             return
         }
 
-        // --- Standard Voice Recording Path (Unified) ---
-        // We use Web Speech API for real-time transcription and MediaRecorder for audio saving.
-        // This follows the successful pattern in Ainance.
         try {
             addLog("🏁 startRecording requested");
 
             // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
-            const actualAndroid = getIsAndroid();
-
             if (audioContextRef.current) {
                 await audioContextRef.current.resume();
                 addLog("🔊 AudioContext resumed");
@@ -282,41 +252,18 @@ export default function VoiceJournalRecorder({
                 addLog("⚠️ No microphone hardware detected");
             }
 
-            const isNative = Capacitor.isNativePlatform();
-
-            // ===================================================================
-            // ANDROID CHROME: Web Speech API has EXCLUSIVE mic access.
-            // We CANNOT run getUserMedia + webkitSpeechRecognition at the same time.
-            // Strategy: Use Gemini Live via WebSocket for real-time transcription.
-            // ===================================================================
             addLog("🎙️ requesting getUserMedia...");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             addLog("✅ stream granted");
 
-            if (actualAndroid && !isNative) {
-                addLog("📱 Android Chrome mode: Using Gemini Live (WebSocket)");
-                setIsGeminiLiveActive(true);
-                const isResuming = !!options?.isResuming;
-                await startGeminiStreaming(stream, { isResuming });
-            }
-
             // MIME Type detection
             let mimeType = "";
-
-            if (isAndroid) {
-                if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                    mimeType = "audio/mp4";
-                } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-                    mimeType = "audio/webm;codecs=opus";
-                } else if (MediaRecorder.isTypeSupported("audio/webm")) {
-                    mimeType = "audio/webm";
-                }
-            } else {
-                if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-                    mimeType = "audio/webm;codecs=opus";
-                } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                    mimeType = "audio/mp4";
-                }
+            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                mimeType = "audio/webm;codecs=opus";
+            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                mimeType = "audio/mp4";
+            } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+                mimeType = "audio/webm";
             }
 
             const recorderOptions = mimeType ? { mimeType } : undefined;
@@ -344,22 +291,7 @@ export default function VoiceJournalRecorder({
                 const type = mediaRecorderRef.current?.mimeType || mimeType || 'audio/webm';
                 const rawBlob = new Blob(chunksRef.current, { type });
                 addLog(`📦 MediaRecorder stopped. Chunks: ${chunksRef.current.length}, Size: ${Math.round(rawBlob.size / 1024)} KB`);
-
-                // Fallback/Priority logic for Android Chrome
-                if (isAndroid && !isNative) {
-                    addLog("🔄 Android detected: Attempting to retrieve Gemini capture data (WAV)...");
-                    const geminiBlob = getCapturedAudio();
-                    if (geminiBlob && geminiBlob.size > 1000) {
-                        addLog(`✅ Using Gemini capture: ${Math.round(geminiBlob.size / 1024)} KB (WAV)`);
-                        setAudioBlob(geminiBlob);
-                    } else {
-                        addLog("⚠️ Gemini capture empty or too small, using raw MediaRecorder blob.");
-                        setAudioBlob(rawBlob);
-                    }
-                } else {
-                    setAudioBlob(rawBlob);
-                }
-
+                setAudioBlob(rawBlob);
                 stream.getTracks().forEach(track => track.stop());
 
                 if (speechRecognitionRef.current) {
@@ -374,46 +306,42 @@ export default function VoiceJournalRecorder({
             startVisualizer(stream);
             addLog("📊 visualizer started");
 
-            // Start Web Speech API (SKIP on Android to avoid mic conflict)
-            if (actualAndroid && !isNative) {
-                addLog("ℹ️ Skipping Web Speech on Android (using Gemini)");
-            } else {
-                addLog("🌐 trying Web Speech API...");
-                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                if (SpeechRecognitionWeb) {
-                    try {
-                        const recognition = new SpeechRecognitionWeb();
-                        recognition.lang = 'ja-JP';
-                        recognition.continuous = true;
-                        recognition.interimResults = true;
+            // Start Web Speech API (Unified across all platforms)
+            addLog("🌐 trying Web Speech API...");
+            const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            if (SpeechRecognitionWeb) {
+                try {
+                    const recognition = new SpeechRecognitionWeb();
+                    recognition.lang = 'ja-JP';
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
 
-                        recognition.onstart = () => addLog("🚀 web speech active");
-                        recognition.onresult = (event: any) => {
-                            let interim = '';
-                            let finalText = '';
-                            for (let i = event.resultIndex; i < event.results.length; i++) {
-                                if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                                else interim += event.results[i][0].transcript;
-                            }
-                            if (finalText) setTranscript(prev => prev + finalText + ' ');
-                            setInterimTranscript(interim);
-                        };
+                    recognition.onstart = () => addLog("🚀 web speech active");
+                    recognition.onresult = (event: any) => {
+                        let interim = '';
+                        let finalText = '';
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                            else interim += event.results[i][0].transcript;
+                        }
+                        if (finalText) setTranscript(prev => prev + finalText + ' ');
+                        setInterimTranscript(interim);
+                    };
 
-                        recognition.onerror = (event: any) => {
-                            addLog(`❌ web speech error: ${event.error}`);
-                        };
+                    recognition.onerror = (event: any) => {
+                        addLog(`❌ web speech error: ${event.error}`);
+                    };
 
-                        recognition.onend = () => {
-                            if (isRecording) {
-                                try { recognition.start(); } catch (e) { }
-                            }
-                        };
+                    recognition.onend = () => {
+                        if (isRecording) {
+                            try { recognition.start(); } catch (e) { }
+                        }
+                    };
 
-                        speechRecognitionRef.current = recognition;
-                        recognition.start();
-                    } catch (e) {
-                        addLog(`⚠️ web speech failed: ${e}`);
-                    }
+                    speechRecognitionRef.current = recognition;
+                    recognition.start();
+                } catch (e) {
+                    addLog(`⚠️ web speech failed: ${e}`);
                 }
             }
 
@@ -431,66 +359,30 @@ export default function VoiceJournalRecorder({
 
         } catch (error: any) {
             console.error("Failed to start recording:", error);
-
-            let errorMessage = "録音を開始できませんでした。";
-
-            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                errorMessage = "マイクへのアクセスが拒否されました。ブラウザの設定で許可してください。";
-            } else if (error.name === 'NotFoundError') {
-                errorMessage = "マイクが見つかりませんでした。";
-            } else if (error.name === 'NotReadableError') {
-                errorMessage = "マイクにアクセスできません。他のアプリが使用中の可能性があります。";
-            }
-
-            alert(errorMessage);
+            alert("録音を開始できませんでした。");
         }
     };
 
     const stopRecording = async () => {
         addLog("🛑 stopRecording requested");
 
-        // 0. Stop timer first
         if (timerRef.current) {
             clearInterval(timerRef.current as any);
             timerRef.current = null;
         }
 
-        // 1. Stop Gemini Live FIRST on Android to ensure data is settled for fallback
-        if (isGeminiLiveActive) {
-            addLog("💎 stopping Gemini Live");
-            try {
-                // We stop streaming first so that the last chunks are processed
-                stopGeminiStreaming();
-            } catch (e) { }
-            setIsGeminiLiveActive(false);
-        }
-
-        // 2. Stop MediaRecorder (this triggers onstop fallback)
+        // Standard stop sequence
         if (mediaRecorderRef.current && isRecording) {
             addLog("🎥 stopping MediaRecorder");
             mediaRecorderRef.current.stop();
         }
 
-        // 3. Handle Native platform
-        const isNative = Capacitor.isNativePlatform();
-        if (isAndroid && isNative) {
-            try {
-                if (interimTranscript) {
-                    setTranscript(prev => prev + interimTranscript + ' ');
-                    setInterimTranscript("");
-                }
-                await SpeechRecognition.stop();
-                SpeechRecognition.removeAllListeners();
-            } catch (e) { }
-        }
-
-        // 4. Final state switch
         setIsRecording(false);
         stopVisualizer();
 
-        // Android Chrome Case cleanup (if web speech was used)
         if (speechRecognitionRef.current) {
             try { speechRecognitionRef.current.stop(); } catch (e) { }
+            speechRecognitionRef.current = null;
         }
     };
 
@@ -504,7 +396,6 @@ export default function VoiceJournalRecorder({
         setIsProcessing(true);
 
         try {
-            // 1. Voice file upload
             const mimeType = audioBlob.type;
             let ext = "webm";
             if (mimeType.includes("mp4")) ext = "mp4";
@@ -532,7 +423,6 @@ export default function VoiceJournalRecorder({
 
             const uploadData = await uploadRes.json();
 
-            // 2. 音声ジャーナルを作成（リアルタイム文字起こしを使用）
             const createRes = await fetch("/api/voice-journal/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -553,7 +443,6 @@ export default function VoiceJournalRecorder({
             const result = await createRes.json();
             addLog("🎉 Journal created successfully!");
 
-            // リセット
             setAudioBlob(null);
             setRecordingTime(0);
             setTranscript("");
@@ -565,7 +454,6 @@ export default function VoiceJournalRecorder({
                 onComplete(result.id);
             }
 
-            // 音声ジャーナルページに遷移
             router.push("/journal?tab=voice");
 
         } catch (error: any) {
