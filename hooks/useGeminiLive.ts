@@ -60,7 +60,9 @@ registerProcessor('pcm-processor', PCMProcessor);
 
 const FALLBACK_MODELS = [
     "models/gemini-2.0-flash-exp",
-    "models/gemini-2.0-flash", // Attempt fallback
+    "models/gemini-2.0-flash",
+    "models/gemini-1.5-flash-latest", // Known stable fallback
+    "models/gemini-1.5-pro-latest"
 ];
 
 export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLiveProps) { // Changed onLog to onError
@@ -157,15 +159,25 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
                 setIsConnected(false);
                 setIsStreaming(false);
 
-                // Retry logic for Rate Limit (429) or Service Unavailable (503) or generic 1011 (Internal Error)
-                if (ev.code === 429 || ev.code === 503 || ev.code === 1011 || reason.includes("429")) {
-                    console.warn("⚠️ Rate limit or server error detected. Switching model...");
-                    setDebugInfo(prev => ({ ...prev, status: `RateLimited. Switching...` }));
+                // Retry logic for Rate Limit (429), Service Unavailable (503), Internal (1011), or Policy/Model Error (1008)
+                // Note: 1008 is often "Policy Violation" but can also be "Model not found" or "Invalid key" depending on the reason text.
+                // We'll retry to be safe if it's a model issue.
+                if (
+                    ev.code === 429 ||
+                    ev.code === 503 ||
+                    ev.code === 1011 ||
+                    ev.code === 1008 ||
+                    reason.includes("429") ||
+                    reason.includes("not found") ||
+                    reason.includes("not supported")
+                ) {
+                    console.warn("⚠️ Rate limit or model error detected. Switching model...");
+                    setDebugInfo(prev => ({ ...prev, status: `Switching Model...` }));
 
                     // Delay before retry to avoid spamming
                     setTimeout(() => {
                         setModelIndex(prev => prev + 1);
-                    }, 2000);
+                    }, 1000);
                 } else {
                     setDebugInfo(prev => ({ ...prev, status: `Closed:${ev.code}${reason}` }));
                 }
