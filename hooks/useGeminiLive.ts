@@ -77,6 +77,7 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
     }>({ status: 'Idle', chunksSent: 0 });
 
     const [modelIndex, setModelIndex] = useState(0);
+    const retryCountRef = useRef(0);
     const websocketRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const workletNodeRef = useRef<AudioWorkletNode | null>(null);
@@ -147,8 +148,8 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
 
             ws.onerror = (error) => {
                 console.log(`❌ WebSocket Error`);
-                if (onError) onError(error);
-                setIsConnected(false);
+                // Only trigger global onError if we are NOT going to retry (handled in onclose)
+                // or if it's the initial connection attempt managed by startStreaming
                 setDebugInfo(prev => ({ ...prev, lastError: "WebSocket Error" }));
                 reject(error);
             };
@@ -163,16 +164,20 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
                 // Note: 1008 is often "Policy Violation" but can also be "Model not found" or "Invalid key" depending on the reason text.
                 // We'll retry to be safe if it's a model issue.
                 if (
-                    ev.code === 429 ||
-                    ev.code === 503 ||
-                    ev.code === 1011 ||
-                    ev.code === 1008 ||
-                    reason.includes("429") ||
-                    reason.includes("not found") ||
-                    reason.includes("not supported")
+                    (ev.code === 429 ||
+                        ev.code === 503 ||
+                        ev.code === 1011 ||
+                        ev.code === 1008 ||
+                        reason.includes("429") ||
+                        reason.includes("not found") ||
+                        reason.includes("not supported")) &&
+                    retryCountRef.current < FALLBACK_MODELS.length
                 ) {
-                    console.warn("⚠️ Rate limit or model error detected. Switching model...");
-                    setDebugInfo(prev => ({ ...prev, status: `Switching Model...` }));
+                    const nextModel = FALLBACK_MODELS[(modelIndex + 1) % FALLBACK_MODELS.length];
+                    console.warn(`⚠️ Error detected. Retrying with ${nextModel} (Attempt ${retryCountRef.current + 1}/${FALLBACK_MODELS.length})...`);
+                    setDebugInfo(prev => ({ ...prev, status: `Retry ${retryCountRef.current + 1}...` }));
+
+                    retryCountRef.current += 1;
 
                     // Delay before retry to avoid spamming
                     setTimeout(() => {
@@ -180,6 +185,7 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
                     }, 1000);
                 } else {
                     setDebugInfo(prev => ({ ...prev, status: `Closed:${ev.code}${reason}` }));
+                    if (onError) onError(`Connection Failed: ${reason || ev.code}`);
                 }
             };
 
@@ -265,6 +271,14 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
         }
     }, [connect, onError]); // Removed log from dependencies
 
+    // Reset retry count on successful manual start
+    const startStreamingWrapper = useCallback(async (existingStream?: MediaStream) => {
+        retryCountRef.current = 0;
+        await startStreaming(existingStream);
+    }, [startStreaming]);
+
+
+
     const stopStreaming = useCallback(() => {
         console.log("Stopping streaming...");
         if (streamRef.current) {
@@ -298,7 +312,7 @@ export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLivePr
     return {
         isStreaming,
         isConnected,
-        startStreaming,
+        startStreaming: startStreamingWrapper,
         stopStreaming,
         debugInfo // expose for UI
     };
