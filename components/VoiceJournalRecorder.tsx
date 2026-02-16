@@ -281,7 +281,8 @@ export default function VoiceJournalRecorder({
             if (isAndroid && !isNative) {
                 addLog("📱 Android Chrome mode: Using Gemini Live (WebSocket)");
                 setIsGeminiLiveActive(true);
-                await startGeminiStreaming(stream);
+                const isResuming = !!options?.isResuming;
+                await startGeminiStreaming(stream, { isResuming });
             }
 
             // MIME Type detection
@@ -303,10 +304,10 @@ export default function VoiceJournalRecorder({
                 }
             }
 
-            const options = mimeType ? { mimeType } : undefined;
+            const recorderOptions = mimeType ? { mimeType } : undefined;
 
             try {
-                const mediaRecorder = new MediaRecorder(stream, options);
+                const mediaRecorder = new MediaRecorder(stream, recorderOptions);
                 mediaRecorderRef.current = mediaRecorder;
             } catch (e) {
                 mediaRecorderRef.current = new MediaRecorder(stream);
@@ -327,6 +328,7 @@ export default function VoiceJournalRecorder({
             mediaRecorderRef.current.onstop = () => {
                 const type = mediaRecorderRef.current?.mimeType || mimeType || 'audio/webm';
                 const blob = new Blob(chunksRef.current, { type });
+                addLog(`📦 MediaRecorder stopped. Chunks: ${chunksRef.current.length}, Size: ${Math.round(blob.size / 1024)} KB`);
                 setAudioBlob(blob);
                 stream.getTracks().forEach(track => track.stop());
 
@@ -334,13 +336,15 @@ export default function VoiceJournalRecorder({
                     try { speechRecognitionRef.current.stop(); } catch (e) { }
                 }
 
-                // Fallback for Android Chrome: if chunks are empty, try Gemini Live capture
-                if (chunksRef.current.length === 0 && isAndroid) {
-                    addLog("⚠️ MediaRecorder chunks empty. Trying Gemini capture...");
+                // Fallback for Android Chrome: if chunks are empty OR too small (likely failed), try Gemini Live capture
+                if (isAndroid && (chunksRef.current.length === 0 || blob.size < 1000)) {
+                    addLog("⚠️ MediaRecorder likely failed (empty or tiny). Trying Gemini capture...");
                     const fallbackBlob = getCapturedAudio();
                     if (fallbackBlob) {
-                        addLog("✅ Fallback audio captured from Gemini stream");
+                        addLog(`✅ Fallback audio captured from Gemini stream: ${Math.round(fallbackBlob.size / 1024)} KB`);
                         setAudioBlob(fallbackBlob);
+                    } else {
+                        addLog("❌ Gemini capture also returned no data");
                     }
                 }
             };
@@ -421,19 +425,26 @@ export default function VoiceJournalRecorder({
     const stopRecording = async () => {
         addLog("🛑 stopRecording requested");
 
-        // 1. Stop MediaRecorder FIRST to ensure it yields the final blob chunks
-        if (mediaRecorderRef.current && isRecording) {
-            addLog("🎥 stopping MediaRecorder");
-            mediaRecorderRef.current.stop();
+        // 0. Stop timer first
+        if (timerRef.current) {
+            clearInterval(timerRef.current as any);
+            timerRef.current = null;
         }
 
-        // 2. Stop Gemini Live (does not kill tracks anymore if we manage them)
+        // 1. Stop Gemini Live FIRST on Android to ensure data is settled for fallback
         if (isGeminiLiveActive) {
             addLog("💎 stopping Gemini Live");
             try {
+                // We stop streaming first so that the last chunks are processed
                 stopGeminiStreaming();
             } catch (e) { }
             setIsGeminiLiveActive(false);
+        }
+
+        // 2. Stop MediaRecorder (this triggers onstop fallback)
+        if (mediaRecorderRef.current && isRecording) {
+            addLog("🎥 stopping MediaRecorder");
+            mediaRecorderRef.current.stop();
         }
 
         // 3. Handle Native platform
@@ -449,13 +460,7 @@ export default function VoiceJournalRecorder({
             } catch (e) { }
         }
 
-        // 4. Timer cleanup and state reset
-        if (timerRef.current) {
-            clearInterval(timerRef.current as any);
-            timerRef.current = null;
-        }
-
-        // 5. Final state switch
+        // 4. Final state switch
         setIsRecording(false);
         stopVisualizer();
 
@@ -617,48 +622,49 @@ export default function VoiceJournalRecorder({
                             </div>
                         )}
                         {/* Header */}
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-xl font-bold text-white mb-1">音声ジャーナル</h3>
-                                <div className="flex items-center gap-3">
-                                    <p className="text-white/40 text-sm">
-                                        {isRecording ? "録音中..." : "小さな記録が、見える景色を変えていく"}
-                                    </p>
-                                    {!isRecording && (audioBlob || transcript) && (
-                                        <button
-                                            onClick={resumeRecording}
-                                            disabled={isProcessing}
-                                            className="flex items-center gap-2 px-3 py-1 text-xs font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-full transition-all disabled:opacity-40 whitespace-nowrap"
-                                        >
-                                            <RotateCcw className="w-3 h-3" />
-                                            <span>再開して追加</span>
-                                        </button>
-                                    )}
-                                </div>
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-xl font-bold text-white">音声ジャーナル</h3>
                             </div>
-                            {isRecording && (
-                                <div className="flex items-center gap-3">
-                                    <div className="text-emerald-400 font-mono font-bold">
-                                        {formatTime(recordingTime)}
-                                    </div>
+                            <div className="flex items-center gap-3">
+                                {!isRecording && (audioBlob || transcript) && (
                                     <button
-                                        onClick={stopRecording}
-                                        className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all animate-pulse"
+                                        onClick={resumeRecording}
+                                        disabled={isProcessing}
+                                        className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-emerald-400 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/40 rounded-full transition-all disabled:opacity-40 whitespace-nowrap border border-emerald-500/30"
                                     >
-                                        <Square className="w-5 h-5 fill-current" />
+                                        <RotateCcw className="w-3 h-3" />
+                                        <span>録音を再開</span>
                                     </button>
-                                </div>
-                            )}
+                                )}
+                                {isRecording && (
+                                    <>
+                                        <div className="text-emerald-400 font-mono font-bold text-lg">
+                                            {formatTime(recordingTime)}
+                                        </div>
+                                        <button
+                                            onClick={stopRecording}
+                                            className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"
+                                        >
+                                            <Square className="w-4 h-4 fill-current" />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
+                        <p className="text-white/40 text-xs mb-4">
+                            {isRecording ? "あなたの声を聴いています..." : "小さな記録が、見える景色を変えていく"}
+                        </p>
 
                         {/* Visualizer & Transcript Area */}
-                        <div className="bg-white/5 rounded-2xl p-4 min-h-[120px] max-h-[220px] overflow-y-auto border border-white/5 relative">
+                        <div className={`bg-white/5 rounded-2xl pt-2 px-4 pb-4 min-h-[120px] max-h-[220px] overflow-y-auto border relative transition-all ${!isRecording && audioBlob ? "border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]" : "border-white/5"
+                            }`}>
                             {isRecording && (
-                                <div className="absolute top-0 left-0 w-full h-12 overflow-hidden px-4 pt-2">
-                                    <canvas ref={canvasRef} width={300} height={40} className="w-full h-full opacity-60" />
+                                <div className="absolute top-0 left-0 w-full h-6 overflow-hidden px-4 pt-1">
+                                    <canvas ref={canvasRef} width={300} height={20} className="w-full h-full opacity-60" />
                                 </div>
                             )}
-                            <div className={isRecording ? "mt-12" : ""}>
+                            <div className={isRecording ? "mt-2" : ""}>
                                 {isRecording ? (
                                     <p className="text-white/80 leading-relaxed text-sm">
                                         {transcript}

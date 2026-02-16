@@ -124,7 +124,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             if (isAndroid) {
                 addLog("📱 Android Chrome detected: Using Gemini Live path")
                 setIsGeminiLiveActive(true)
-                await startGeminiStreaming(stream)
+                await startGeminiStreaming(stream, { isResuming })
             }
 
             let mimeType = "audio/webm"
@@ -150,6 +150,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
             mediaRecorder.onstop = () => {
                 const blob = new Blob(chunksRef.current, { type: mimeType })
+                addLog(`📦 Meeting MediaRecorder stopped. Chunks: ${chunksRef.current.length}, Size: ${Math.round(blob.size / 1024)} KB`);
                 setAudioBlob(blob)
                 stream.getTracks().forEach(track => track.stop())
 
@@ -158,13 +159,15 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                     try { speechRecognitionRef.current.stop() } catch (e) { }
                 }
 
-                // Fallback for Android Chrome
-                if (chunksRef.current.length === 0 && isAndroid) {
-                    addLog("⚠️ MediaRecorder chunks empty. Trying Gemini capture...");
+                // Fallback for Android Chrome: if chunks are empty OR tiny, try Gemini Live capture
+                if (isAndroid && (chunksRef.current.length === 0 || blob.size < 1000)) {
+                    addLog("⚠️ MediaRecorder likely failed (empty/tiny). Trying Gemini capture...");
                     const fallbackBlob = getCapturedAudio();
                     if (fallbackBlob) {
-                        addLog("✅ Fallback audio captured from Gemini stream");
+                        addLog(`✅ Fallback audio captured from Gemini stream: ${Math.round(fallbackBlob.size / 1024)} KB`);
                         setAudioBlob(fallbackBlob);
+                    } else {
+                        addLog("❌ Gemini capture also returned no data");
                     }
                 }
             }
@@ -264,13 +267,13 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const stopRecording = () => {
         addLog("🛑 stopRecording requested")
 
-        // 1. Stop MediaRecorder FIRST to ensure it yields the final blob chunks
-        if (mediaRecorderRef.current && isRecording) {
-            addLog("🎥 stopping MediaRecorder")
-            mediaRecorderRef.current.stop()
+        // 0. Stop timer first
+        if (timerRef.current) {
+            clearInterval(timerRef.current as any)
+            timerRef.current = null
         }
 
-        // 2. Stop Gemini Live (does not kill tracks anymore if we manage them)
+        // 1. Stop Gemini Live FIRST on Android to ensure data is settled for fallback
         if (isGeminiLiveActive) {
             addLog("💎 stopping Gemini Live")
             try {
@@ -279,13 +282,13 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             setIsGeminiLiveActive(false);
         }
 
-        // 3. Timer cleanup and state reset
-        if (timerRef.current) {
-            clearInterval(timerRef.current as any)
-            timerRef.current = null
+        // 2. Stop MediaRecorder (this triggers onstop fallback)
+        if (mediaRecorderRef.current && isRecording) {
+            addLog("🎥 stopping MediaRecorder")
+            mediaRecorderRef.current.stop()
         }
 
-        // 4. Final state switch
+        // 3. Final state switch
         setIsRecording(false)
 
         // Android Chrome Case cleanup (if web speech was used)
@@ -424,58 +427,49 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                         <div className="relative z-10 p-5 sm:p-6">
 
                             {/* Header */}
-                            <div className="flex items-start justify-between gap-4 mb-5">
-                                <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-4 mb-2">
+                                <div className="flex items-center gap-3">
                                     <h3 className="text-lg font-bold text-white/90 tracking-tight">
-                                        議事録を録音して要約
+                                        議事録を録音
                                     </h3>
-                                    <div className="flex items-center gap-3">
-                                        <p className="text-white/40 text-xs mt-0.5">
-                                            {!isRecording && !audioBlob && "マイクをタップして録音開始"}
-                                            {isRecording && "リアルタイムで文字起こし中…"}
-                                            {!isRecording && audioBlob && "テキストを編集して保存できます"}
-                                        </p>
-                                        {!isRecording && audioBlob && (
-                                            <button
-                                                onClick={() => resumeRecording()}
-                                                disabled={isProcessing}
-                                                className="flex items-center gap-2 px-3 py-1 text-xs font-medium text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-full transition-all disabled:opacity-40 whitespace-nowrap"
-                                            >
-                                                <RotateCcw className="w-3 h-3" />
-                                                <span>再開して追加</span>
-                                            </button>
-                                        )}
-                                    </div>
                                 </div>
 
-                                {/* Mic / Stop Button (top-right, only when not in recorded state) */}
-                                {!audioBlob && (
-                                    <div className="relative shrink-0">
-                                        {isRecording && (
-                                            <motion.div
-                                                animate={{ scale: [1, 1.6, 1], opacity: [0.4, 0, 0.4] }}
-                                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                                className="absolute inset-0 bg-red-500/60 rounded-full blur-lg"
-                                            />
-                                        )}
+                                <div className="flex items-center gap-3">
+                                    {isRecording ? (
+                                        <>
+                                            <div className="text-cyan-400 font-mono font-bold text-lg tabular-nums">
+                                                {formatTime(recordingTime)}
+                                            </div>
+                                            <button
+                                                onClick={stopRecording}
+                                                className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"
+                                            >
+                                                <Square className="w-4 h-4 fill-current" />
+                                            </button>
+                                        </>
+                                    ) : audioBlob ? (
+                                        <button
+                                            onClick={() => resumeRecording()}
+                                            disabled={isProcessing}
+                                            className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-cyan-400 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/40 rounded-full transition-all disabled:opacity-40 whitespace-nowrap border border-cyan-500/30"
+                                        >
+                                            <RotateCcw className="w-3 h-3" />
+                                            <span>録音を再開</span>
+                                        </button>
+                                    ) : (
                                         <motion.button
                                             whileTap={{ scale: 0.9 }}
-                                            onClick={isRecording ? stopRecording : () => startRecording()}
-                                            disabled={isProcessing}
-                                            className={`relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${isRecording
-                                                ? "bg-red-500 shadow-red-500/40"
-                                                : "bg-gradient-to-br from-cyan-500 to-blue-600 shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-105"
-                                                } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+                                            onClick={() => startRecording()}
+                                            className="relative w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-105 transition-all"
                                         >
-                                            {isRecording ? (
-                                                <Square className="w-5 h-5 text-white fill-white" />
-                                            ) : (
-                                                <Mic className="w-5 h-5 text-white" strokeWidth={2.5} />
-                                            )}
+                                            <Mic className="w-5 h-5 text-white" strokeWidth={2.5} />
                                         </motion.button>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
+                            <p className="text-white/40 text-xs mb-4">
+                                {isRecording ? "会議の音声を聴いています..." : "マイクボタンをタップして開始してください"}
+                            </p>
 
                             {/* Recording Timer */}
                             <AnimatePresence>
@@ -568,13 +562,11 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                                     LIVE
                                                 </motion.span>
                                             )}
-                                            {!isRecording && transcript && (
-                                                <span className="text-[10px] text-white/20 ml-auto">✏️ 編集可能</span>
-                                            )}
                                         </div>
-                                        <div className="relative rounded-xl bg-white/[0.03] border border-white/[0.05] overflow-hidden">
+                                        <div className={`relative rounded-xl bg-white/[0.03] border overflow-hidden transition-all ${!isRecording && audioBlob ? "border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.1)]" : "border-white/[0.05]"
+                                            }`}>
                                             {isRecording ? (
-                                                <div className="p-3.5 max-h-40 overflow-y-auto">
+                                                <div className="pt-1.5 px-3.5 pb-3.5 max-h-40 overflow-y-auto">
                                                     <p className="text-white/70 text-sm leading-relaxed break-words">
                                                         {transcript}
                                                         {interimTranscript && (
@@ -594,19 +586,12 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                                     rows={5}
                                                 />
                                             )}
+                                            {!isRecording && transcript && (
+                                                <span className="absolute bottom-2 right-3 text-[10px] text-white/20 pointer-events-none">✏️ 編集可能</span>
+                                            )}
                                         </div>
 
-                                        {/* Resume Recording Button */}
-                                        {!isRecording && audioBlob && (
-                                            <button
-                                                onClick={resumeRecording}
-                                                disabled={isProcessing}
-                                                className="flex items-center gap-2 mt-2 px-3 py-2 text-xs font-medium text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all disabled:opacity-40"
-                                            >
-                                                <RotateCcw className="w-3 h-3" />
-                                                <span>録音を再開して追加</span>
-                                            </button>
-                                        )}
+                                        {/* Resume Recording Button removed per user request */}
                                     </motion.div>
                                 )}
                             </AnimatePresence>

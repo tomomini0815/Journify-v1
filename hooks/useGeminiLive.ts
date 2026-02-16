@@ -91,11 +91,17 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
         });
     }, [apiKey, onTranscript, log, onError]);
 
-    const startStreaming = useCallback(async (existingStream?: MediaStream) => {
+    const startStreaming = useCallback(async (existingStream?: MediaStream, options?: { isResuming?: boolean }) => {
         try {
             await connect();
             log("Connection confirmed. Starting media...");
-            capturedChunksRef.current = [];
+
+            // Only clear chunks if NOT resuming
+            if (!options?.isResuming) {
+                capturedChunksRef.current = [];
+            } else {
+                log("🔄 Resuming: appending to existing audio chunks");
+            }
 
             let stream = existingStream;
             if (!stream) {
@@ -166,7 +172,9 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                         resampledData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                     }
 
-                    bufferAccumulator = new Float32Array(0);
+                    // Keep the REMAINDER instead of clearing everything
+                    const usedInputLength = Math.floor(outputLength * ratio);
+                    bufferAccumulator = bufferAccumulator.slice(usedInputLength);
 
                     // Accumulate for fallback recording
                     capturedChunksRef.current.push(new Int16Array(resampledData));
@@ -193,6 +201,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
 
             workletNodeRef.current = processor;
             setIsStreaming(true);
+            log(`🎙️ Streaming Started (bufferAccumulator managed)`);
 
         } catch (err) {
             log(`Failed to start audio stream: ${err}`);
