@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Mic, Square, Loader2, CheckCircle2, FileText, X, RotateCcw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import VoiceJournalRecorder from "./VoiceJournalRecorder"
+import { useGeminiLive } from "@/hooks/useGeminiLive"
 
 interface VoiceRecordingSectionProps {
     projects?: Array<{ id: string; title: string }>
@@ -66,7 +67,19 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     }, [])
 
     // --- Gemini Live Hook (Android Only) ---
-    // --- Gemini Live integration removed as we unify to standard Web Speech API ---
+    // --- Gemini Live Hook (Android Only) ---
+    const {
+        startStreaming: startGeminiStreaming,
+        stopStreaming: stopGeminiStreaming,
+    } = useGeminiLive({
+        apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
+        onTranscript: (text) => {
+            setTranscript(prev => prev + text);
+        },
+        onError: (err) => {
+            console.error(`Gemini Error: ${err}`);
+        }
+    });
 
     // Cleanup on unmount
     useEffect(() => {
@@ -136,43 +149,49 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             // Start MediaRecorder
             mediaRecorder.start(15000);
 
-            // Start SpeechRecognition (Unified)
-            const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            if (SpeechRecognitionWeb) {
-                try {
-                    const recognition = new SpeechRecognitionWeb();
-                    recognition.lang = 'ja-JP';
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
+            // Start Transcription (Hybrid Strategy)
+            if (isAndroid) {
+                addLog("🤖 Android detected: Using Gemini Live for transcription");
+                await startGeminiStreaming(stream);
+            } else {
+                // Start SpeechRecognition (Unified)
+                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                if (SpeechRecognitionWeb) {
+                    try {
+                        const recognition = new SpeechRecognitionWeb();
+                        recognition.lang = 'ja-JP';
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
 
-                    recognition.onresult = (event: any) => {
-                        let interim = '';
-                        let finalText = '';
+                        recognition.onresult = (event: any) => {
+                            let interim = '';
+                            let finalText = '';
 
-                        for (let i = event.resultIndex; i < event.results.length; i++) {
-                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                            else interim += event.results[i][0].transcript;
-                        }
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                                if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                                else interim += event.results[i][0].transcript;
+                            }
 
-                        if (finalText) setTranscript(prev => prev + finalText + ' ');
-                        setInterimTranscript(interim);
-                    };
+                            if (finalText) setTranscript(prev => prev + finalText + ' ');
+                            setInterimTranscript(interim);
+                        };
 
-                    recognition.onerror = (event: any) => {
-                        console.warn('SpeechRecognition error:', event.error);
-                    };
+                        recognition.onerror = (event: any) => {
+                            console.warn('SpeechRecognition error:', event.error);
+                        };
 
-                    recognition.onend = () => {
-                        if (isRecording) {
-                            try { recognition.start(); } catch (e) { }
-                        }
-                    };
+                        recognition.onend = () => {
+                            if (isRecording) {
+                                try { recognition.start(); } catch (e) { }
+                            }
+                        };
 
-                    speechRecognitionRef.current = recognition;
-                    recognition.start();
-                } catch (error) {
-                    console.error('Failed to init SpeechRecognition:', error);
-                    setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)');
+                        speechRecognitionRef.current = recognition;
+                        recognition.start();
+                    } catch (error) {
+                        console.error('Failed to init SpeechRecognition:', error);
+                        setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)');
+                    }
                 }
             }
 
@@ -205,6 +224,11 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
         if (timerRef.current) {
             clearInterval(timerRef.current as any);
             timerRef.current = null;
+        }
+
+        // Stop Gemini Live (Android)
+        if (isAndroid) {
+            stopGeminiStreaming();
         }
 
         if (mediaRecorderRef.current && isRecording) {

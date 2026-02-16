@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useGeminiLive } from "@/hooks/useGeminiLive";
 import { Capacitor } from "@capacitor/core";
 import { SpeechRecognition } from "@capacitor-community/speech-recognition";
 
@@ -141,6 +142,20 @@ export default function VoiceJournalRecorder({
         };
         checkBrowser();
     }, []);
+
+    // --- Gemini Live Hook (Android Only) ---
+    const {
+        startStreaming: startGeminiStreaming,
+        stopStreaming: stopGeminiStreaming,
+    } = useGeminiLive({
+        apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
+        onTranscript: (text) => {
+            setTranscript(prev => prev + text);
+        },
+        onError: (err) => {
+            addLog(`❌ Gemini Error: ${err}`);
+        }
+    });
 
     // --- Device Check ---
     const checkDevices = async () => {
@@ -305,42 +320,48 @@ export default function VoiceJournalRecorder({
             startVisualizer(stream);
             addLog("📊 visualizer started");
 
-            // Start Web Speech API (Unified across all platforms)
-            addLog("🌐 trying Web Speech API...");
-            const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            if (SpeechRecognitionWeb) {
-                try {
-                    const recognition = new SpeechRecognitionWeb();
-                    recognition.lang = 'ja-JP';
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
+            // Start Transcription (Hybrid Strategy)
+            if (isAndroid) {
+                addLog("🤖 Android detected: Using Gemini Live for transcription");
+                await startGeminiStreaming(stream);
+            } else {
+                // Start Web Speech API (iOS/Desktop)
+                addLog("🌐 trying Web Speech API...");
+                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                if (SpeechRecognitionWeb) {
+                    try {
+                        const recognition = new SpeechRecognitionWeb();
+                        recognition.lang = 'ja-JP';
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
 
-                    recognition.onstart = () => addLog("🚀 web speech active");
-                    recognition.onresult = (event: any) => {
-                        let interim = '';
-                        let finalText = '';
-                        for (let i = event.resultIndex; i < event.results.length; i++) {
-                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                            else interim += event.results[i][0].transcript;
-                        }
-                        if (finalText) setTranscript(prev => prev + finalText + ' ');
-                        setInterimTranscript(interim);
-                    };
+                        recognition.onstart = () => addLog("🚀 web speech active");
+                        recognition.onresult = (event: any) => {
+                            let interim = '';
+                            let finalText = '';
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                                if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                                else interim += event.results[i][0].transcript;
+                            }
+                            if (finalText) setTranscript(prev => prev + finalText + ' ');
+                            setInterimTranscript(interim);
+                        };
 
-                    recognition.onerror = (event: any) => {
-                        addLog(`❌ web speech error: ${event.error}`);
-                    };
+                        recognition.onerror = (event: any) => {
+                            addLog(`❌ web speech error: ${event.error}`);
+                        };
 
-                    recognition.onend = () => {
-                        if (isRecording) {
-                            try { recognition.start(); } catch (e) { }
-                        }
-                    };
+                        recognition.onend = () => {
+                            if (isRecording) {
+                                try { recognition.start(); } catch (e) { }
+                            }
+                        };
 
-                    speechRecognitionRef.current = recognition;
-                    recognition.start();
-                } catch (e) {
-                    addLog(`⚠️ web speech failed: ${e}`);
+                        speechRecognitionRef.current = recognition;
+                        recognition.start();
+                    } catch (e) {
+                        addLog(`⚠️ web speech failed: ${e}`);
+                    }
                 }
             }
 
@@ -368,6 +389,11 @@ export default function VoiceJournalRecorder({
         if (timerRef.current) {
             clearInterval(timerRef.current as any);
             timerRef.current = null;
+        }
+
+        // Stop Gemini Live (Android)
+        if (isAndroid) {
+            stopGeminiStreaming();
         }
 
         // Standard stop sequence
