@@ -71,6 +71,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const {
         startStreaming: startGeminiStreaming,
         stopStreaming: stopGeminiStreaming,
+        debugInfo
     } = useGeminiLive({
         apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
         onTranscript: (text) => {

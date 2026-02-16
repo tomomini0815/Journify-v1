@@ -147,6 +147,7 @@ export default function VoiceJournalRecorder({
     const {
         startStreaming: startGeminiStreaming,
         stopStreaming: stopGeminiStreaming,
+        debugInfo
     } = useGeminiLive({
         apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
         onTranscript: (text) => {
@@ -537,6 +538,17 @@ export default function VoiceJournalRecorder({
                 {/* Background ambient glow */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
+
+                {/* Android Debug Overlay (Robust Implementation) */}
+                {isAndroid && isRecording && (
+                    <div className="absolute top-0 right-0 p-2 bg-black/80 text-[10px] text-green-400 font-mono z-50 pointer-events-none rounded-bl-xl border-l border-b border-green-500/30">
+                        <div>GEMINI LIVE DEBUG</div>
+                        <div>Status: {debugInfo?.status}</div>
+                        <div>Rate: {debugInfo?.sampleRate || 'N/A'}Hz</div>
+                        <div>Chunks: {debugInfo?.chunksSent}</div>
+                        {debugInfo?.lastError && <div className="text-red-500 font-bold">Err: {debugInfo.lastError}</div>}
+                    </div>
+                )}
 
                 {!audioBlob && !isRecording ? (
                     // Initial State
