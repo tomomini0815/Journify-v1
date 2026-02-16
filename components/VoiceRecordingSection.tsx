@@ -340,11 +340,16 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             }
 
             const mimeType = audioBlob.type
-            const ext = mimeType.includes("mp4") ? "mp4" : "webm"
+            let ext = "webm"
+            if (mimeType.includes("mp4")) ext = "mp4"
+            else if (mimeType.includes("wav")) ext = "wav"
+
+            addLog(`🚀 Uploading meeting: ${Math.round(audioBlob.size / 1024)} KB (${ext})`)
             const formData = new FormData()
             formData.append("file", audioBlob, `meeting-recording.${ext}`)
             const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
             if (!uploadRes.ok) throw new Error("Failed to upload audio")
+            addLog("✅ Upload success. Transcribing meeting...")
             const uploadData = await uploadRes.json()
 
             const transcribeRes = await fetch(`/api/projects/${targetProjectId}/meetings/transcribe`, {

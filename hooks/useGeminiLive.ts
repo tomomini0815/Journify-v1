@@ -175,6 +175,9 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
 
                     // 3. ALWAYS accumulate for local fallback recording
                     capturedChunksRef.current.push(new Int16Array(resampledData));
+                    if (capturedChunksRef.current.length % 50 === 0) { // Approx every 1-5s depending on buffer size
+                        log(`🎤 Captured ${capturedChunksRef.current.length} chunks locally...`);
+                    }
 
                     // 4. Send to WebSocket ONLY if established
                     if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {

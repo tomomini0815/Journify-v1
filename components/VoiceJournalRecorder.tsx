@@ -399,9 +399,11 @@ export default function VoiceJournalRecorder({
             }
 
             setIsRecording(true);
-            setRecordingTime(0);
-            setTranscript("");
-            setInterimTranscript("");
+            if (!options?.isResuming) {
+                setRecordingTime(0);
+                setTranscript("");
+                setInterimTranscript("");
+            }
 
             // Timer start
             timerRef.current = setInterval(() => {
@@ -483,9 +485,13 @@ export default function VoiceJournalRecorder({
         setIsProcessing(true);
 
         try {
-            // 1. 音声ファイルをアップロード
+            // 1. Voice file upload
             const mimeType = audioBlob.type;
-            const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+            let ext = "webm";
+            if (mimeType.includes("mp4")) ext = "mp4";
+            else if (mimeType.includes("wav")) ext = "wav";
+
+            addLog(`🚀 Uploading started: ${Math.round(audioBlob.size / 1024)} KB (${ext})`);
             const formData = new FormData();
             formData.append("file", audioBlob, `voice-journal.${ext}`);
 
@@ -526,6 +532,7 @@ export default function VoiceJournalRecorder({
             }
 
             const result = await createRes.json();
+            addLog("🎉 Journal created successfully!");
 
             // リセット
             setAudioBlob(null);
