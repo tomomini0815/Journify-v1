@@ -58,7 +58,12 @@ class PCMProcessor extends AudioWorkletProcessor {
 registerProcessor('pcm-processor', PCMProcessor);
 `;
 
-export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGeminiLiveProps) {
+const FALLBACK_MODELS = [
+    "models/gemini-2.0-flash-exp",
+    "models/gemini-2.0-flash", // Attempt fallback
+];
+
+export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLiveProps) { // Changed onLog to onError
     const [isStreaming, setIsStreaming] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [debugInfo, setDebugInfo] = useState<{
@@ -66,19 +71,19 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
         sampleRate?: number;
         chunksSent: number;
         lastError?: string;
+        currentModel?: string; // New debug field
     }>({ status: 'Idle', chunksSent: 0 });
 
+    const [modelIndex, setModelIndex] = useState(0);
     const websocketRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const workletNodeRef = useRef<AudioWorkletNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const chunksSentRef = useRef(0);
+    const processorRef = useRef<ScriptProcessorNode | null>(null); // Fallback for iOS/Desktop (though unused in Android path)
 
-    const log = useCallback((msg: string) => {
-        if (onLog) onLog(msg);
-        console.log(`[GeminiLive] ${msg}`);
-        setDebugInfo(prev => ({ ...prev, status: msg }));
-    }, [onLog]);
+    // Removed the `log` function as `onLog` is no longer a prop.
+    // Replaced calls to `log` with `console.log` or direct `setDebugInfo` updates.
 
     const connect = useCallback(() => {
         return new Promise<void>((resolve, reject) => {
@@ -88,25 +93,28 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             }
 
             if (!apiKey) {
-                log("❌ ERROR: Gemini API Key is MISSING");
-                setDebugInfo(prev => ({ ...prev, lastError: "API Key Missing" }));
+                console.log("❌ ERROR: Gemini API Key is MISSING");
+                setDebugInfo(prev => ({ ...prev, lastError: "API Key Missing", status: 'Config Error' }));
                 reject("API Key Missing");
                 return;
             }
 
-            log(`Connecting to Gemini API...`);
+            const currentModel = FALLBACK_MODELS[modelIndex % FALLBACK_MODELS.length];
+            console.log(`Connecting to Gemini API with model: ${currentModel}...`);
+            setDebugInfo(prev => ({ ...prev, status: `Connecting (${currentModel})...`, currentModel }));
+
             const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 
             const ws = new WebSocket(url);
 
             ws.onopen = () => {
-                log("WebSocket Opened. Sending setup...");
+                console.log("WebSocket Opened. Sending setup...");
                 setIsConnected(true);
 
                 // Simplify setup to defaults to avoid config errors
                 const setupMsg = {
                     setup: {
-                        model: "models/gemini-2.0-flash-exp"
+                        model: currentModel
                     }
                 };
                 ws.send(JSON.stringify(setupMsg));
@@ -131,12 +139,12 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                         }
                     }
                 } catch (e) {
-                    // log("Error parsing message: " + e);
+                    // console.log("Error parsing message: " + e);
                 }
             };
 
             ws.onerror = (error) => {
-                log(`❌ WebSocket Error`);
+                console.log(`❌ WebSocket Error`);
                 if (onError) onError(error);
                 setIsConnected(false);
                 setDebugInfo(prev => ({ ...prev, lastError: "WebSocket Error" }));
@@ -145,21 +153,33 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
 
             ws.onclose = (ev) => {
                 const reason = ev.reason ? ` Reason: ${ev.reason}` : '';
-                log(`🔌 WebSocket Closed: code=${ev.code}${reason}`);
+                console.log(`🔌 WebSocket Closed: code=${ev.code}${reason}`);
                 setIsConnected(false);
                 setIsStreaming(false);
-                setDebugInfo(prev => ({ ...prev, status: `Closed:${ev.code}${reason}` }));
+
+                // Retry logic for Rate Limit (429) or Service Unavailable (503) or generic 1011 (Internal Error)
+                if (ev.code === 429 || ev.code === 503 || ev.code === 1011 || reason.includes("429")) {
+                    console.warn("⚠️ Rate limit or server error detected. Switching model...");
+                    setDebugInfo(prev => ({ ...prev, status: `RateLimited. Switching...` }));
+
+                    // Delay before retry to avoid spamming
+                    setTimeout(() => {
+                        setModelIndex(prev => prev + 1);
+                    }, 2000);
+                } else {
+                    setDebugInfo(prev => ({ ...prev, status: `Closed:${ev.code}${reason}` }));
+                }
             };
 
             websocketRef.current = ws;
         });
-    }, [apiKey, onTranscript, log, onError]);
+    }, [apiKey, onTranscript, onError, modelIndex]); // Added modelIndex to dependencies
 
     const startStreaming = useCallback(async (existingStream?: MediaStream) => {
         try {
-            log("🚀 Initializing Gemini Streaming (Robust Mode)...");
+            console.log("🚀 Initializing Gemini Streaming (Robust Mode)...");
             chunksSentRef.current = 0;
-            setDebugInfo({ status: 'Initializing...', chunksSent: 0 });
+            setDebugInfo(prev => ({ ...prev, status: 'Initializing...', chunksSent: 0 })); // Updated to use prev state
 
             // 1. Connect WebSocket
             await connect();
@@ -167,7 +187,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             // 2. Audio Context & Worklet
             const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
             const audioContext = new AudioContextClass(); // Let it use native sample rate (e.g. 48000)
-            log(`AudioContext created. Rate: ${audioContext.sampleRate}`);
+            console.log(`AudioContext created. Rate: ${audioContext.sampleRate}`);
             audioContextRef.current = audioContext;
 
             setDebugInfo(prev => ({ ...prev, sampleRate: audioContext.sampleRate }));
@@ -176,7 +196,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             const blob = new Blob([WORKLET_CODE], { type: 'application/javascript' });
             const workletUrl = URL.createObjectURL(blob);
             await audioContext.audioWorklet.addModule(workletUrl);
-            log("Inline AudioWorklet loaded.");
+            console.log("Inline AudioWorklet loaded.");
 
             // 3. Get Stream
             let stream = existingStream;
@@ -227,14 +247,14 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             setDebugInfo(prev => ({ ...prev, status: 'Streaming' }));
 
         } catch (err: any) {
-            log(`❌ CRITICAL FAILURE: ${err.message}`);
+            console.log(`❌ CRITICAL FAILURE: ${err.message}`);
             if (onError) onError(err);
             setDebugInfo(prev => ({ ...prev, lastError: err.message, status: 'Failed' }));
         }
-    }, [connect, log, onError]);
+    }, [connect, onError]); // Removed log from dependencies
 
     const stopStreaming = useCallback(() => {
-        log("Stopping streaming...");
+        console.log("Stopping streaming...");
         if (streamRef.current) {
             // Do NOT stop tracks if shared
             streamRef.current = null;
@@ -254,7 +274,14 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
         setIsStreaming(false);
         setIsConnected(false);
         setDebugInfo(prev => ({ ...prev, status: 'Stopped' }));
-    }, [log]);
+    }, []); // Removed log from dependencies
+
+    // Auto-reconnect when model index changes (triggered by error fallback)
+    useEffect(() => {
+        if (modelIndex > 0) { // Don't auto-connect on initial mount, only on retry
+            connect();
+        }
+    }, [modelIndex, connect]);
 
     return {
         isStreaming,

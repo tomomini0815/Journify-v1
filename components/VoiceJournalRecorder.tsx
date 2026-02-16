@@ -544,6 +544,7 @@ export default function VoiceJournalRecorder({
                     <div className="absolute top-0 right-0 p-2 bg-black/80 text-[10px] text-green-400 font-mono z-50 pointer-events-none rounded-bl-xl border-l border-b border-green-500/30">
                         <div>GEMINI LIVE DEBUG</div>
                         <div>Status: {debugInfo?.status}</div>
+                        <div>Model: {debugInfo?.currentModel?.split('/').pop() || '...'}</div>
                         <div>Rate: {debugInfo?.sampleRate || 'N/A'}Hz</div>
                         <div>Chunks: {debugInfo?.chunksSent}</div>
                         {debugInfo?.lastError && <div className="text-red-500 font-bold">Err: {debugInfo.lastError}</div>}
