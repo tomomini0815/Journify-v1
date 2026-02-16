@@ -128,10 +128,10 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             }
 
             let mimeType = "audio/webm"
-            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-                mimeType = "audio/webm;codecs=opus"
-            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+            if (MediaRecorder.isTypeSupported("audio/mp4")) {
                 mimeType = "audio/mp4"
+            } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                mimeType = "audio/webm;codecs=opus"
             }
 
             const mediaRecorder = new MediaRecorder(stream, { mimeType })
@@ -178,11 +178,11 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
             // Start MediaRecorder (same timeslice as VoiceJournalRecorder)
             mediaRecorder.start(15000)
 
-            // === Initialize SpeechRecognition HERE (not in useEffect) ===
-            // This prevents stale closures and matches the working VoiceJournalRecorder pattern
-            // Skip on Android if Gemini Live is active
+            // Start SpeechRecognition (Skip on Android to avoid mic conflict)
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-            if (SpeechRecognition && !isGeminiLiveActive) {
+            if (isAndroid) {
+                addLog("ℹ️ Skipping Web Speech on Android (using Gemini)");
+            } else if (SpeechRecognition) {
                 try {
                     const recognition = new SpeechRecognition()
                     recognition.lang = 'ja-JP'

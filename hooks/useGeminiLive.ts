@@ -14,6 +14,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
     const websocketRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const capturedChunksRef = useRef<Int16Array[]>([]);
     const bufferAccumulatorRef = useRef<Float32Array>(new Float32Array(0));
@@ -30,7 +31,13 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
                 return;
             }
 
-            log(`Connecting (Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'})...`);
+            if (!apiKey) {
+                log("❌ ERROR: Gemini API Key is MISSING (NEXT_PUBLIC_GEMINI_API_KEY)");
+                reject("API Key Missing");
+                return;
+            }
+
+            log(`Connecting (Key: ${apiKey.substring(0, 5)}...)...`);
             const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 
             const ws = new WebSocket(url);
@@ -144,6 +151,11 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             log("📦 Audio Worklet Loaded");
 
             const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+            analyserRef.current = analyser;
+
             const processor = new AudioWorkletNode(audioContext, 'audio-processor');
 
             // Resampler State via Ref
@@ -239,6 +251,7 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
             audioContextRef.current.close().catch(() => { });
             audioContextRef.current = null;
         }
+        analyserRef.current = null;
         if (websocketRef.current) {
             websocketRef.current.close();
             websocketRef.current = null;
@@ -289,7 +302,8 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
         connect,
         startStreaming,
         stopStreaming,
-        getCapturedAudio
+        getCapturedAudio,
+        analyser: analyserRef.current
     };
 }
 
