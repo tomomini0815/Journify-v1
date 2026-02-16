@@ -94,106 +94,124 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
 
     const startStreaming = useCallback(async (existingStream?: MediaStream, options?: { isResuming?: boolean }) => {
         try {
-            await connect();
-            log("Connection confirmed. Starting media...");
+            log("🚀 Initializing Absolute Recording Pipeline...");
+
+            // 1. Start WebSocket connection in background (DON'T AWAIT)
+            connect().catch(err => {
+                log(`⚠️ Background connection failed (recording will continue): ${err}`);
+            });
 
             // Only clear chunks if NOT resuming
             if (!options?.isResuming) {
                 capturedChunksRef.current = [];
+                log("🆕 New recording: chunks cleared");
             } else {
                 log("🔄 Resuming: appending to existing audio chunks");
             }
 
+            // 2. Immediate Microphone Access
+            log("🎤 Requesting microphone access...");
             let stream = existingStream;
             if (!stream) {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    audio: { channelCount: 1 }
+                    audio: {
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
                 });
             }
-
             streamRef.current = stream;
+            log("✅ Microphone access granted");
 
-            const audioContext = new AudioContext(); // Native sample rate
+            // 3. Optimized AudioContext (Native 16kHz)
+            // Android Chrome handles this better than manual resampling
+            log("🎧 Initializing 16kHz AudioContext...");
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
+                sampleRate: 16000,
+            });
             audioContextRef.current = audioContext;
 
             // Explicit resume for Android/Chrome
             if (audioContext.state === 'suspended') {
-                log("Resuming AudioContext...");
+                log("🎧 Resuming AudioContext...");
                 await audioContext.resume();
             }
+            log(`🎧 AudioContext state: ${audioContext.state} at ${audioContext.sampleRate}Hz`);
 
-            const sourceSampleRate = audioContext.sampleRate;
-            log(`AudioContext Rate: ${sourceSampleRate}`);
-
-            log("Loading audio-processor.js...");
+            log("📦 Loading audio-processor.js...");
             await audioContext.audioWorklet.addModule('/audio-processor.js');
-            log("Audio Worklet Loaded");
+            log("📦 Audio Worklet Loaded");
 
             const source = audioContext.createMediaStreamSource(stream);
             const processor = new AudioWorkletNode(audioContext, 'audio-processor');
-            log(`Worklet Node State: ${processor.parameters.get('isWorking') || 'started'}`);
 
             // Resampler State via Ref
             bufferAccumulatorRef.current = new Float32Array(0);
 
             processor.port.onmessage = (event) => {
-                const inputData = event.data; // Float32Array at native rate
+                const inputData = event.data; // Float32Array (already 16kHz if browser respects it)
 
-                // 1. Append to accumulator
-                const newBuffer = new Float32Array(bufferAccumulatorRef.current.length + inputData.length);
-                newBuffer.set(bufferAccumulatorRef.current);
-                newBuffer.set(inputData, bufferAccumulatorRef.current.length);
-                bufferAccumulatorRef.current = newBuffer;
+                // Detailed data flow log (throttled)
+                if (capturedChunksRef.current.length === 0) {
+                    log("🎤 FIRST audio chunk received from Worklet!");
+                }
 
-                // Target: 16000Hz (Fixed)
+                // Browser might not have honored 16kHz, check ratio
+                const sourceSampleRate = audioContext.sampleRate;
                 const targetSampleRate = 16000;
-                const ratio = sourceSampleRate / targetSampleRate;
 
-                // 2. Resample logic (Required for both WebSocket and Local storage)
-                const outputLength = Math.floor(bufferAccumulatorRef.current.length / ratio);
-
-                if (outputLength > 0) {
-                    const resampledData = new Int16Array(outputLength);
-
-                    for (let i = 0; i < outputLength; i++) {
-                        const originalIndex = i * ratio;
-                        const index1 = Math.floor(originalIndex);
-                        const index2 = Math.min(index1 + 1, bufferAccumulatorRef.current.length - 1);
-                        const weight = originalIndex - index1;
-
-                        const val1 = bufferAccumulatorRef.current[index1];
-                        const val2 = bufferAccumulatorRef.current[index2];
-                        const value = val1 + (val2 - val1) * weight;
-
-                        const s = Math.max(-1, Math.min(1, value));
-                        resampledData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                if (sourceSampleRate === targetSampleRate) {
+                    // Optimized path: Direct conversion to Int16
+                    const pcmData = new Int16Array(inputData.length);
+                    for (let i = 0; i < inputData.length; i++) {
+                        const s = Math.max(-1, Math.min(1, inputData[i]));
+                        pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                     }
+                    capturedChunksRef.current.push(pcmData);
 
-                    // Keep the REMAINDER
-                    const usedInputLength = Math.floor(outputLength * ratio);
-                    bufferAccumulatorRef.current = bufferAccumulatorRef.current.slice(usedInputLength);
-
-                    // 3. ALWAYS accumulate for local fallback recording
-                    capturedChunksRef.current.push(new Int16Array(resampledData));
-                    if (capturedChunksRef.current.length % 50 === 0) { // Approx every 1-5s depending on buffer size
-                        log(`🎤 Captured ${capturedChunksRef.current.length} chunks locally...`);
-                    }
-
-                    // 4. Send to WebSocket ONLY if established
+                    // Send to WebSocket if open
                     if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
-                        const base64Audio = arrayBufferToBase64(resampledData.buffer);
-                        const msg = {
+                        const base64Audio = arrayBufferToBase64(pcmData.buffer);
+                        websocketRef.current.send(JSON.stringify({
                             realtimeInput: {
-                                mediaChunks: [
-                                    {
-                                        mimeType: "audio/pcm;rate=16000",
-                                        data: base64Audio
-                                    }
-                                ]
+                                mediaChunks: [{ mimeType: "audio/pcm;rate=16000", data: base64Audio }]
                             }
-                        };
-                        websocketRef.current.send(JSON.stringify(msg));
+                        }));
                     }
+                } else {
+                    // Fallback: Resample if browser didn't honor 16kHz
+                    const ratio = sourceSampleRate / targetSampleRate;
+                    const newBuffer = new Float32Array(bufferAccumulatorRef.current.length + inputData.length);
+                    newBuffer.set(bufferAccumulatorRef.current);
+                    newBuffer.set(inputData, bufferAccumulatorRef.current.length);
+                    bufferAccumulatorRef.current = newBuffer;
+
+                    const outputLength = Math.floor(bufferAccumulatorRef.current.length / ratio);
+                    if (outputLength > 0) {
+                        const resampledData = new Int16Array(outputLength);
+                        for (let i = 0; i < outputLength; i++) {
+                            const originalIndex = i * ratio;
+                            const idx = Math.floor(originalIndex);
+                            const s = Math.max(-1, Math.min(1, bufferAccumulatorRef.current[idx]));
+                            resampledData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        }
+                        bufferAccumulatorRef.current = bufferAccumulatorRef.current.slice(Math.floor(outputLength * ratio));
+                        capturedChunksRef.current.push(resampledData);
+
+                        if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+                            const base64Audio = arrayBufferToBase64(resampledData.buffer);
+                            websocketRef.current.send(JSON.stringify({
+                                realtimeInput: {
+                                    mediaChunks: [{ mimeType: "audio/pcm;rate=16000", data: base64Audio }]
+                                }
+                            }));
+                        }
+                    }
+                }
+
+                if (capturedChunksRef.current.length % 100 === 0) {
+                    log(`🎤 Buffered ${Math.round(capturedChunksRef.current.length * 2048 / 16000)}s of audio...`);
                 }
             };
 
@@ -202,10 +220,10 @@ export function useGeminiLive({ apiKey, onTranscript, onLog, onError }: UseGemin
 
             workletNodeRef.current = processor;
             setIsStreaming(true);
-            log(`🎙️ Streaming Started (bufferAccumulator managed)`);
+            log(`✅ Recording Pipeline ACTIVE`);
 
         } catch (err) {
-            log(`Failed to start audio stream: ${err}`);
+            log(`❌ CRITICAL FAILURE: ${err}`);
             if (onError) onError(err);
         }
     }, [connect, log, onError]);
