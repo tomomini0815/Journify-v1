@@ -61,7 +61,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard
                 icon={BookOpen}
-                label="今月の記録数"
+                label="統計記録数"
                 value={stats.journalCount}
                 trend={stats.journalTrend || "+0"}
                 delay={0.1}

@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useGeminiLive } from "@/hooks/useGeminiLive";
 import { Capacitor } from "@capacitor/core";
 import { SpeechRecognition } from "@capacitor-community/speech-recognition";
 
@@ -38,7 +37,6 @@ export default function VoiceJournalRecorder({
 
     // Tag Categories State
     const [activeTagCategory, setActiveTagCategory] = useState("goals");
-    const [showCustomTagInput, setShowCustomTagInput] = useState(false);
 
     const tagCategories = {
         goals: {
@@ -47,7 +45,7 @@ export default function VoiceJournalRecorder({
         },
         emotions: {
             name: "💭 感情・気分",
-            tags: ["幸せ", "感謝", "不安", "ストレス", "リラックス", "モチベーション"]
+            tags: ["幸せ", "感謝", "不安", "ストレス", "リラックス", "モチベーション", "イライラ", "モヤモヤ", "孤独感", "焦り", "自己嫌悪"]
         },
         relationships: {
             name: "👥 人間関係",
@@ -59,7 +57,7 @@ export default function VoiceJournalRecorder({
         },
         health: {
             name: "🏃 健康・ライフスタイル",
-            tags: ["運動", "食事", "睡眠", "瞑想", "ヨガ"]
+            tags: ["運動", "食事", "睡眠", "瞑想", "ヨガ", "疲労", "頭痛", "体調不良", "寝不足"]
         },
         hobbies: {
             name: "🎨 趣味・娯楽",
@@ -79,10 +77,6 @@ export default function VoiceJournalRecorder({
         }
     };
 
-    // Update tags for Emotions and Health
-    tagCategories.emotions.tags = [...tagCategories.emotions.tags, "イライラ", "モヤモヤ", "孤独感", "焦り", "自己嫌悪"];
-    tagCategories.health.tags = [...tagCategories.health.tags, "疲労", "頭痛", "体調不良", "寝不足"];
-
     // Sync props with local state
     useEffect(() => {
         setLocalMood(mood);
@@ -96,84 +90,24 @@ export default function VoiceJournalRecorder({
     const chunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | number | null>(null);
     const speechRecognitionRef = useRef<any>(null);
-    const [isBraveBrowser, setIsBraveBrowser] = useState(false);
-
-    const [isAndroid, setIsAndroid] = useState(false);
-    const [isGeminiLiveActive, setIsGeminiLiveActive] = useState(false);
-
-    // Direct check for use in event handlers/logic to avoid state lag
-    const getIsAndroid = () => {
-        if (typeof navigator === 'undefined') return false;
-        return /android/i.test(navigator.userAgent || '');
-    };
 
     // Diagnostics & Visualizer
-    const [diagnostics, setDiagnostics] = useState<string[]>([]);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const animationFrameRef = useRef<number | null>(null);
-
-    const addLog = (msg: string) => {
-        const time = new Date().toLocaleTimeString();
-        const entry = `[${time}] ${msg}`;
-        console.log(entry);
-        setDiagnostics(prev => [...prev.slice(-4), entry]); // Keep last 5
-    };
-
-    // Detect Brave browser and Android
-    useEffect(() => {
-        const checkBrowser = async () => {
-            if (typeof window !== 'undefined' && (navigator as any).brave && await (navigator as any).brave.isBrave()) {
-                setIsBraveBrowser(true);
-                addLog('🦁 Brave browser detected');
-            }
-
-            // Detection
-            const isNative = Capacitor.isNativePlatform();
-
-            const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-            const isAndroidSystem = /android/i.test(userAgent);
-
-            if (isAndroidSystem) {
-                setIsAndroid(true);
-                addLog(`🤖 Android device detected (Native: ${isNative})`);
-            }
-        };
-        checkBrowser();
-    }, []);
-
-    // --- Gemini Live Hook (Android Only) ---
-    const {
-        startStreaming: startGeminiStreaming,
-        stopStreaming: stopGeminiStreaming,
-        debugInfo
-    } = useGeminiLive({
-        apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
-        onTranscript: (text) => {
-            setTranscript(prev => prev + text);
-        },
-        onError: (err) => {
-            addLog(`❌ Gemini Error: ${err}`);
-        }
-    });
 
     // --- Device Check ---
     const checkDevices = async () => {
         try {
             const devices = await navigator.mediaDevices.enumerateDevices();
             const mics = devices.filter(d => d.kind === 'audioinput');
-            addLog(`🎤 mics found: ${mics.length}`);
-            mics.forEach(m => addLog(`   - ${m.label || 'unlabeled mic'}`));
             return mics.length > 0;
         } catch (e) {
-            addLog(`❌ device check error: ${e}`);
+            console.error("Device check error:", e);
             return false;
         }
     };
-
-    // --- Speech Recognition Setup ---
-    // Note: useGeminiLive is removed here as we unify to standard Web Speech API.
 
     // --- Visualizer Drawing ---
     const startVisualizer = (stream: MediaStream) => {
@@ -253,23 +187,18 @@ export default function VoiceJournalRecorder({
         }
 
         try {
-            addLog("🏁 startRecording requested");
-
             // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
             if (audioContextRef.current) {
                 await audioContextRef.current.resume();
-                addLog("🔊 AudioContext resumed");
             }
 
             // 2. Hardware and Permission Check
             const hasMics = await checkDevices();
             if (!hasMics) {
-                addLog("⚠️ No microphone hardware detected");
+                console.warn("No microphone hardware detected");
             }
 
-            addLog("🎙️ requesting getUserMedia...");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            addLog("✅ stream granted");
 
             // MIME Type detection
             let mimeType = "";
@@ -305,7 +234,6 @@ export default function VoiceJournalRecorder({
             mediaRecorderRef.current.onstop = () => {
                 const type = mediaRecorderRef.current?.mimeType || mimeType || 'audio/webm';
                 const rawBlob = new Blob(chunksRef.current, { type });
-                addLog(`📦 MediaRecorder stopped. Chunks: ${chunksRef.current.length}, Size: ${Math.round(rawBlob.size / 1024)} KB`);
                 setAudioBlob(rawBlob);
                 stream.getTracks().forEach(track => track.stop());
 
@@ -319,50 +247,41 @@ export default function VoiceJournalRecorder({
 
             // Start Visualizer
             startVisualizer(stream);
-            addLog("📊 visualizer started");
 
-            // Start Transcription (Hybrid Strategy)
-            if (isAndroid) {
-                addLog("🤖 Android detected: Using Gemini Live for transcription");
-                await startGeminiStreaming(stream);
-            } else {
-                // Start Web Speech API (iOS/Desktop)
-                addLog("🌐 trying Web Speech API...");
-                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                if (SpeechRecognitionWeb) {
-                    try {
-                        const recognition = new SpeechRecognitionWeb();
-                        recognition.lang = 'ja-JP';
-                        recognition.continuous = true;
-                        recognition.interimResults = true;
+            // Start Web Speech API (All platforms)
+            const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            if (SpeechRecognitionWeb) {
+                try {
+                    const recognition = new SpeechRecognitionWeb();
+                    recognition.lang = 'ja-JP';
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
 
-                        recognition.onstart = () => addLog("🚀 web speech active");
-                        recognition.onresult = (event: any) => {
-                            let interim = '';
-                            let finalText = '';
-                            for (let i = event.resultIndex; i < event.results.length; i++) {
-                                if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                                else interim += event.results[i][0].transcript;
-                            }
-                            if (finalText) setTranscript(prev => prev + finalText + ' ');
-                            setInterimTranscript(interim);
-                        };
+                    recognition.onresult = (event: any) => {
+                        let interim = '';
+                        let finalText = '';
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                            else interim += event.results[i][0].transcript;
+                        }
+                        if (finalText) setTranscript(prev => prev + finalText + ' ');
+                        setInterimTranscript(interim);
+                    };
 
-                        recognition.onerror = (event: any) => {
-                            addLog(`❌ web speech error: ${event.error}`);
-                        };
+                    recognition.onerror = (event: any) => {
+                        console.warn(`web speech error: ${event.error}`);
+                    };
 
-                        recognition.onend = () => {
-                            if (isRecording) {
-                                try { recognition.start(); } catch (e) { }
-                            }
-                        };
+                    recognition.onend = () => {
+                        if (isRecording) {
+                            try { recognition.start(); } catch (e) { }
+                        }
+                    };
 
-                        speechRecognitionRef.current = recognition;
-                        recognition.start();
-                    } catch (e) {
-                        addLog(`⚠️ web speech failed: ${e}`);
-                    }
+                    speechRecognitionRef.current = recognition;
+                    recognition.start();
+                } catch (e) {
+                    console.warn(`web speech failed: ${e}`);
                 }
             }
 
@@ -385,21 +304,13 @@ export default function VoiceJournalRecorder({
     };
 
     const stopRecording = async () => {
-        addLog("🛑 stopRecording requested");
-
         if (timerRef.current) {
             clearInterval(timerRef.current as any);
             timerRef.current = null;
         }
 
-        // Stop Gemini Live (Android)
-        if (isAndroid) {
-            stopGeminiStreaming();
-        }
-
         // Standard stop sequence
         if (mediaRecorderRef.current && isRecording) {
-            addLog("🎥 stopping MediaRecorder");
             mediaRecorderRef.current.stop();
         }
 
@@ -427,7 +338,6 @@ export default function VoiceJournalRecorder({
             if (mimeType.includes("mp4")) ext = "mp4";
             else if (mimeType.includes("wav")) ext = "wav";
 
-            addLog(`🚀 Uploading started: ${Math.round(audioBlob.size / 1024)} KB (${ext})`);
             const formData = new FormData();
             formData.append("file", audioBlob, `voice-journal.${ext}`);
 
@@ -467,7 +377,6 @@ export default function VoiceJournalRecorder({
             }
 
             const result = await createRes.json();
-            addLog("🎉 Journal created successfully!");
 
             setAudioBlob(null);
             setRecordingTime(0);
@@ -530,26 +439,12 @@ export default function VoiceJournalRecorder({
         }
     };
 
-    // Removed fileInputRef and handleFileUpload as per instructions.
-
     if (compact) {
         return (
             <div className="rounded-3xl bg-[#0F172A] border border-white/5 p-6 shadow-2xl overflow-hidden relative">
                 {/* Background ambient glow */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
-
-                {/* Android Debug Overlay (Robust Implementation) */}
-                {isAndroid && isRecording && (
-                    <div className="absolute top-0 right-0 p-2 bg-black/80 text-[10px] text-green-400 font-mono z-50 pointer-events-none rounded-bl-xl border-l border-b border-green-500/30">
-                        <div>GEMINI LIVE DEBUG</div>
-                        <div>Status: {debugInfo?.status}</div>
-                        <div>Model: {debugInfo?.currentModel?.split('/').pop() || '...'}</div>
-                        <div>Rate: {debugInfo?.sampleRate || 'N/A'}Hz</div>
-                        <div>Chunks: {debugInfo?.chunksSent}</div>
-                        {debugInfo?.lastError && <div className="text-red-500 font-bold">Err: {debugInfo.lastError}</div>}
-                    </div>
-                )}
 
                 {!audioBlob && !isRecording ? (
                     // Initial State
@@ -570,12 +465,6 @@ export default function VoiceJournalRecorder({
                 ) : (
                     // Recording or Post-Recording State
                     <div className="space-y-6">
-                        {/* Diagnostics Overlay (Android Only) */}
-                        {isAndroid && diagnostics.length > 0 && (
-                            <div className="bg-black/40 rounded-xl p-2 font-mono text-[9px] text-emerald-400/80 border border-emerald-500/20 mb-2">
-                                {diagnostics.map((log, i) => <div key={i}>{log}</div>)}
-                            </div>
-                        )}
                         {/* Header */}
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
@@ -798,168 +687,197 @@ export default function VoiceJournalRecorder({
 
     return (
         <div className="rounded-2xl bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 p-8 backdrop-blur-xl">
-            <div className="text-center">
-                <div className="flex items-center justify-center gap-4 mb-2">
-                    <h3 className="text-2xl font-bold text-white">音声ジャーナル</h3>
-                    {!isRecording && audioBlob && (
-                        <button
-                            onClick={resumeRecording}
-                            disabled={isProcessing}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-full transition-all disabled:opacity-40 whitespace-nowrap"
-                        >
-                            <RotateCcw className="w-4 h-4" />
-                            <span>録音を再開して追加</span>
-                        </button>
-                    )}
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">音声ジャーナル</h3>
+                    <p className="text-white/60">話すだけで、AIが記録と分析をサポート（現在は音声入力のみ）</p>
                 </div>
-                <p className="text-white/60 mb-8">ワンタップで思いを記録</p>
-
-                {/* Recording Button */}
-                <div className="relative inline-block mb-6">
-                    {isRecording && (
-                        <motion.div
-                            animate={{
-                                scale: [1, 1.5, 1],
-                                opacity: [0.5, 0, 0.5]
-                            }}
-                            transition={{
-                                duration: 2,
-                                repeat: Infinity
-                            }}
-                            className="absolute inset-0 bg-red-500 rounded-full"
-                        />
-                    )}
-
-                    <motion.button
-                        onClick={isRecording ? stopRecording : () => startRecording()}
-                        disabled={isProcessing}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl transition-all relative z-10 ${isRecording
-                            ? "bg-red-500 shadow-red-500/40"
-                            : "bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-emerald-500/40"
-                            }`}
+                {!isRecording && !audioBlob && (
+                    <button
+                        onClick={() => startRecording()}
+                        className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                     >
-                        {isRecording ? (
-                            <Square className="w-12 h-12 text-white fill-current" />
-                        ) : (
-                            <Mic className="w-12 h-12 text-white" />
-                        )}
-                    </motion.button>
-                </div>
-
-                {/* Real-time Transcript Display */}
-                <AnimatePresence>
-                    {(isRecording || audioBlob) && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="mb-6 max-w-2xl mx-auto"
-                        >
-                            <div className="bg-white/5 rounded-xl p-6 max-h-48 overflow-y-auto text-left">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h4 className="text-white/60 text-sm">文字起こし:</h4>
-                                    {!isRecording && transcript && (
-                                        <span className="text-[10px] text-white/30">✏️ タップして編集</span>
-                                    )}
-                                </div>
-                                {isRecording ? (
-                                    <>
-                                        <p className="text-white text-lg leading-relaxed">
-                                            {transcript}
-                                            <span className="text-white/40">{interimTranscript}</span>
-                                        </p>
-                                        {!transcript && !interimTranscript && (
-                                            <p className="text-white/40 italic">話してください...</p>
-                                        )}
-                                    </>
-                                ) : (
-                                    <textarea
-                                        value={transcript}
-                                        onChange={(e) => setTranscript(e.target.value)}
-                                        placeholder="録音後にテキストが表示されます。編集も可能です。"
-                                        className="w-full bg-transparent text-white text-lg leading-relaxed resize-none focus:outline-none placeholder:text-white/30 placeholder:italic min-h-[80px]"
-                                        rows={4}
-                                    />
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Recording Time */}
-                <AnimatePresence>
-                    {isRecording && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="mb-6"
-                        >
-                            <div className="text-4xl font-bold text-white mb-2">
-                                {formatTime(recordingTime)}
-                            </div>
-                            <div className="flex items-center justify-center gap-2">
-                                <motion.div
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{ duration: 1, repeat: Infinity }}
-                                    className="w-3 h-3 bg-red-500 rounded-full"
-                                />
-                                <span className="text-white/60">録音中...</span>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-
-                {/* Process Button */}
-                <AnimatePresence>
-                    {audioBlob && !isRecording && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="flex flex-wrap gap-4 justify-center mt-8"
-                        >
-                            <button
-                                onClick={cancelRecording}
-                                className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full font-semibold transition-all whitespace-nowrap"
-                            >
-                                キャンセル
-                            </button>
-                            <button
-                                onClick={processVoiceJournal}
-                                disabled={isProcessing}
-                                className="bg-gradient-to-r from-cyan-600 to-emerald-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg hover:shadow-cyan-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                            >
-                                {isProcessing ? (
-                                    <span className="flex items-center gap-2">
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        処理中...
-                                    </span>
-                                ) : (
-                                    <span className="flex items-center gap-2">
-                                        <CheckCircle2 className="w-5 h-5" />
-                                        ジャーナルを作成
-                                    </span>
-                                )}
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Diagnostics Log (Android Only) */}
-                {isAndroid && diagnostics.length > 0 && (
-                    <div className="mt-8 max-w-md mx-auto bg-black/40 rounded-xl p-3 font-mono text-[10px] text-emerald-400/80 border border-emerald-500/20 text-left">
-                        <div className="flex items-center justify-between mb-1 opacity-60">
-                            <span>Diagnostic Logs:</span>
-                            <button onClick={() => setDiagnostics([])} className="hover:text-white">Clear</button>
-                        </div>
-                        {diagnostics.map((log, i) => <div key={i} className="truncate">{log}</div>)}
-                    </div>
+                        <Mic className="w-8 h-8" />
+                    </button>
                 )}
             </div>
+
+            {(isRecording || audioBlob) && (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                            {isRecording && (
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+                                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                    <span className="font-mono font-bold">{formatTime(recordingTime)}</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {!isRecording && (audioBlob || transcript) && (
+                                <button
+                                    onClick={resumeRecording}
+                                    disabled={isProcessing}
+                                    className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-400 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/40 rounded-full transition-all disabled:opacity-40 border border-emerald-500/30"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                    <span>再開</span>
+                                </button>
+                            )}
+                            {isRecording && (
+                                <button
+                                    onClick={stopRecording}
+                                    className="flex items-center gap-2 px-6 py-2 rounded-full bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-lg shadow-red-500/20"
+                                >
+                                    <Square className="w-4 h-4 fill-current" />
+                                    <span>停止</span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className={`bg-black/20 rounded-2xl p-6 min-h-[200px] max-h-[400px] overflow-y-auto border relative transition-all ${!isRecording && audioBlob ? "border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]" : "border-white/5"
+                        }`}>
+                        {isRecording && (
+                            <div className="absolute top-0 left-0 w-full h-8 overflow-hidden px-6 pt-2">
+                                <canvas ref={canvasRef} width={600} height={30} className="w-full h-full opacity-60" />
+                            </div>
+                        )}
+                        <div className={isRecording ? "mt-4" : ""}>
+                            {isRecording ? (
+                                <p className="text-white/80 leading-relaxed text-lg">
+                                    {transcript}
+                                    <span className="text-white/40">{interimTranscript}</span>
+                                    {!transcript && !interimTranscript && (
+                                        <span className="text-white/30 italic">お話しください...</span>
+                                    )}
+                                </p>
+                            ) : (
+                                <textarea
+                                    value={transcript}
+                                    onChange={(e) => setTranscript(e.target.value)}
+                                    placeholder="音声がここに表示されます。"
+                                    className="w-full bg-transparent text-white/80 leading-relaxed text-lg resize-none focus:outline-none placeholder:text-white/30 placeholder:italic min-h-[150px]"
+                                    rows={6}
+                                />
+                            )}
+                        </div>
+                    </div>
+
+                    {!isRecording && audioBlob && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div>
+                                <label className="text-lg font-bold text-white mb-4 block">今の気分は？</label>
+                                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                                    {[
+                                        { value: 1, emoji: '🤬', label: '激怒' },
+                                        { value: 2, emoji: '😞', label: '憂鬱' },
+                                        { value: 3, emoji: '😫', label: 'イライラ' },
+                                        { value: 4, emoji: '😢', label: '悲しい' },
+                                        { value: 5, emoji: '😐', label: '普通' },
+                                        { value: 6, emoji: '🙂', label: 'まあまあ' },
+                                        { value: 7, emoji: '😊', label: '幸せ' },
+                                        { value: 8, emoji: '😄', label: 'とても幸せ' },
+                                        { value: 9, emoji: '🤩', label: 'ワクワク' },
+                                        { value: 10, emoji: '🥰', label: '感謝' }
+                                    ].map((item) => (
+                                        <button
+                                            key={item.value}
+                                            onClick={() => setLocalMood(item.value)}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${localMood === item.value
+                                                ? "bg-emerald-500/20 border-emerald-500 text-white transform scale-105"
+                                                : "bg-white/5 border-transparent text-white/40 hover:bg-white/10 hover:text-white/80"
+                                                }`}
+                                        >
+                                            <span className="text-2xl mb-1">{item.emoji}</span>
+                                            <span className="text-[10px] sm:text-xs font-medium">{item.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-lg font-bold text-white mb-4 block">タグ</label>
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {localTags.map(tag => (
+                                        <span key={tag} className="bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 border border-emerald-500/30">
+                                            #{tag}
+                                            <button onClick={() => handleRemoveTag(tag)} className="hover:text-white">×</button>
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {Object.entries(tagCategories).map(([key, category]) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => setActiveTagCategory(key)}
+                                            className={`px-4 py-2 rounded-lg text-sm transition-all ${activeTagCategory === key
+                                                ? 'bg-emerald-500/30 border border-emerald-500/50 text-white font-bold'
+                                                : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {category.name}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex flex-wrap gap-2 mb-4 p-4 bg-white/5 rounded-2xl border border-white/5 h-40 overflow-y-auto content-start">
+                                    {tagCategories[activeTagCategory as keyof typeof tagCategories].tags.map((tag) => (
+                                        <button
+                                            key={tag}
+                                            onClick={() => toggleTag(tag)}
+                                            className={`px-3 py-1.5 rounded-lg text-sm transition-all ${localTags.includes(tag)
+                                                ? 'bg-emerald-500/30 border border-emerald-500/50 text-white'
+                                                : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {tag}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="relative max-w-md">
+                                    <input
+                                        type="text"
+                                        value={newTag}
+                                        onChange={(e) => setNewTag(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder="カスタムタグ..."
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                    />
+                                    <button
+                                        onClick={handleAddTag}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 hover:text-emerald-400 p-1"
+                                    >
+                                        <span className="text-2xl leading-none">+</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 pt-4 border-t border-white/10">
+                                <button
+                                    onClick={cancelRecording}
+                                    className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-colors"
+                                >
+                                    キャンセル
+                                </button>
+                                <button
+                                    onClick={processVoiceJournal}
+                                    disabled={isProcessing}
+                                    className="flex-1 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20 text-lg"
+                                >
+                                    {isProcessing ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            保存中...
+                                        </span>
+                                    ) : (
+                                        "ジャーナルを保存"
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

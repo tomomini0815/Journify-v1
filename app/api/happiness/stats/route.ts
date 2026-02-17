@@ -69,10 +69,27 @@ export async function GET(request: Request) {
             }
         })
 
-        const dailyMap = new Map<string, { total: number, count: number }>()
-        // Force git update for dailyMap declaration
+        // 音声ジャーナルデータも取得（気分が記録されているもののみ）
+        const voiceJournals = await prisma.voiceJournal.findMany({
+            where: {
+                userId: user.id,
+                mood: { not: null },
+                ...(startDate ? { createdAt: { gte: startDate } } : {})
+            },
+            select: {
+                mood: true,
+                createdAt: true
+            }
+        })
 
-        journals.forEach(journal => {
+        const allEntries = [
+            ...journals,
+            ...voiceJournals
+        ];
+
+        const dailyMap = new Map<string, { total: number, count: number }>()
+
+        allEntries.forEach(journal => {
             if (journal.mood === null) return
 
             // ローカルの日付（YYYY-MM-DD）を使用

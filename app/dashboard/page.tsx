@@ -46,11 +46,11 @@ const getCachedJournalData = unstable_cache(
         const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
         return await Promise.all([
-            // This month count
+            // This month count (Text)
             prisma.journalEntry.count({
                 where: { userId, createdAt: { gte: thisMonthStart } },
             }),
-            // Last month count (for trend)
+            // Last month count (Text) - for trend
             prisma.journalEntry.count({
                 where: { userId, createdAt: { gte: lastMonthStart, lt: thisMonthStart } },
             }),
@@ -91,6 +91,36 @@ const getCachedJournalData = unstable_cache(
                 where: { userId },
                 select: { createdAt: true },
                 orderBy: { createdAt: 'desc' }
+            }),
+            // Total Text Journals
+            prisma.journalEntry.count({ where: { userId } }),
+            // Total Voice Journals
+            prisma.voiceJournal.count({ where: { userId } }),
+            // This Month Voice Journals
+            prisma.voiceJournal.count({ where: { userId, createdAt: { gte: thisMonthStart } } }),
+            // All Voice Journal dates for streak
+            prisma.voiceJournal.findMany({
+                where: { userId },
+                select: { createdAt: true },
+                orderBy: { createdAt: 'desc' }
+            }),
+            // Recent Voice Journals (with mood) for happiness stats
+            prisma.voiceJournal.findMany({
+                where: {
+                    userId,
+                    mood: { gt: 0 },
+                    createdAt: { gte: thirtyDaysAgo }
+                },
+                select: { mood: true, createdAt: true }
+            }),
+            // Previous Voice Journals (with mood) for trend
+            prisma.voiceJournal.findMany({
+                where: {
+                    userId,
+                    mood: { gt: 0 },
+                    createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
+                },
+                select: { mood: true, createdAt: true }
             })
         ])
     },
@@ -147,12 +177,18 @@ import { StatsSkeleton, ChartsSkeleton, RecentJournalsSkeleton, GoalProgressSkel
 async function StatsSection({ userId }: { userId: string }) {
     const [
         [
-            thisMonthCount,
-            lastMonthCount,
+            thisMonthTextCount,
+            lastMonthTextCount,
             ,
             journalEntries,
             prevJournalEntries,
-            allJournalDates
+            allJournalDates,
+            totalTextCount,
+            totalVoiceCount,
+            thisMonthVoiceCount,
+            allVoiceDates,
+            voiceEntries,
+            prevVoiceEntries
         ],
         [goalCount]
     ] = await Promise.all([
@@ -160,12 +196,14 @@ async function StatsSection({ userId }: { userId: string }) {
         getCachedGoalData(userId)
     ])
 
+    // Combine dates for streak
+    const combinedDates = [...allJournalDates, ...allVoiceDates]
+
     // Calculate streak
     let streak = 0
-    if (allJournalDates.length > 0) {
-        // ... (streak calculation remains same)
+    if (combinedDates.length > 0) {
         const uniqueDates = new Set(
-            allJournalDates.map(j => new Date(j.createdAt).toISOString().split('T')[0])
+            combinedDates.map(j => new Date(j.createdAt).toISOString().split('T')[0])
         )
 
         const today = new Date()
@@ -191,24 +229,32 @@ async function StatsSection({ userId }: { userId: string }) {
 
     // Calculate happiness average and trend
     const calculateAvg = (entries: { mood: number | null }[]) => {
-        const total = entries.reduce((sum, e) => sum + (e.mood || 0), 0)
-        return entries.length > 0 ? (total / entries.length / 5) * 100 : 0
+        const validEntries = entries.filter(e => e.mood !== null)
+        const total = validEntries.reduce((sum, e) => sum + (e.mood || 0), 0)
+        return validEntries.length > 0 ? (total / validEntries.length / 5) * 100 : 0
     }
 
-    const currentAvg = calculateAvg(journalEntries)
-    const prevAvg = calculateAvg(prevJournalEntries)
+    // Combine entries for happiness
+    const combinedCurrentEntries = [...journalEntries, ...voiceEntries]
+    const combinedPrevEntries = [...prevJournalEntries, ...prevVoiceEntries]
+
+    const currentAvg = calculateAvg(combinedCurrentEntries)
+    const prevAvg = calculateAvg(combinedPrevEntries)
 
     const happinessTrend = prevAvg > 0
         ? `${currentAvg >= prevAvg ? '+' : ''}${Math.round(((currentAvg - prevAvg) / prevAvg) * 100)}%`
         : "+0%"
 
-    // Calculate journal count trend
-    const journalDiff = thisMonthCount - lastMonthCount
-    const journalTrend = `${journalDiff >= 0 ? '+' : ''}${journalDiff}`
+    // Calculate Combined Total Count
+    const combinedTotal = totalTextCount + totalVoiceCount
+
+    // Calculate Combined Monthly Trend (This Month Total)
+    const combinedThisMonth = thisMonthTextCount + thisMonthVoiceCount
+    const journalTrend = `+${combinedThisMonth}`
 
     const stats = {
-        journalCount: thisMonthCount,
-        journalTrend,
+        journalCount: combinedTotal, // Display Total All Time
+        journalTrend,                // Display "+X" (This month's additions)
         goalCount,
         streak,
         happiness: Math.round(currentAvg),

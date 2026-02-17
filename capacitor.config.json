@@ -4,7 +4,7 @@
     "webDir": "cap-www",
     "bundledWebRuntime": false,
     "server": {
-        "url": "https://journify-v1.vercel.app",
+        "url": "https://www.myjournifyapp.com",
         "cleartext": true
     }
 }

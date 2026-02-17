@@ -39,6 +39,7 @@ export async function POST(req: Request) {
         }
 
         let transcript = providedTranscript || "";
+        let title = "";
         let summary = "";
         let sentiment = "neutral";
         let aiTags: string[] = [];
@@ -232,6 +233,10 @@ JSONのみを返し、他の説明は不要です。`;
         const voiceJournal = await prisma.voiceJournal.create({
             data: voiceJournalData
         });
+
+        // 以前はここでJournalEntryも作成していたが、重複表示とタイトル問題のため廃止。
+        // 統計チャート側でVoiceJournalを参照するように変更済み。
+
 
         // デイリーチャレンジを更新
         const today = new Date();
