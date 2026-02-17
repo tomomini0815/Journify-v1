@@ -206,7 +206,7 @@ export default function VoiceJournalRecorder({
     }, []);
 
     // --- Step 1: Synchronous SpeechRecognition Trigger ---
-    const handleMicButtonClick = () => {
+    const handleMicButtonClick = (options?: { isResuming?: boolean }) => {
         // SpeechRecognitionの初期化と起動をここで同期的に行う
         const SpeechRecognitionWeb =
             (window as any).SpeechRecognition ||
@@ -299,9 +299,12 @@ export default function VoiceJournalRecorder({
         speechRecognitionRef.current = recognition;
         isRecordingRef.current = true;
         setIsRecording(true);
-        setRecordingTime(0);
-        setTranscript("");
-        setInterimTranscript("");
+
+        if (!options?.isResuming) {
+            setRecordingTime(0);
+            setTranscript("");
+            setInterimTranscript("");
+        }
 
         // Timer start
         if (timerRef.current) clearInterval(timerRef.current as any);
@@ -356,7 +359,8 @@ export default function VoiceJournalRecorder({
     };
 
     const resumeRecording = async () => {
-        await startRecording({ isResuming: true });
+        await startRecording();
+        handleMicButtonClick({ isResuming: true });
     };
 
     const processVoiceJournal = async () => {
@@ -487,7 +491,7 @@ export default function VoiceJournalRecorder({
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={handleMicButtonClick}
+                                onClick={() => handleMicButtonClick()}
                                 className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                             >
                                 <Mic className="w-6 h-6" />
@@ -726,7 +730,7 @@ export default function VoiceJournalRecorder({
                 </div>
                 {!isRecording && !audioBlob && (
                     <button
-                        onClick={handleMicButtonClick}
+                        onClick={() => handleMicButtonClick()}
                         className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                     >
                         <Mic className="w-8 h-8" />
