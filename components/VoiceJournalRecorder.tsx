@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import 'regenerator-runtime/runtime';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import { useState, useRef, useEffect, MouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
-import { SpeechRecognition } from "@capacitor-community/speech-recognition";
 
 interface VoiceJournalRecorderProps {
     onComplete?: (journalId: string) => void;
@@ -23,48 +24,54 @@ export default function VoiceJournalRecorder({
     tags = DEFAULT_TAGS
 }: VoiceJournalRecorderProps) {
     const router = useRouter();
-    const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-    const [transcript, setTranscript] = useState("");
-    const [interimTranscript, setInterimTranscript] = useState("");
-
-    // Local state for Mood and Tags
-    const [localMood, setLocalMood] = useState(mood);
+    const [localMood, setLocalMood] = useState<number>(mood);
     const [localTags, setLocalTags] = useState<string[]>(tags);
     const [newTag, setNewTag] = useState("");
+    const [editableTranscript, setEditableTranscript] = useState("");
 
-    // --- Phoenix Engine Refs & State ---
-    const restartCountRef = useRef(0);
-    const maxRestarts = 5;
-    const isAndroidRef = useRef(false);
-    const isRecordingRef = useRef(false); // Ref to track recording state avoiding closure staleness
+    const {
+        transcript,
+        interimTranscript,
+        listening,
+        browserSupportsSpeechRecognition,
+        resetTranscript
+    } = useSpeechRecognition();
 
-    // Debug State (Internal Logic for Phoenix Engine)
+    const isRecording = listening;
+
+    useEffect(() => {
+        if (listening) {
+            setEditableTranscript(transcript);
+        }
+    }, [listening, transcript]);
+
+    // --- MediaRecorder Refs ---
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
+    const timerRef = useRef<NodeJS.Timeout | number | null>(null);
+
+    // Diagnostics & Visualizer
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+
+    // Debug State
     const [debugStatus, setDebugStatus] = useState({
-        permission: 'unknown',
-        isSupported: false,
-        isRecording: false,
+        isSupported: true,
         speechState: 'idle',
         lastError: ''
     });
 
     const updateDebug = (key: string, value: any) => {
         setDebugStatus(prev => ({ ...prev, [key]: value }));
-        // Log critical errors to console/server if needed
         if (key === 'lastError' && value) {
             console.warn(`[VoiceRecorder] Error: ${value}`);
         }
     };
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const ua = navigator.userAgent.toLowerCase();
-            isAndroidRef.current = ua.includes('android');
-            updateDebug('isSupported', !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition));
-        }
-    }, []);
 
     // Tag Categories State
     const [activeTagCategory, setActiveTagCategory] = useState("goals");
@@ -116,17 +123,6 @@ export default function VoiceJournalRecorder({
     useEffect(() => {
         setLocalTags(tags);
     }, [tags]);
-
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const chunksRef = useRef<Blob[]>([]);
-    const timerRef = useRef<NodeJS.Timeout | number | null>(null);
-    const speechRecognitionRef = useRef<any>(null);
-
-    // Diagnostics & Visualizer
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const analyserRef = useRef<AnalyserNode | null>(null);
-    const animationFrameRef = useRef<number | null>(null);
 
     // --- Device Check ---
     const checkDevices = async () => {
@@ -198,124 +194,37 @@ export default function VoiceJournalRecorder({
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (speechRecognitionRef.current) {
-                try { speechRecognitionRef.current.onend = null; speechRecognitionRef.current.stop(); } catch (e) { }
-            }
             stopVisualizer();
         };
     }, []);
 
-    // --- Step 1: Synchronous SpeechRecognition Trigger ---
+    // --- Step 1: react-speech-recognition Trigger ---
     const handleMicButtonClick = (options?: { isResuming?: boolean }) => {
-        // SpeechRecognitionの初期化と起動をここで同期的に行う
-        const SpeechRecognitionWeb =
-            (window as any).SpeechRecognition ||
-            (window as any).webkitSpeechRecognition;
-
-        if (!SpeechRecognitionWeb) {
-            console.warn("Speech recognition not supported on this browser.");
-            return;
-        }
-
-        const recognition = new SpeechRecognitionWeb();
-        recognition.lang = 'ja-JP';
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 1;
-
-        // Androidは安定性のためfalseにし、onendで手動再起動する
-        recognition.continuous = isAndroidRef.current ? false : true;
-
-        recognition.onstart = async () => {
-            updateDebug('speechState', 'listening');
-            updateDebug('isRecording', true);
-
-            // SpeechRecognition起動後にvisualizerだけ別途起動（マイクの取り合いを避ける）
-            try {
-                // MediaRecorder用ではなく、あくまで解析（Visualizer）用として取得
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                startVisualizer(stream);
-            } catch (e) {
-                // visualizerが動かなくても録音には影響しない
-                console.warn('Visualizer起動失敗:', e);
-            }
-        };
-
-        recognition.onresult = (event: any) => {
-            let interim = '';
-            let final = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    final += event.results[i][0].transcript;
-                } else {
-                    interim += event.results[i][0].transcript;
-                }
-            }
-            if (final) setTranscript(prev => prev + final + ' ');
-            setInterimTranscript(interim);
-        };
-
-        recognition.onend = () => {
-            updateDebug('speechState', 'ended');
-            if (isRecordingRef.current) {
-                // Phoenix Engine: Smart Restart
-                const restartDelay = isAndroidRef.current ? 150 : 50;
-                updateDebug('speechState', 'restarting (active)...');
-
-                setTimeout(() => {
-                    if (isRecordingRef.current) {
-                        try {
-                            recognition.start();
-                            console.log("Phoenix: Restart success");
-                        } catch (e: any) {
-                            console.warn(`再起動失敗: ${e.message}`);
-                            if (!e.message?.includes('already started')) {
-                                updateDebug('lastError', `Restart: ${e.message}`);
-                            }
-                        }
-                    }
-                }, restartDelay);
-            } else {
-                updateDebug('isRecording', false);
-            }
-        };
-
-        recognition.onerror = (event: any) => {
-            if (event.error === 'no-speech') return;
-            if (event.error === 'network') {
-                updateDebug('lastError', 'Network error - will retry');
-                return;
-            }
-            if (event.error === 'not-allowed') {
-                alert('マイクの使用を許可してください');
-                isRecordingRef.current = false;
-                setIsRecording(false);
-                return;
-            }
-            console.warn(`speech error: ${event.error}`);
-            updateDebug('lastError', `${event.error}`);
-        };
-
-        // 同期的にstart()を呼ぶ
-        speechRecognitionRef.current = recognition;
-        isRecordingRef.current = true;
-        setIsRecording(true);
-
         if (!options?.isResuming) {
+            resetTranscript();
             setRecordingTime(0);
-            setTranscript("");
-            setInterimTranscript("");
         }
+
+        SpeechRecognition.startListening({
+            continuous: true,
+            interimResults: true,
+            language: 'ja-JP',
+        });
+
+        startRecording();
 
         // Timer start
         if (timerRef.current) clearInterval(timerRef.current as any);
         timerRef.current = setInterval(() => {
             setRecordingTime(prev => prev + 1);
         }, 1000);
-
-        recognition.start();
     };
 
     const startRecording = async () => {
+        if (!browserSupportsSpeechRecognition) {
+            alert("このブラウザは音声認識に対応していません。");
+            return;
+        }
         // AudioContextの初期化のみ残す（Android互換性のため）
         try {
             const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
@@ -331,30 +240,15 @@ export default function VoiceJournalRecorder({
         }
     };
 
-    const stopRecording = async () => {
+    const stopRecording = () => {
+        SpeechRecognition.stopListening();
+        stopVisualizer();
+
         if (timerRef.current) {
             clearInterval(timerRef.current as any);
             timerRef.current = null;
         }
 
-        // Standard stop sequence
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-        }
-
-        setIsRecording(false);
-        isRecordingRef.current = false; // Sync ref
-        stopVisualizer();
-
-        if (speechRecognitionRef.current) {
-            try {
-                speechRecognitionRef.current.onend = null; // Prevent restart loop
-                speechRecognitionRef.current.stop();
-            } catch (e) { }
-            speechRecognitionRef.current = null;
-        }
-
-        updateDebug('isRecording', false);
         updateDebug('speechState', 'stopped');
     };
 
@@ -392,7 +286,6 @@ export default function VoiceJournalRecorder({
                 }
                 throw new Error(`Failed to upload audio: ${errorDetails}`);
             }
-
             const uploadData = await uploadRes.json();
 
             const createRes = await fetch("/api/voice-journal/create", {
@@ -400,7 +293,7 @@ export default function VoiceJournalRecorder({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     audioPath: uploadData.filepath,
-                    transcript: transcript || "音声を認識できませんでした",
+                    transcript: editableTranscript || transcript || "音声を認識できませんでした",
                     mood: localMood,
                     tags: localTags
                 })
@@ -416,8 +309,7 @@ export default function VoiceJournalRecorder({
 
             setAudioBlob(null);
             setRecordingTime(0);
-            setTranscript("");
-            setInterimTranscript("");
+            setEditableTranscript("");
             setLocalTags([]);
             setLocalMood(3);
 
@@ -437,8 +329,7 @@ export default function VoiceJournalRecorder({
 
     const cancelRecording = () => {
         setAudioBlob(null);
-        setTranscript("");
-        setInterimTranscript("");
+        resetTranscript();
         setLocalTags(tags);
         setLocalMood(mood);
     };
@@ -533,7 +424,7 @@ export default function VoiceJournalRecorder({
                             </div>
                         </div>
                         <p className="text-white/40 text-xs mb-4">
-                            {isRecording ? "あなたの声を聴いています..." : "小さな記録が、見える景色を変えていく"}
+                            {listening ? "あなたの声を聴いています..." : "小さな記録が、見える景色を変えていく"}
                         </p>
 
                         {/* Visualizer & Transcript Area */}
@@ -547,22 +438,18 @@ export default function VoiceJournalRecorder({
                             <div className={isRecording ? "mt-2" : ""}>
                                 {isRecording ? (
                                     <p className="text-white/80 leading-relaxed text-sm">
-                                        {transcript}
-                                        <span className="text-white/40">{interimTranscript}</span>
-                                        {!transcript && !interimTranscript && (
-                                            <span className="text-white/30 italic">声を待っています...</span>
-                                        )}
+                                        {transcript || (listening ? "お話しください..." : "完了しました")}
                                     </p>
                                 ) : (
                                     <>
                                         <textarea
-                                            value={transcript}
-                                            onChange={(e) => setTranscript(e.target.value)}
+                                            value={editableTranscript}
+                                            onChange={(e) => setEditableTranscript(e.target.value)}
                                             placeholder="音声がここに表示されます。録音後に編集できます。"
                                             className="w-full bg-transparent text-white/80 leading-relaxed text-sm resize-none focus:outline-none placeholder:text-white/30 placeholder:italic min-h-[100px]"
                                             rows={4}
                                         />
-                                        {transcript && (
+                                        {editableTranscript && (
                                             <span className="absolute bottom-2 right-3 text-[10px] text-white/20">✏️ 編集可能</span>
                                         )}
                                     </>
@@ -790,8 +677,8 @@ export default function VoiceJournalRecorder({
                                 </p>
                             ) : (
                                 <textarea
-                                    value={transcript}
-                                    onChange={(e) => setTranscript(e.target.value)}
+                                    value={editableTranscript}
+                                    onChange={(e) => setEditableTranscript(e.target.value)}
                                     placeholder="音声がここに表示されます。"
                                     className="w-full bg-transparent text-white/80 leading-relaxed text-lg resize-none focus:outline-none placeholder:text-white/30 placeholder:italic min-h-[150px]"
                                     rows={6}
