@@ -69,6 +69,9 @@ export async function GET(request: Request) {
             }
         })
 
+        const dailyMap = new Map<string, { total: number, count: number }>()
+        // Force git update for dailyMap declaration
+
         journals.forEach(journal => {
             if (journal.mood === null) return
 
