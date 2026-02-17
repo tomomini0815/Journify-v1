@@ -35,6 +35,37 @@ export default function VoiceJournalRecorder({
     const [localTags, setLocalTags] = useState<string[]>(tags);
     const [newTag, setNewTag] = useState("");
 
+    // --- Phoenix Engine Refs & State ---
+    const restartCountRef = useRef(0);
+    const maxRestarts = 5;
+    const isAndroidRef = useRef(false);
+    const isRecordingRef = useRef(false); // Ref to track recording state avoiding closure staleness
+
+    // Debug State (Internal Logic for Phoenix Engine)
+    const [debugStatus, setDebugStatus] = useState({
+        permission: 'unknown',
+        isSupported: false,
+        isRecording: false,
+        speechState: 'idle',
+        lastError: ''
+    });
+
+    const updateDebug = (key: string, value: any) => {
+        setDebugStatus(prev => ({ ...prev, [key]: value }));
+        // Log critical errors to console/server if needed
+        if (key === 'lastError' && value) {
+            console.warn(`[VoiceRecorder] Error: ${value}`);
+        }
+    };
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const ua = navigator.userAgent.toLowerCase();
+            isAndroidRef.current = ua.includes('android');
+            updateDebug('isSupported', !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition));
+        }
+    }, []);
+
     // Tag Categories State
     const [activeTagCategory, setActiveTagCategory] = useState("goals");
 
@@ -168,11 +199,98 @@ export default function VoiceJournalRecorder({
     useEffect(() => {
         return () => {
             if (speechRecognitionRef.current) {
-                try { speechRecognitionRef.current.stop(); } catch (e) { }
+                try { speechRecognitionRef.current.onend = null; speechRecognitionRef.current.stop(); } catch (e) { }
             }
             stopVisualizer();
         };
     }, []);
+
+    // --- Step 1: Synchronous SpeechRecognition Trigger ---
+    const handleMicButtonClick = () => {
+        // SpeechRecognitionの初期化と起動をここで同期的に行う
+        const SpeechRecognitionWeb =
+            (window as any).SpeechRecognition ||
+            (window as any).webkitSpeechRecognition;
+
+        if (!SpeechRecognitionWeb) {
+            console.warn("Speech recognition not supported on this browser.");
+            return;
+        }
+
+        const recognition = new SpeechRecognitionWeb();
+        recognition.lang = 'ja-JP';
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        // Androidは安定性のためfalseにし、onendで手動再起動する
+        recognition.continuous = isAndroidRef.current ? false : true;
+
+        recognition.onstart = () => {
+            updateDebug('speechState', 'listening');
+            updateDebug('isRecording', true);
+        };
+
+        recognition.onresult = (event: any) => {
+            let interim = '';
+            let final = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    final += event.results[i][0].transcript;
+                } else {
+                    interim += event.results[i][0].transcript;
+                }
+            }
+            if (final) setTranscript(prev => prev + final + ' ');
+            setInterimTranscript(interim);
+        };
+
+        recognition.onend = () => {
+            updateDebug('speechState', 'ended');
+            if (isRecordingRef.current) {
+                // Phoenix Engine: Smart Restart
+                const restartDelay = isAndroidRef.current ? 150 : 50;
+                updateDebug('speechState', 'restarting (active)...');
+
+                setTimeout(() => {
+                    if (isRecordingRef.current) {
+                        try {
+                            recognition.start();
+                            console.log("Phoenix: Restart success");
+                        } catch (e: any) {
+                            console.warn(`再起動失敗: ${e.message}`);
+                            if (!e.message?.includes('already started')) {
+                                updateDebug('lastError', `Restart: ${e.message}`);
+                            }
+                        }
+                    }
+                }, restartDelay);
+            } else {
+                updateDebug('isRecording', false);
+            }
+        };
+
+        recognition.onerror = (event: any) => {
+            if (event.error === 'no-speech') return;
+            if (event.error === 'network') {
+                updateDebug('lastError', 'Network error - will retry');
+                return;
+            }
+            if (event.error === 'not-allowed') {
+                alert('マイクの使用を許可してください');
+                isRecordingRef.current = false;
+                setIsRecording(false);
+                return;
+            }
+            console.warn(`speech error: ${event.error}`);
+            updateDebug('lastError', `${event.error}`);
+        };
+
+        // 同期的にstart()を呼ぶ
+        speechRecognitionRef.current = recognition;
+        isRecordingRef.current = true;
+        setIsRecording(true);
+        recognition.start();
+    };
 
     const startRecording = async (options?: { isResuming?: boolean }) => {
         // Check for Secure Context (HTTPS or localhost)
@@ -188,16 +306,15 @@ export default function VoiceJournalRecorder({
 
         try {
             // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
-            if (audioContextRef.current) {
+            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+                audioContextRef.current = new AudioContextClass();
+            }
+            if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
                 await audioContextRef.current.resume();
             }
 
-            // 2. Hardware and Permission Check
-            const hasMics = await checkDevices();
-            if (!hasMics) {
-                console.warn("No microphone hardware detected");
-            }
-
+            // 2. Hardware and Permission Check (Trigger getUserMedia for permission/playback)
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             // MIME Type detection
@@ -236,10 +353,6 @@ export default function VoiceJournalRecorder({
                 const rawBlob = new Blob(chunksRef.current, { type });
                 setAudioBlob(rawBlob);
                 stream.getTracks().forEach(track => track.stop());
-
-                if (speechRecognitionRef.current) {
-                    try { speechRecognitionRef.current.stop(); } catch (e) { }
-                }
             };
 
             // Start MediaRecorder
@@ -248,44 +361,6 @@ export default function VoiceJournalRecorder({
             // Start Visualizer
             startVisualizer(stream);
 
-            // Start Web Speech API (All platforms)
-            const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            if (SpeechRecognitionWeb) {
-                try {
-                    const recognition = new SpeechRecognitionWeb();
-                    recognition.lang = 'ja-JP';
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
-
-                    recognition.onresult = (event: any) => {
-                        let interim = '';
-                        let finalText = '';
-                        for (let i = event.resultIndex; i < event.results.length; i++) {
-                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                            else interim += event.results[i][0].transcript;
-                        }
-                        if (finalText) setTranscript(prev => prev + finalText + ' ');
-                        setInterimTranscript(interim);
-                    };
-
-                    recognition.onerror = (event: any) => {
-                        console.warn(`web speech error: ${event.error}`);
-                    };
-
-                    recognition.onend = () => {
-                        if (isRecording) {
-                            try { recognition.start(); } catch (e) { }
-                        }
-                    };
-
-                    speechRecognitionRef.current = recognition;
-                    recognition.start();
-                } catch (e) {
-                    console.warn(`web speech failed: ${e}`);
-                }
-            }
-
-            setIsRecording(true);
             if (!options?.isResuming) {
                 setRecordingTime(0);
                 setTranscript("");
@@ -315,12 +390,19 @@ export default function VoiceJournalRecorder({
         }
 
         setIsRecording(false);
+        isRecordingRef.current = false; // Sync ref
         stopVisualizer();
 
         if (speechRecognitionRef.current) {
-            try { speechRecognitionRef.current.stop(); } catch (e) { }
+            try {
+                speechRecognitionRef.current.onend = null; // Prevent restart loop
+                speechRecognitionRef.current.stop();
+            } catch (e) { }
             speechRecognitionRef.current = null;
         }
+
+        updateDebug('isRecording', false);
+        updateDebug('speechState', 'stopped');
     };
 
     const resumeRecording = async () => {
@@ -455,7 +537,7 @@ export default function VoiceJournalRecorder({
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => startRecording()}
+                                onClick={() => { startRecording(); handleMicButtonClick(); }}
                                 className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                             >
                                 <Mic className="w-6 h-6" />
@@ -694,7 +776,7 @@ export default function VoiceJournalRecorder({
                 </div>
                 {!isRecording && !audioBlob && (
                     <button
-                        onClick={() => startRecording()}
+                        onClick={() => { startRecording(); handleMicButtonClick(); }}
                         className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                     >
                         <Mic className="w-8 h-8" />
