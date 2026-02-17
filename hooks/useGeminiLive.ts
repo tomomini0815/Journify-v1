@@ -59,8 +59,8 @@ registerProcessor('pcm-processor', PCMProcessor);
 `;
 
 const FALLBACK_MODELS = [
-    "models/gemini-2.5-flash",
-    "models/gemini-3-flash-preview", // Newest model
+    "models/gemini-2.0-flash-exp",
+    "models/gemini-1.5-flash",
 ];
 
 export function useGeminiLive({ apiKey, onTranscript, onError }: UseGeminiLiveProps) { // Changed onLog to onError
