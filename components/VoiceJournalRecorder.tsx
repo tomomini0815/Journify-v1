@@ -225,9 +225,19 @@ export default function VoiceJournalRecorder({
         // Androidは安定性のためfalseにし、onendで手動再起動する
         recognition.continuous = isAndroidRef.current ? false : true;
 
-        recognition.onstart = () => {
+        recognition.onstart = async () => {
             updateDebug('speechState', 'listening');
             updateDebug('isRecording', true);
+
+            // SpeechRecognition起動後にvisualizerだけ別途起動（マイクの取り合いを避ける）
+            try {
+                // MediaRecorder用ではなく、あくまで解析（Visualizer）用として取得
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                startVisualizer(stream);
+            } catch (e) {
+                // visualizerが動かなくても録音には影響しない
+                console.warn('Visualizer起動失敗:', e);
+            }
         };
 
         recognition.onresult = (event: any) => {
@@ -289,92 +299,32 @@ export default function VoiceJournalRecorder({
         speechRecognitionRef.current = recognition;
         isRecordingRef.current = true;
         setIsRecording(true);
+        setRecordingTime(0);
+        setTranscript("");
+        setInterimTranscript("");
+
+        // Timer start
+        if (timerRef.current) clearInterval(timerRef.current as any);
+        timerRef.current = setInterval(() => {
+            setRecordingTime(prev => prev + 1);
+        }, 1000);
+
         recognition.start();
     };
 
-    const startRecording = async (options?: { isResuming?: boolean }) => {
-        // Check for Secure Context (HTTPS or localhost)
-        if (typeof window !== 'undefined' && !window.isSecureContext) {
-            alert('セキュリティ上の理由により、マイクの使用はHTTPS接続またはlocalhostでのみ許可されています。')
-            return
-        }
-
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert('お使いのブラウザはマイク録音をサポートしていません。Chromeまたは最新のブラウザをご利用ください。')
-            return
-        }
-
+    const startRecording = async () => {
+        // AudioContextの初期化のみ残す（Android互換性のため）
         try {
-            // 1. Mandatory AudioContext Resume (for Android/Chrome browsers)
             const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
             if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
                 audioContextRef.current = new AudioContextClass();
             }
             if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
                 await audioContextRef.current.resume();
+                console.log("AudioContext resumed");
             }
-
-            // 2. Hardware and Permission Check (Trigger getUserMedia for permission/playback)
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-            // MIME Type detection
-            let mimeType = "";
-            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-                mimeType = "audio/webm;codecs=opus";
-            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                mimeType = "audio/mp4";
-            } else if (MediaRecorder.isTypeSupported("audio/webm")) {
-                mimeType = "audio/webm";
-            }
-
-            const recorderOptions = mimeType ? { mimeType } : undefined;
-
-            try {
-                const mediaRecorder = new MediaRecorder(stream, recorderOptions);
-                mediaRecorderRef.current = mediaRecorder;
-            } catch (e) {
-                mediaRecorderRef.current = new MediaRecorder(stream);
-            }
-
-            if (!mediaRecorderRef.current) {
-                throw new Error("MediaRecorder failed to initialize");
-            }
-
-            chunksRef.current = [];
-
-            mediaRecorderRef.current.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    chunksRef.current.push(e.data);
-                }
-            };
-
-            mediaRecorderRef.current.onstop = () => {
-                const type = mediaRecorderRef.current?.mimeType || mimeType || 'audio/webm';
-                const rawBlob = new Blob(chunksRef.current, { type });
-                setAudioBlob(rawBlob);
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            // Start MediaRecorder
-            mediaRecorderRef.current.start(1000);
-
-            // Start Visualizer
-            startVisualizer(stream);
-
-            if (!options?.isResuming) {
-                setRecordingTime(0);
-                setTranscript("");
-                setInterimTranscript("");
-            }
-
-            // Timer start
-            timerRef.current = setInterval(() => {
-                setRecordingTime(prev => prev + 1);
-            }, 1000);
-
-        } catch (error: any) {
-            console.error("Failed to start recording:", error);
-            alert("録音を開始できませんでした。");
+        } catch (e) {
+            console.warn("AudioContext init failed:", e);
         }
     };
 
@@ -537,7 +487,7 @@ export default function VoiceJournalRecorder({
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => { startRecording(); handleMicButtonClick(); }}
+                                onClick={handleMicButtonClick}
                                 className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                             >
                                 <Mic className="w-6 h-6" />
@@ -776,7 +726,7 @@ export default function VoiceJournalRecorder({
                 </div>
                 {!isRecording && !audioBlob && (
                     <button
-                        onClick={() => { startRecording(); handleMicButtonClick(); }}
+                        onClick={handleMicButtonClick}
                         className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                     >
                         <Mic className="w-8 h-8" />
