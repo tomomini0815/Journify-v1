@@ -203,15 +203,22 @@ export default function VoiceJournalRecorder({
         if (!options?.isResuming) {
             resetTranscript();
             setRecordingTime(0);
+            setAudioBlob(null);
+            chunksRef.current = [];
         }
 
+        // 1. Start SpeechRecognition IMMEDIATELY (Sync)
         SpeechRecognition.startListening({
             continuous: true,
             interimResults: true,
             language: 'ja-JP',
         });
 
-        startRecording();
+        // 2. Delayed Audio Recording (Async/Safe)
+        // Android Chrome often kills SpeechRecognition if getUserMedia is called too soon.
+        setTimeout(() => {
+            startRecording();
+        }, 200);
 
         // Timer start
         if (timerRef.current) clearInterval(timerRef.current as any);
@@ -225,24 +232,70 @@ export default function VoiceJournalRecorder({
             alert("このブラウザは音声認識に対応していません。");
             return;
         }
-        // AudioContextの初期化のみ残す（Android互換性のため）
+
         try {
+            // AudioContext Resume (Android Keep-Alive)
             const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
             if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
                 audioContextRef.current = new AudioContextClass();
             }
             if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
                 await audioContextRef.current.resume();
-                console.log("AudioContext resumed");
             }
+
+            // Safe MediaRecorder Start
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+                startVisualizer(stream);
+
+                let mimeType = "audio/webm";
+                if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+                    mimeType = "audio/webm;codecs=opus";
+                } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                    mimeType = "audio/mp4";
+                }
+
+                const mediaRecorder = new MediaRecorder(stream, { mimeType });
+                mediaRecorderRef.current = mediaRecorder;
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) chunksRef.current.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunksRef.current, { type: mimeType });
+                    setAudioBlob(blob);
+                    stream.getTracks().forEach(track => track.stop());
+                    stopVisualizer();
+                };
+
+                mediaRecorder.start(1000);
+
+            } catch (mediaError: any) {
+                console.warn("MediaRecorder failed (Text-only mode active):", mediaError);
+                // Do NOT stop SpeechRecognition here. Allow text-only mode.
+            }
+
         } catch (e) {
-            console.warn("AudioContext init failed:", e);
+            console.warn("Audio setup failed:", e);
         }
     };
 
     const stopRecording = () => {
         SpeechRecognition.stopListening();
-        stopVisualizer();
+
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+        } else {
+            stopVisualizer(); // Manual stop if MediaRecorder didn't trigger it
+        }
 
         if (timerRef.current) {
             clearInterval(timerRef.current as any);
@@ -258,42 +311,40 @@ export default function VoiceJournalRecorder({
     };
 
     const processVoiceJournal = async () => {
-        if (!audioBlob) return;
+        // Fallback: If no audio blob (failed recording), create a placeholder blob or skip audio upload
+        if (!audioBlob && !editableTranscript && !transcript) return;
 
         setIsProcessing(true);
 
         try {
-            const mimeType = audioBlob.type;
-            let ext = "webm";
-            if (mimeType.includes("mp4")) ext = "mp4";
-            else if (mimeType.includes("wav")) ext = "wav";
+            let uploadedFilePath = "";
 
-            const formData = new FormData();
-            formData.append("file", audioBlob, `voice-journal.${ext}`);
+            if (audioBlob) {
+                const mimeType = audioBlob.type;
+                let ext = "webm";
+                if (mimeType.includes("mp4")) ext = "mp4";
+                else if (mimeType.includes("wav")) ext = "wav";
 
-            const uploadRes = await fetch("/api/upload", {
-                method: "POST",
-                body: formData
-            });
+                const formData = new FormData();
+                formData.append("file", audioBlob, `voice-journal.${ext}`);
 
-            if (!uploadRes.ok) {
-                let errorDetails = "Unknown error";
-                try {
-                    const errorData = await uploadRes.json();
-                    errorDetails = errorData.error || errorData.details || JSON.stringify(errorData);
-                } catch (e) {
-                    errorDetails = await uploadRes.text();
+                const uploadRes = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json();
+                    uploadedFilePath = uploadData.filepath;
                 }
-                throw new Error(`Failed to upload audio: ${errorDetails}`);
             }
-            const uploadData = await uploadRes.json();
 
             const createRes = await fetch("/api/voice-journal/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    audioPath: uploadData.filepath,
-                    transcript: editableTranscript || transcript || "音声を認識できませんでした",
+                    audioPath: uploadedFilePath || null,
+                    transcript: editableTranscript || transcript || "（音声録音なし）",
                     mood: localMood,
                     tags: localTags
                 })
@@ -398,7 +449,7 @@ export default function VoiceJournalRecorder({
                                 <h3 className="text-xl font-bold text-white">音声ジャーナル</h3>
                             </div>
                             <div className="flex items-center gap-3">
-                                {!isRecording && (audioBlob || transcript) && (
+                                {!isRecording && (audioBlob || transcript || editableTranscript) && (
                                     <button
                                         onClick={resumeRecording}
                                         disabled={isProcessing}
@@ -458,7 +509,7 @@ export default function VoiceJournalRecorder({
                         </div>
 
                         {/* Post-Recording Options */}
-                        {!isRecording && audioBlob && (
+                        {!isRecording && (audioBlob || transcript || editableTranscript) && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
