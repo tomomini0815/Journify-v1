@@ -40,7 +40,11 @@ export default function VoiceJournalRecorder({
         resetTranscript
     } = useSpeechRecognition();
 
-    const isRecording = listening;
+    // Android/Manual recording state
+    const [isManualRecording, setIsManualRecording] = useState(false);
+
+    // Combine both states
+    const isRecording = listening || isManualRecording;
 
     useEffect(() => {
         if (listening) {
@@ -261,6 +265,9 @@ export default function VoiceJournalRecorder({
 
             // Safe MediaRecorder Start
             try {
+                // Set manual recording state (important for Android where SpeechRecognition is disabled)
+                setIsManualRecording(true);
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
                         echoCancellation: true,
@@ -321,6 +328,7 @@ export default function VoiceJournalRecorder({
         }
 
         updateDebug('speechState', 'stopped');
+        setIsManualRecording(false);
     };
 
     const resumeRecording = async () => {
