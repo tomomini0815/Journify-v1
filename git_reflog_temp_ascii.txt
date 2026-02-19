@@ -1,0 +1,50 @@
+65038e1 HEAD@{0}: commit: chore: manual deployment trigger to restore stable state (cdd769f)
+cdd769f HEAD@{1}: reset: moving to cdd769f
+c741b8d HEAD@{2}: revert: Revert "feat(android): Implement text-only mode for Voice Journal to ensure stability"
+3c2d35c HEAD@{3}: commit: feat(android): Implement text-only mode for Voice Journal to ensure stability
+3dabd0e HEAD@{4}: commit: feat: implement safe audio recording for Android with delayed start and error handling
+cdd769f HEAD@{5}: reset: moving to cdd769f
+b9723f8 HEAD@{6}: commit: Revert: Restore split handleMicButtonClick and startRecording for Android stability
+0be3edf HEAD@{7}: commit: Fix: Add missing closing div tag in VoiceJournalRecorder
+cf06ca0 HEAD@{8}: commit: feat(android): sync startListening + async mediaRecorder
+ffe0850 HEAD@{9}: commit: trigger: force deployment of reverted state
+cdd769f HEAD@{10}: reset: moving to cdd769f
+eeeeded HEAD@{11}: commit: fix(recording): remove redundant async startListening call on Android
+6c60db3 HEAD@{12}: commit: fix(recording): ensure startListening is called synchronously for Android
+f804efe HEAD@{13}: commit: fix(minutes): simplify VoiceRecordingSection logic to fix stop button issue
+d9cf492 HEAD@{14}: commit: fix(minutes): refactor VoiceRecordingSection to use react-speech-recognition and support resume
+1121717 HEAD@{15}: commit: fix(ui): restore rich UI (visualizer, moods, tags) while keeping react-speech-recognition
+a3e0d3b HEAD@{16}: commit: refactor: replace Phoenix Engine with react-speech-recognition in VoiceJournalRecorder
+36abd2a HEAD@{17}: commit: feat: add local transcript saving to VoiceJournalRecorder (Phoenix Engine)
+ea3eccc HEAD@{18}: commit: fix: correct malformed regex in VoiceRecordingSection
+e89ebc8 HEAD@{19}: commit: fix: rename stopGeminiStreaming to stopStreaming in VoiceJournalRecorder
+a060d07 HEAD@{20}: commit: fix: restore Phoenix Engine (Gemini Live) for stable Android recording
+1cd0703 HEAD@{21}: commit: fix: suppress MetaMask extension connection errors in dev mode
+9431961 HEAD@{22}: commit: fix: improve dashboard robustness and cleanup redundant imports
+eb0c426 HEAD@{23}: commit: fix: ensure regenerator-runtime and proper client directive in VoiceRecordingSection
+db5ed82 HEAD@{24}: commit: fix: restore missing 'use client' directive in VoiceRecordingSection
+2a3489b HEAD@{25}: commit: feat: restore and unify voice journal and minutes recording functionality
+cdd769f HEAD@{26}: reset: moving to cdd769f
+d0a779e HEAD@{27}: commit: fix: add security and browser support checks for recording
+dce3b39 HEAD@{28}: commit: feat: migrate Minutes recorder to react-speech-recognition
+7b7b657 HEAD@{29}: commit: fix: restore MediaRecorder to capture audio blobs
+cdd769f HEAD@{30}: commit: fix: add @types/react-speech-recognition to resolve build error
+8c96200 HEAD@{31}: commit: feat: migrate to react-speech-recognition
+bbc748a HEAD@{32}: commit: fix: resolve build error in resumeRecording and fix onClick type mismatch
+65c7bbf HEAD@{33}: commit: fix: resolve microphone conflict on Android by prioritizing SpeechRecognition
+44d51c4 HEAD@{34}: commit: fix: trigger speech recognition synchronously for Android Chrome
+fe75b9d HEAD@{35}: commit: chore: manual deployment trigger
+4b5a551 HEAD@{36}: reset: moving to 4b5a551
+1021d5f HEAD@{37}: commit: refactor: hide debug panel UI
+7f00237 HEAD@{38}: commit: chore: trigger deployment
+cd9a977 HEAD@{39}: reset: moving to cd9a977
+c22f6bd HEAD@{40}: commit: remove: DebugPanel component and usage
+a6ceefa HEAD@{41}: commit: fix: disable debug panel to restore view
+cd9a977 HEAD@{42}: commit: chore: force remove debris files
+9b22383 HEAD@{43}: commit: chore: trigger deployment
+6c08a4b HEAD@{44}: commit: fix: resolve TypeScript null error in audioContextRef
+7d94639 HEAD@{45}: commit: feat: implement Phoenix Engine
+0853261 HEAD@{46}: checkout: moving from main to main
+0853261 HEAD@{47}: checkout: moving from main to main
+0853261 HEAD@{48}: commit: style(recorder): restore original UI for mood and tags
+0b76118 HEAD@{49}: commit: fix(android): use continuous:false for speech stability

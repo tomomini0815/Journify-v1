@@ -373,5 +373,26 @@ export const inspirationalQuotes: InspirationalQuote[] = [
     { original: "Jojo77", quote: "精神一到何事か成らざらん", author: "朱子", title: "", category: "精神", context: "" },
     { original: "Jojo78", quote: "吾唯足知", author: "仏教", title: "", category: "満足", context: "" },
     { original: "Jojo79", quote: "七転び八起き", author: "日本の諺", title: "", category: "不屈", context: "" },
-    { original: "Jojo80", quote: "初心不可忘", author: "世阿弥", title: "", category: "謙虚", context: "" }
+    { original: "Jojo80", quote: "初心不可忘", author: "世阿弥", title: "", category: "謙虚", context: "" },
+    // New additions (Batch 2)
+    { original: "Jojo81", quote: "優しい言葉は短く簡単に言えるが、その響きは本当に無限だ。", author: "マザー・テレサ", title: "", category: "優しさ", context: "" },
+    { original: "Jojo82", quote: "偉大な仕事をする唯一の方法は、自分の仕事を愛することだ。", author: "スティーブ・ジョブズ", title: "", category: "情熱", context: "" },
+    { original: "Jojo83", quote: "何事も達成するまでは不可能に見える。", author: "ネルソン・マンデラ", title: "", category: "可能性", context: "" },
+    { original: "Jojo84", quote: "自分を信じれば、もう半分は成功したようなものだ。", author: "セオドア・ルーズベルト", title: "", category: "自信", context: "" },
+    { original: "Jojo85", quote: "自分の行動が変化をもたらすと信じて行動しなさい。実際にそうなのだから。", author: "ウィリアム・ジェームズ", title: "", category: "行動", context: "" },
+    { original: "Jojo86", quote: "幸せかどうかは、自分次第である。", author: "アリストテレス", title: "", category: "幸福", context: "" },
+    { original: "Jojo87", quote: "傷を知恵に変えなさい。", author: "オプラ・ウィンフリー", title: "", category: "知恵", context: "" },
+    { original: "Jojo88", quote: "自分らしくあることで、世界を変えなさい。", author: "エイミー・ポーラー", title: "", category: "自分らしさ", context: "" },
+    { original: "Jojo89", quote: "あらゆる瞬間が、新しい始まりである。", author: "T.S.エリオット", title: "", category: "希望", context: "" },
+    { original: "Jojo90", quote: "夢ではなく、思い出と共に死ね。", author: "作者不詳", title: "", category: "人生", context: "" },
+    { original: "Jojo91", quote: "虹を見たければ、雨を我慢しなければならない。", author: "ドリー・パートン", title: "", category: "忍耐", context: "" },
+    { original: "Jojo92", quote: "何をするかではなく、どれだけの愛を込めるかが重要だ。", author: "マザー・テレサ", title: "", category: "愛", context: "" },
+    { original: "Jojo93", quote: "人生とは、自分を見つけることではない。自分を創ることだ。", author: "バーナード・ショー", title: "", category: "創造", context: "" },
+    { original: "Jojo94", quote: "止まらない限り、どれだけゆっくり進んでも問題ない。", author: "孔子", title: "", category: "継続", context: "" },
+    { original: "Jojo95", quote: "未来を予測する最良の方法は、それを創り出すことだ。", author: "ピーター・ドラッカー", title: "", category: "未来", context: "" },
+    { original: "Jojo96", quote: "困難が大きければ大きいほど、それを乗り越えた時の栄光も大きい。", author: "エピクウロス", title: "", category: "達成", context: "" },
+    { original: "Jojo97", quote: "他人の道を照らすことで、自分の道も照らされる。", author: "ベン・スイートランド", title: "", category: "利他", context: "" },
+    { original: "Jojo98", quote: "今日の成果は、過去の努力の結果である。未来の成果は、今日の努力の結果である。", author: "稲盛和夫", title: "", category: "因果", context: "" },
+    { original: "Jojo99", quote: "人生において最も大切な日は、生まれた日と、なぜ生まれたかが分かった日である。", author: "マーク・トウェイン", title: "", category: "目的", context: "" },
+    { original: "Jojo100", quote: "成功とは、熱意を失わずに失敗から失敗へと進む能力のことだ。", author: "ウィンストン・チャーチル", title: "", category: "成功", context: "" }
 ];

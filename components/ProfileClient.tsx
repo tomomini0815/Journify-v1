@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { User, Mail, Bell, Lock, Palette, Globe, Save, Camera, Briefcase, Calendar, Sparkles, Gamepad2 } from "lucide-react"
+import { User, Mail, Bell, Lock, Palette, Globe, Save, Camera, Briefcase, Calendar, Sparkles, Gamepad2, PawPrint } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { createClient } from "@/lib/supabase/client"
@@ -421,7 +421,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                         </div>
                         <button
                             onClick={() => setNotifications(!notifications)}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${notifications ? "bg-emerald-500" : "bg-white/20"}`}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${notifications ? "bg-emerald-500" : "bg-white/20"} shrink-0`}
                         >
                             <div
                                 className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${notifications ? "translate-x-7" : "translate-x-1"}`}
@@ -439,7 +439,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                         </div>
                         <button
                             onClick={() => setEmailUpdates(!emailUpdates)}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${emailUpdates ? "bg-emerald-500" : "bg-white/20"}`}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${emailUpdates ? "bg-emerald-500" : "bg-white/20"} shrink-0`}
                         >
                             <div
                                 className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${emailUpdates ? "translate-x-7" : "translate-x-1"}`}
@@ -474,7 +474,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                         </div>
                         <button
                             onClick={() => handleProjectToggle(!enableProjects)}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${enableProjects ? "bg-emerald-500" : "bg-white/20"}`}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${enableProjects ? "bg-emerald-500" : "bg-white/20"} shrink-0`}
                         >
                             <div
                                 className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${enableProjects ? "translate-x-7" : "translate-x-1"}`}
@@ -484,15 +484,15 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
 
                     <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                         <div className="flex items-center gap-3">
-                            <Gamepad2 className="w-5 h-5 text-white/60" />
+                            <PawPrint className="w-5 h-5 text-white/60" />
                             <div>
-                                <p className="font-medium">アドベンチャーモード</p>
-                                <p className="text-sm text-white/60">タスク管理をゲーム化して楽しむ</p>
+                                <p className="font-medium">ペット育成モード</p>
+                                <p className="text-sm text-white/60">タスクを消化して相棒を育てる</p>
                             </div>
                         </div>
                         <button
                             onClick={() => handleAdventureToggle(!enableAdventure)}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${enableAdventure ? "bg-emerald-500" : "bg-white/20"}`}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${enableAdventure ? "bg-emerald-500" : "bg-white/20"} shrink-0`}
                         >
                             <div
                                 className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${enableAdventure ? "translate-x-7" : "translate-x-1"}`}
@@ -510,7 +510,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                         </div>
                         <button
                             onClick={() => handleJojoToggle(!showJojo)}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${showJojo ? "bg-emerald-500" : "bg-white/20"}`}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${showJojo ? "bg-emerald-500" : "bg-white/20"} shrink-0`}
                         >
                             <div
                                 className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${showJojo ? "translate-x-7" : "translate-x-1"}`}

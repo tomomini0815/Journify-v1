@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
 import { unstable_cache } from "next/cache"
+import { FileText, Mic } from "lucide-react"
 
 import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 import { DashboardGreeting } from "@/components/DashboardGreeting"
@@ -120,7 +121,18 @@ const getCachedJournalData = unstable_cache(
                     mood: { gt: 0 },
                     createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
                 },
-                select: { mood: true, createdAt: true }
+            }),
+            // Recent Voice Journals (for display) - Index 12
+            prisma.voiceJournal.findMany({
+                where: { userId },
+                select: {
+                    id: true,
+                    aiSummary: true,
+                    mood: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: "desc" },
+                take: 3,
             })
         ])
     },
@@ -351,7 +363,26 @@ async function ChartsSection({ userId }: { userId: string }) {
 }
 
 async function RecentJournalsSection({ userId }: { userId: string }) {
-    const [, , recentJournals] = await getCachedJournalData(userId)
+    const data = await getCachedJournalData(userId)
+    // Index 2 is recent text journals, Index 12 is recent voice journals
+    const recentTextJournals = data[2]
+    // @ts-ignore - Index 12 might not be inferred correctly by TS in this context without full type def update
+    const recentVoiceJournals = data[12] as Array<{ id: string, aiSummary: string, mood: number | null, createdAt: Date }>
+
+    // Combine and sort
+    // Combine and sort
+    const combinedJournals = [
+        ...recentTextJournals.map(j => ({ ...j, type: 'text', displayTitle: j.title })),
+        ...recentVoiceJournals.map(j => {
+            // Remove "ユーザーは" prefix if present
+            let title = j.aiSummary || "音声ジャーナル";
+            if (title.startsWith("ユーザーは")) {
+                title = title.replace(/^ユーザーは/, "");
+            }
+            return { ...j, type: 'voice', displayTitle: title };
+        })
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 3)
 
     return (
         <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
@@ -370,21 +401,32 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
             </div>
 
             <div className="space-y-3">
-                {recentJournals.map((journal) => (
-                    <Link href={`/journal/${journal.id}`} key={journal.id} className="block group">
+                {combinedJournals.map((journal) => (
+                    <Link
+                        href={journal.type === 'text' ? `/journal/${journal.id}` : `/voice-journal/${journal.id}`}
+                        key={`${journal.type}-${journal.id}`}
+                        className="block group"
+                    >
                         <div
                             className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border border-white/5 group-hover:border-emerald-500/30"
                         >
                             <div className="flex items-center justify-between mb-1">
-                                <h4 className="font-medium">{journal.title}</h4>
-                                <span className="text-2xl">{getMoodEmoji(journal.mood)}</span>
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    {journal.type === 'text' ? (
+                                        <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                                    ) : (
+                                        <Mic className="w-4 h-4 text-cyan-400 shrink-0" />
+                                    )}
+                                    <h4 className="font-medium truncate">{journal.displayTitle}</h4>
+                                </div>
+                                <span className="text-2xl shrink-0 ml-2">{getMoodEmoji(journal.mood)}</span>
                             </div>
-                            <p className="text-white/60 text-sm">{new Date(journal.createdAt).toISOString().split('T')[0]}</p>
+                            <p className="text-white/60 text-sm pl-6">{new Date(journal.createdAt).toISOString().split('T')[0]}</p>
                         </div>
                     </Link>
                 ))}
-                {recentJournals.length === 0 && (
-                    <p className="text-center text-white/40 text-sm py-4">まだジャーナルがありません</p>
+                {combinedJournals.length === 0 && (
+                    <p className="text-center text-white/40 text-sm py-4">まだ記録がありません</p>
                 )}
             </div>
         </div>

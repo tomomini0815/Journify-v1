@@ -167,7 +167,7 @@ export default function DailyChallenges() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
-                                <Zap className="w-4 h-4 text-cyan-400" />
+                                <Gem className="w-4 h-4 text-cyan-400" />
                                 <span className={`font-bold ${item.completed ? "text-emerald-400" : "text-white/60"}`}>
                                     +{item.crystals}
                                 </span>

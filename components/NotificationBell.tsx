@@ -15,15 +15,19 @@ interface Notification {
     createdAt: string
 }
 
+import { Switch } from "@/components/ui/switch"
+
 export default function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [isPushEnabled, setIsPushEnabled] = useState(false)
     const bellRef = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {
         fetchNotifications()
+        checkPushSubscription() // Check initial state
         const interval = setInterval(fetchNotifications, 30000)
         return () => clearInterval(interval)
     }, [])
@@ -38,12 +42,93 @@ export default function NotificationBell() {
         return () => { document.body.style.overflow = '' }
     }, [isOpen])
 
+    // Check if user is already subscribed
+    const checkPushSubscription = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+
+        try {
+            const registration = await navigator.serviceWorker.ready
+            const subscription = await registration.pushManager.getSubscription()
+            setIsPushEnabled(!!subscription && Notification.permission === 'granted')
+        } catch (error) {
+            console.error('Error checking push subscription:', error)
+        }
+    }
+
+    // Toggle handler
+    const handlePushToggle = async (checked: boolean) => {
+        if (checked) {
+            // Check permission first
+            if (Notification.permission === 'default') {
+                const permission = await Notification.requestPermission()
+                if (permission === 'granted') {
+                    await subscribeToPush()
+                } else {
+                    // unexpected denial or close
+                    setIsPushEnabled(false)
+                }
+            } else if (Notification.permission === 'granted') {
+                await subscribeToPush()
+            } else {
+                alert('通知がブロックされています。ブラウザの設定から許可してください。')
+                setIsPushEnabled(false)
+            }
+        } else {
+            await unsubscribeFromPush()
+        }
+    }
+
+    const unsubscribeFromPush = async () => {
+        try {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready
+                const subscription = await registration.pushManager.getSubscription()
+                if (subscription) {
+                    // Unsubscribe from server
+                    await fetch('/api/push/unsubscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ endpoint: subscription.endpoint })
+                    })
+
+                    // Unsubscribe from browser
+                    await subscription.unsubscribe()
+                    setIsPushEnabled(false)
+                    console.log('Push notification disabled')
+                }
+            }
+        } catch (error) {
+            console.error('Failed to unsubscribe:', error)
+        }
+    }
+
     const fetchNotifications = async () => {
         try {
             const res = await fetch('/api/notifications')
             if (res.ok) {
                 const data = await res.json()
-                setNotifications(data.notifications || [])
+                const newNotifications: Notification[] = data.notifications || []
+
+                // Check if we have any *new* task reminders that are unread
+                // We compare with the previous state 'notifications'
+                // This is a simplified check; for robustness, we could track the last notified ID or timestamp
+                if (notifications.length > 0) { // Only check if we have previous data to avoid blast on initial load
+                    const existingIds = new Set(notifications.map(n => n.id))
+
+                    newNotifications.forEach(n => {
+                        if (!existingIds.has(n.id) && !n.isRead && n.type === 'task_reminder') {
+                            // This is a new, unread task reminder
+                            if (Notification.permission === "granted") {
+                                new Notification(n.title, {
+                                    body: n.message,
+                                    icon: '/icons/icon-192x192.png' // Adjust icon path if needed
+                                })
+                            }
+                        }
+                    })
+                }
+
+                setNotifications(newNotifications)
                 setUnreadCount(data.unreadCount || 0)
             }
         } catch (error) {
@@ -51,6 +136,62 @@ export default function NotificationBell() {
         } finally {
             setLoading(false)
         }
+    }
+
+    const subscribeToPush = async () => {
+        try {
+            const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+            if (!vapidKey) {
+                console.error("VAPID Public Key is missing!");
+                return;
+            }
+
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                await navigator.serviceWorker.ready;
+
+                // Subscribe to Push
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidKey)
+                });
+
+                // Send subscription to server
+                const response = await fetch('/api/push/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(subscription),
+                });
+
+                if (!response.ok) throw new Error('Failed to sync subscription')
+
+                setIsPushEnabled(true)
+                console.log('Push subscription successful');
+            }
+        } catch (error) {
+            console.error('Failed to subscribe to push:', error);
+            setIsPushEnabled(false)
+        }
+    }
+
+    // Helper to convert VAPID key
+    function urlBase64ToUint8Array(base64String: string) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
     }
 
     const markAsRead = async (notificationId: string) => {
@@ -118,7 +259,9 @@ export default function NotificationBell() {
             {/* Bell Icon */}
             <button
                 ref={bellRef}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    setIsOpen(!isOpen)
+                }}
                 className="relative p-2 text-white/70 hover:text-white transition-colors rounded-lg hover:bg-white/5"
             >
                 <Bell className="w-6 h-6" />
@@ -156,7 +299,17 @@ export default function NotificationBell() {
                         >
                             {/* Header */}
                             <div className="p-4 border-b border-white/10 flex items-center justify-between shrink-0">
-                                <h3 className="font-bold text-lg text-white">通知</h3>
+                                <div className="flex items-center gap-4">
+                                    <h3 className="font-bold text-lg text-white">通知</h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-white/50">Push通知</span>
+                                        <Switch
+                                            checked={isPushEnabled}
+                                            onCheckedChange={handlePushToggle}
+                                            className="scale-75"
+                                        />
+                                    </div>
+                                </div>
                                 <div className="flex items-center gap-3">
                                     {unreadCount > 0 && (
                                         <button
@@ -190,8 +343,8 @@ export default function NotificationBell() {
                                         <div
                                             key={notification.id}
                                             className={`relative border-b border-white/5 transition-all ${notification.isRead
-                                                    ? 'opacity-50'
-                                                    : 'bg-white/[0.03]'
+                                                ? 'opacity-50'
+                                                : 'bg-white/[0.03]'
                                                 }`}
                                         >
                                             <Link
@@ -217,8 +370,8 @@ export default function NotificationBell() {
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-start justify-between gap-2">
                                                             <p className={`text-sm ${notification.isRead
-                                                                    ? 'font-normal text-white/50 line-through decoration-white/20'
-                                                                    : 'font-medium text-white'
+                                                                ? 'font-normal text-white/50 line-through decoration-white/20'
+                                                                : 'font-medium text-white'
                                                                 }`}>
                                                                 {notification.title}
                                                             </p>
@@ -227,8 +380,8 @@ export default function NotificationBell() {
                                                             )}
                                                         </div>
                                                         <p className={`text-sm mt-1 ${notification.isRead
-                                                                ? 'text-white/30'
-                                                                : 'text-white/60'
+                                                            ? 'text-white/30'
+                                                            : 'text-white/60'
                                                             }`}>
                                                             {notification.message}
                                                         </p>

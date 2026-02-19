@@ -1,82 +1,85 @@
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
-    const users = await prisma.user.findMany({
-        include: { stats: true, challenges: true }
-    });
+    console.log('Starting crystal synchronization...')
 
-    console.log(`Found ${users.length} users.`);
+    // 1. Get all users
+    const users = await prisma.user.findMany({
+        select: { id: true, name: true }
+    })
+
+    console.log(`Found ${users.length} users.`)
 
     for (const user of users) {
-        console.log(`Checking User: ${user.email} (${user.id})`);
+        console.log(`Processing user: ${user.name} (${user.id})`)
 
-        // Get today's challenge
-        const challenge = await prisma.dailyChallenge.findFirst({
-            where: { userId: user.id },
-            orderBy: { date: 'desc' }
-        });
+        // 2. Get all daily challenges for this user
+        const challenges = await prisma.dailyChallenge.findMany({
+            where: { userId: user.id }
+        })
 
-        if (!challenge) {
-            console.log("  No challenge found.");
-            continue;
+        // 3. Calculate total earned XP/Crystals from challenges
+        let totalEarned = 0
+        for (const challenge of challenges) {
+            totalEarned += challenge.xpEarned || 0
         }
 
-        // 3. Calculate expected XP based on flags
-        let expectedXP = 0;
-        if (challenge.journalCreated) {
-            expectedXP += 20;
-            console.error(`  +20 (Journal)`);
-        }
+        console.log(`- Total earned from ${challenges.length} challenges: ${totalEarned}`)
 
-        // Cap tasks at 2 (50 XP max)
-        let tasksToCount = challenge.tasksCompleted;
-        if (tasksToCount > 2) tasksToCount = 2;
+        // 4. Update UserStats
+        const stats = await prisma.userStats.findUnique({
+            where: { userId: user.id }
+        })
 
-        if (tasksToCount > 0) {
-            const taskXP = tasksToCount * 25;
-            expectedXP += taskXP;
-            console.error(`  +${taskXP} (Tasks: ${challenge.tasksCompleted} -> Capped at ${tasksToCount})`);
-        }
+        if (stats) {
+            console.log(`- Current stats: XP=${stats.totalXP}, Crystals=${stats.crystals}`)
 
-        if (challenge.meetingCreated) {
-            expectedXP += 30;
-            console.error(`  +30 (Meeting)`);
-        }
+            // We want to make sure crystals reflects the earned amount at minimum
+            // Or we can just set it to the total earned if that is the source of truth
+            // Given the user request, we'll force update it to match totalEarned if it seems off
 
-        console.error(`  Current DB XP: ${challenge.xpEarned}`);
-        console.error(`  Current User Crystals: ${user.stats?.crystals}`);
-        console.error(`  Calculated Expected: ${expectedXP}`);
-
-        // Update UserStats
-        const updatedStats = await prisma.userStats.update({
-            where: { userId: user.id },
-            data: {
-                crystals: expectedXP,
-                totalXP: expectedXP // Sync Total XP too
+            if (stats.crystals < totalEarned) {
+                console.log(`- Updating crystals from ${stats.crystals} to ${totalEarned}`)
+                await prisma.userStats.update({
+                    where: { userId: user.id },
+                    data: {
+                        crystals: totalEarned,
+                        // Optionally update totalXP if that is also off, but user specifically asked for "Held" amount (crystals)
+                        // totalXP: totalEarned 
+                    }
+                })
+                console.log('  -> Updated successfully.')
+            } else {
+                console.log('- Crystals count seems correct or higher than challenge total (maybe spent?). Skipping update.')
+                // For this specific request, the user says "Current is 5, want 50". 
+                // If totalEarned is 50, and stats.crystals is 5, this block will be skipped if I used > check.
+                // Wait, logic above is: if (stats.crystals < totalEarned) -> Update. 
+                // So if 5 < 50, it updates. Correct.
             }
-        });
-
-        // Sync Challenge XP
-        if (challenge.xpEarned !== expectedXP) {
-            await prisma.dailyChallenge.update({
-                where: { id: challenge.id },
-                data: { xpEarned: expectedXP }
-            });
-            console.error("  Updated Challenge XP.");
+        } else {
+            console.log('- No UserStats found. Creating...')
+            await prisma.userStats.create({
+                data: {
+                    userId: user.id,
+                    crystals: totalEarned,
+                    totalXP: totalEarned
+                }
+            })
+            console.log('  -> Created successfully.')
         }
-
-        console.error(`  => Updated Crystals to ${updatedStats.crystals}`);
     }
+
+    console.log('Synchronization complete.')
 }
 
 main()
     .catch((e) => {
-        console.error(e);
-        process.exit(1);
+        console.error(e)
+        process.exit(1)
     })
     .finally(async () => {
-        await prisma.$disconnect();
-    });
+        await prisma.$disconnect()
+    })

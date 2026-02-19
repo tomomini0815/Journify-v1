@@ -136,8 +136,8 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
         setIsAdding(true);
         try {
             const today = new Date().toISOString();
-            // Default to today if on Today tab, otherwise no date
-            const scheduledDate = activeTab === 'today' ? today : null;
+            // Always set scheduledDate to today for quick add, so it appears in "Today", "Week", and "Month"
+            const scheduledDate = today;
 
             const res = await fetch('/api/tasks', {
                 method: 'POST',
@@ -195,7 +195,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
             </div>
 
             {/* Quick Add Form */}
-            <form onSubmit={handleAddTask} className="relative mb-4">
+            <form onSubmit={handleAddTask} className="relative mb-4 z-10">
                 <Input
                     type="text"
                     placeholder="新しいタスクを入力..."
@@ -207,7 +207,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                 <button
                     type="submit"
                     disabled={!newTaskTitle.trim() || isAdding}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-emerald-400 hover:text-emerald-300 disabled:opacity-30 transition-all"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-emerald-400 hover:text-emerald-300 disabled:opacity-30 transition-all z-20"
                 >
                     {isAdding ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

@@ -78,20 +78,19 @@ export default function Jojo({ userId }: JojoProps) {
 
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center">
-            {/* Message Bubble */}
             <AnimatePresence>
                 {showMessage && message && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                        className="absolute bottom-24 right-0 mb-2"
+                        initial={{ opacity: 0, x: -20, scale: 0.8 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -20, scale: 0.8 }}
+                        className="absolute bottom-0 right-20 mb-2"
                     >
-                        <div className="relative w-72 md:w-80">
+                        <div className="relative w-[70vw] max-w-sm md:w-80">
                             <div className="bg-gradient-to-br from-emerald-500/95 to-teal-500/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-emerald-400/20">
                                 <button
                                     onClick={() => setShowMessage(false)}
-                                    className="absolute -top-2 -right-2 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
+                                    className="absolute -top-2 -left-2 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors shadow-lg"
                                 >
                                     <X className="w-4 h-4 text-white" />
                                 </button>
@@ -109,8 +108,8 @@ export default function Jojo({ userId }: JojoProps) {
                                     ))}
                                 </div>
                             </div>
-                            {/* Speech bubble tail */}
-                            <div className="absolute -bottom-2 right-8 w-4 h-4 bg-gradient-to-br from-emerald-500/90 to-teal-500/90 rotate-45" />
+                            {/* Speech bubble tail - pointing right to Jojo */}
+                            <div className="absolute bottom-6 -right-2 w-4 h-4 bg-teal-500/95 rotate-45" />
                         </div>
                     </motion.div>
                 )}

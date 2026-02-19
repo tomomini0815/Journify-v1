@@ -59,7 +59,8 @@
     "regenerator-runtime": "^0.14.1",
     "tailwind-merge": "^3.4.0",
     "three": "^0.182.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -67,6 +68,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-speech-recognition": "^3.9.6",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.0.4",
     "prisma": "^5.22.0",
