@@ -29,8 +29,8 @@ export async function POST(req: Request) {
     try {
         const { audioPath, transcript: providedTranscript, mood, tags: clientTags } = await req.json();
 
-        if (!audioPath) {
-            return NextResponse.json({ error: "Audio path is required" }, { status: 400 });
+        if (!audioPath && !providedTranscript) {
+            return NextResponse.json({ error: "Audio path or transcript is required" }, { status: 400 });
         }
 
         const apiKey = process.env.GOOGLE_API_KEY;
@@ -102,7 +102,7 @@ JSONのみを返し、他の説明は不要です。`;
             }
         }
         // Case 2: No transcript -> Use Audio analysis (Server-side Transcription)
-        else {
+        else if (audioPath) {
             console.log("Transcript missing, utilizing server-side audio processing with Gemini...");
             try {
                 let audioBase64 = "";
@@ -210,6 +210,9 @@ JSONのみを返し、他の説明は不要です。`;
                 transcript = "音声の文字起こしに失敗しました";
                 summary = "音声データを処理できませんでした";
             }
+        } else {
+            // Should be caught by initial validation, but as a fallback
+            return NextResponse.json({ error: "Invalid request: missing audio and transcript" }, { status: 400 });
         }
 
         // Merge client tags and AI tags (Prioritize user tags + add unique AI tags)

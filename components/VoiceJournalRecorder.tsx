@@ -224,21 +224,23 @@ export default function VoiceJournalRecorder({
             chunksRef.current = [];
         }
 
-        // Android: Skip SpeechRecognition to avoid mic conflict
-        if (!isAndroid) {
-            SpeechRecognition.startListening({
-                continuous: true,
-                interimResults: true,
-                language: 'ja-JP',
-            });
-        }
+        // Always start SpeechRecognition (Even on Android for this mode)
+        SpeechRecognition.startListening({
+            continuous: true,
+            interimResults: true,
+            language: 'ja-JP',
+        });
 
         // 2. Audio Recording
-        // Android Chrome often kills SpeechRecognition if getUserMedia is called too soon.
-        // On Android, we just start MediaRecorder immediately since we aren't waiting for SpeechRecognition
-        setTimeout(() => {
-            startRecording();
-        }, isAndroid ? 0 : 200);
+        // Android: Skip MediaRecorder completely to avoid conflict
+        if (!isAndroid) {
+            setTimeout(() => {
+                startRecording();
+            }, 200);
+        } else {
+            // For Android, just set manual recording flag to true to show UI state
+            setIsManualRecording(true);
+        }
 
         // Timer start
         if (timerRef.current) clearInterval(timerRef.current as any);
@@ -312,14 +314,14 @@ export default function VoiceJournalRecorder({
     };
 
     const stopRecording = () => {
-        if (!isAndroid) {
-            SpeechRecognition.stopListening();
-        }
+        SpeechRecognition.stopListening();
 
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
-        } else {
-            stopVisualizer(); // Manual stop if MediaRecorder didn't trigger it
+        if (!isAndroid) {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+            } else {
+                stopVisualizer(); // Manual stop if MediaRecorder didn't trigger it
+            }
         }
 
         if (timerRef.current) {
@@ -332,12 +334,14 @@ export default function VoiceJournalRecorder({
     };
 
     const resumeRecording = async () => {
-        await startRecording();
+        if (!isAndroid) {
+            await startRecording();
+        }
         handleMicButtonClick({ isResuming: true });
     };
 
     const processVoiceJournal = async () => {
-        // Fallback: If no audio blob (failed recording), create a placeholder blob or skip audio upload
+        // Fallback: If no audio blob AND no transcript, then return
         if (!audioBlob && !editableTranscript && !transcript) return;
 
         setIsProcessing(true);
@@ -515,13 +519,12 @@ export default function VoiceJournalRecorder({
                             <div className={isRecording ? "mt-2" : ""}>
                                 {isRecording ? (
                                     <p className="text-white/80 leading-relaxed text-sm">
-                                        {isAndroid ? (
-                                            <span className="text-emerald-400 animate-pulse">
-                                                録音中... (終了後にAIが文字起こしします)
+                                        {isAndroid && (
+                                            <span className="block text-[10px] text-emerald-400/80 mb-2">
+                                                ※Androidでは音声データは保存されません（文字起こしのみ）
                                             </span>
-                                        ) : (
-                                            transcript || (listening ? "お話しください..." : "完了しました")
                                         )}
+                                        {transcript || (listening ? "お話しください..." : "完了しました")}
                                     </p>
                                 ) : (
                                     <>
@@ -752,18 +755,15 @@ export default function VoiceJournalRecorder({
                         <div className={isRecording ? "mt-4" : ""}>
                             {isRecording ? (
                                 <p className="text-white/80 leading-relaxed text-lg">
-                                    {isAndroid ? (
-                                        <span className="text-emerald-400 animate-pulse">
-                                            録音中... (終了後にAIが文字起こしを行います)
+                                    {isAndroid && (
+                                        <span className="block text-xs text-emerald-400/80 mb-4">
+                                            ※Androidでは音声データは保存されません（文字起こしのみ）
                                         </span>
-                                    ) : (
-                                        <>
-                                            {transcript}
-                                            <span className="text-white/40">{interimTranscript}</span>
-                                            {!transcript && !interimTranscript && (
-                                                <span className="text-white/30 italic">お話しください...</span>
-                                            )}
-                                        </>
+                                    )}
+                                    {transcript}
+                                    <span className="text-white/40">{interimTranscript}</span>
+                                    {!transcript && !interimTranscript && (
+                                        <span className="text-white/30 italic">お話しください...</span>
                                     )}
                                 </p>
                             ) : (
