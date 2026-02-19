@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
 import { unstable_cache } from "next/cache"
-import { FileText, Mic } from "lucide-react"
+import { FileText, Mic, PawPrint } from "lucide-react"
 
 import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 import { DashboardGreeting } from "@/components/DashboardGreeting"
@@ -16,23 +16,34 @@ import { ActiveCompanionDisplay } from "@/components/ActiveCompanionDisplay"
 export const revalidate = 60
 
 // Helper function to convert mood integer to emoji
-function getMoodEmoji(mood: number | null | undefined): string {
-    if (!mood) return "❓"
-
-    switch (mood) {
-        case 1:
-            return "😢" // Very Sad
-        case 2:
-            return "😕" // Sad
-        case 3:
-            return "😐" // Neutral
-        case 4:
-            return "😊" // Happy
-        case 5:
-            return "😄" // Very Happy
-        default:
-            return "❓" // Unknown
+// Helper function to convert mood integer to emoji
+function getMoodEmoji(mood: number | null | undefined, sentiment?: string | null): string {
+    if (mood) {
+        switch (mood) {
+            case 1:
+                return "😢" // Very Sad
+            case 2:
+                return "😕" // Sad
+            case 3:
+                return "😐" // Neutral
+            case 4:
+                return "😊" // Happy
+            case 5:
+                return "😄" // Very Happy
+            default:
+                return "❓"
+        }
     }
+
+    // Fallback to sentiment if mood is missing
+    if (sentiment) {
+        const lower = sentiment.toLowerCase()
+        if (lower.includes('positive') || lower.includes('happy')) return "😊"
+        if (lower.includes('negative') || lower.includes('sad')) return "😢"
+        if (lower.includes('neutral')) return "😐"
+    }
+
+    return "❓" // Unknown
 }
 
 // Cached data fetching functions
@@ -129,6 +140,7 @@ const getCachedJournalData = unstable_cache(
                     id: true,
                     aiSummary: true,
                     mood: true,
+                    sentiment: true, // Add sentiment
                     createdAt: true,
                 },
                 orderBy: { createdAt: "desc" },
@@ -367,7 +379,7 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
     // Index 2 is recent text journals, Index 12 is recent voice journals
     const recentTextJournals = data[2]
     // @ts-ignore - Index 12 might not be inferred correctly by TS in this context without full type def update
-    const recentVoiceJournals = data[12] as Array<{ id: string, aiSummary: string, mood: number | null, createdAt: Date }>
+    const recentVoiceJournals = data[12] as Array<{ id: string, aiSummary: string, mood: number | null, sentiment: string | null, createdAt: Date }>
 
     // Combine and sort
     // Combine and sort
@@ -419,7 +431,7 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
                                     )}
                                     <h4 className="font-medium truncate">{journal.displayTitle}</h4>
                                 </div>
-                                <span className="text-2xl shrink-0 ml-2">{getMoodEmoji(journal.mood)}</span>
+                                <span className="text-2xl shrink-0 ml-2">{getMoodEmoji(journal.mood, (journal as any).sentiment)}</span>
                             </div>
                             <p className="text-white/60 text-sm pl-6">{new Date(journal.createdAt).toISOString().split('T')[0]}</p>
                         </div>
@@ -635,7 +647,7 @@ export default async function DashboardPage() {
                         <div className="relative flex flex-col md:flex-row md:items-center justify-between p-6 gap-4">
                             <div className="flex items-center gap-4">
                                 <div className="relative w-16 h-16 shrink-0 rounded-2xl bg-black/60 border border-white/20 flex items-center justify-center overflow-hidden group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-white/5">
-                                    <span className="text-5xl filter brightness-0 invert drop-shadow-[0_0_8px_rgba(255,255,255,1)] drop-shadow-[2px_2px_1px_rgba(0,0,0,0.9)] animate-glow-pulse">🐾</span>
+                                    <PawPrint className="w-8 h-8 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" />
                                     <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
                                 </div>
                                 <div>
