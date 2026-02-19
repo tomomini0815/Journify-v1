@@ -413,7 +413,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                         <div className="flex items-center gap-3">
-                            <Bell className="w-5 h-5 text-white/60" />
+                            <Bell className="w-5 h-5 text-white/60 shrink-0" />
                             <div>
                                 <p className="font-medium">プッシュ通知</p>
                                 <p className="text-sm text-white/60">デイリーリマインダーを受け取る</p>
@@ -429,23 +429,6 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                         </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
-                        <div className="flex items-center gap-3">
-                            <Mail className="w-5 h-5 text-white/60" />
-                            <div>
-                                <p className="font-medium">メール通知 <span className="text-xs text-amber-400">(近日実装予定)</span></p>
-                                <p className="text-sm text-white/60">週次レポートを受け取る</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setEmailUpdates(!emailUpdates)}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${emailUpdates ? "bg-emerald-500" : "bg-white/20"} shrink-0`}
-                        >
-                            <div
-                                className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${emailUpdates ? "translate-x-7" : "translate-x-1"}`}
-                            />
-                        </button>
-                    </div>
                 </div>
             </motion.div>
 
@@ -466,7 +449,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                         <div className="flex items-center gap-3">
-                            <Briefcase className="w-5 h-5 text-white/60" />
+                            <Briefcase className="w-5 h-5 text-white/60 shrink-0" />
                             <div>
                                 <p className="font-medium">プロジェクト管理</p>
                                 <p className="text-sm text-white/60">プロジェクト、マイルストーン、ガントチャート機能を有効にする</p>
@@ -484,7 +467,7 @@ export function ProfileClient({ initialData }: ProfileClientProps) {
 
                     <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                         <div className="flex items-center gap-3">
-                            <PawPrint className="w-5 h-5 text-white/60" />
+                            <PawPrint className="w-5 h-5 text-white/60 shrink-0" />
                             <div>
                                 <p className="font-medium">ペット育成モード</p>
                                 <p className="text-sm text-white/60">タスクを消化して相棒を育てる</p>

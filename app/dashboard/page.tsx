@@ -18,24 +18,29 @@ export const revalidate = 60
 // Helper function to convert mood integer to emoji
 // Helper function to convert mood integer to emoji
 function getMoodEmoji(mood: number | null | undefined, sentiment?: string | null): string {
+    // If mood is present and within expected ranges (1-5 or 1-10)
     if (mood) {
-        switch (mood) {
-            case 1:
-                return "😢" // Very Sad
-            case 2:
-                return "😕" // Sad
-            case 3:
-                return "😐" // Neutral
-            case 4:
-                return "😊" // Happy
-            case 5:
-                return "😄" // Very Happy
-            default:
-                return "❓"
+        // Handle 1-5 scale (Legacy)
+        if (mood <= 5) {
+            switch (mood) {
+                case 1: return "😢" // Very Sad
+                case 2: return "😕" // Sad
+                case 3: return "😐" // Neutral
+                case 4: return "😊" // Happy
+                case 5: return "😄" // Very Happy
+            }
+        }
+        // Handle 1-10 scale (Voice Journal)
+        else {
+            if (mood <= 2) return "😢" // 1-2
+            if (mood <= 4) return "😕" // 3-4
+            if (mood <= 6) return "😐" // 5-6
+            if (mood <= 8) return "😊" // 7-8
+            return "😄" // 9-10
         }
     }
 
-    // Fallback to sentiment if mood is missing
+    // Fallback to sentiment if mood is missing or we want to double check
     if (sentiment) {
         const lower = sentiment.toLowerCase()
         if (lower.includes('positive') || lower.includes('happy')) return "😊"

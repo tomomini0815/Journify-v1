@@ -198,7 +198,20 @@ export default function VoiceJournalRecorder({
         };
     }, []);
 
-    // --- Step 1: react-speech-recognition Trigger ---
+    // --- Android Detection ---
+    const [isAndroid, setIsAndroid] = useState(false);
+
+    useEffect(() => {
+        const checkAndroid = () => {
+            const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+            if (/android/i.test(userAgent)) {
+                setIsAndroid(true);
+            }
+        };
+        checkAndroid();
+    }, []);
+
+    // --- Step 1: Trigger ---
     const handleMicButtonClick = (options?: { isResuming?: boolean }) => {
         if (!options?.isResuming) {
             resetTranscript();
@@ -207,18 +220,21 @@ export default function VoiceJournalRecorder({
             chunksRef.current = [];
         }
 
-        // 1. Start SpeechRecognition IMMEDIATELY (Sync)
-        SpeechRecognition.startListening({
-            continuous: true,
-            interimResults: true,
-            language: 'ja-JP',
-        });
+        // Android: Skip SpeechRecognition to avoid mic conflict
+        if (!isAndroid) {
+            SpeechRecognition.startListening({
+                continuous: true,
+                interimResults: true,
+                language: 'ja-JP',
+            });
+        }
 
-        // 2. Delayed Audio Recording (Async/Safe)
+        // 2. Audio Recording
         // Android Chrome often kills SpeechRecognition if getUserMedia is called too soon.
+        // On Android, we just start MediaRecorder immediately since we aren't waiting for SpeechRecognition
         setTimeout(() => {
             startRecording();
-        }, 200);
+        }, isAndroid ? 0 : 200);
 
         // Timer start
         if (timerRef.current) clearInterval(timerRef.current as any);
@@ -228,7 +244,7 @@ export default function VoiceJournalRecorder({
     };
 
     const startRecording = async () => {
-        if (!browserSupportsSpeechRecognition) {
+        if (!browserSupportsSpeechRecognition && !isAndroid) {
             alert("このブラウザは音声認識に対応していません。");
             return;
         }
@@ -289,7 +305,9 @@ export default function VoiceJournalRecorder({
     };
 
     const stopRecording = () => {
-        SpeechRecognition.stopListening();
+        if (!isAndroid) {
+            SpeechRecognition.stopListening();
+        }
 
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.stop();
@@ -489,7 +507,13 @@ export default function VoiceJournalRecorder({
                             <div className={isRecording ? "mt-2" : ""}>
                                 {isRecording ? (
                                     <p className="text-white/80 leading-relaxed text-sm">
-                                        {transcript || (listening ? "お話しください..." : "完了しました")}
+                                        {isAndroid ? (
+                                            <span className="text-emerald-400 animate-pulse">
+                                                録音中... (終了後にAIが文字起こしします)
+                                            </span>
+                                        ) : (
+                                            transcript || (listening ? "お話しください..." : "完了しました")
+                                        )}
                                     </p>
                                 ) : (
                                     <>
@@ -720,10 +744,18 @@ export default function VoiceJournalRecorder({
                         <div className={isRecording ? "mt-4" : ""}>
                             {isRecording ? (
                                 <p className="text-white/80 leading-relaxed text-lg">
-                                    {transcript}
-                                    <span className="text-white/40">{interimTranscript}</span>
-                                    {!transcript && !interimTranscript && (
-                                        <span className="text-white/30 italic">お話しください...</span>
+                                    {isAndroid ? (
+                                        <span className="text-emerald-400 animate-pulse">
+                                            録音中... (終了後にAIが文字起こしを行います)
+                                        </span>
+                                    ) : (
+                                        <>
+                                            {transcript}
+                                            <span className="text-white/40">{interimTranscript}</span>
+                                            {!transcript && !interimTranscript && (
+                                                <span className="text-white/30 italic">お話しください...</span>
+                                            )}
+                                        </>
                                     )}
                                 </p>
                             ) : (
