@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         let finalTags: string[] = [];
 
         // Case 1: Client provided transcript -> Use text analysis
-        if (transcript && transcript !== "音声を認識できませんでした") {
+        if (transcript && transcript !== "音声を認識できませんでした" && transcript !== "（音声録音なし）") {
             const genAI = new GoogleGenerativeAI(apiKey);
             const modelsToTry = ["gemini-2.0-flash-lite", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-3-flash-preview"];
             let processed = false;

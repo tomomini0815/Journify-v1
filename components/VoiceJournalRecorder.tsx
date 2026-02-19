@@ -370,7 +370,7 @@ export default function VoiceJournalRecorder({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     audioPath: uploadedFilePath || null,
-                    transcript: editableTranscript || transcript || "（音声録音なし）",
+                    transcript: editableTranscript || transcript || (uploadedFilePath ? "" : "（音声録音なし）"),
                     mood: localMood,
                     tags: localTags
                 })
