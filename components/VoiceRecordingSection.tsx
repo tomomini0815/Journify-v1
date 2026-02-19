@@ -58,7 +58,9 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const timerRef = useRef<NodeJS.Timeout | null>(null)
     const speechRecognitionRef = useRef<any>(null)
     const [isAndroid, setIsAndroid] = useState(false)
+    const [isTranscribing, setIsTranscribing] = useState(false)
     const [diagnostics, setDiagnostics] = useState<string[]>([])
+    const isRecordingRef = useRef(false)
 
     // Android detection
     useEffect(() => {
@@ -101,15 +103,21 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
         }
 
         try {
-            addLog("🎙️ requesting getUserMedia...");
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            addLog("🎤 requesting getUserMedia...");
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
             addLog("✅ stream granted");
 
             let mimeType = "audio/webm";
-            if (MediaRecorder.isTypeSupported("audio/mp4")) {
-                mimeType = "audio/mp4";
-            } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+            if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
                 mimeType = "audio/webm;codecs=opus";
+            } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+                mimeType = "audio/mp4";
             }
 
             const mediaRecorder = new MediaRecorder(stream, { mimeType });
@@ -124,7 +132,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 }
             };
 
-            mediaRecorder.onstop = () => {
+            mediaRecorder.onstop = async () => {
                 const rawBlob = new Blob(chunksRef.current, { type: mimeType });
                 addLog(`📦 Meeting MediaRecorder stopped. Chunks: ${chunksRef.current.length}, Size: ${Math.round(rawBlob.size / 1024)} KB`);
                 setAudioBlob(rawBlob);
@@ -134,57 +142,63 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 if (speechRecognitionRef.current) {
                     try { speechRecognitionRef.current.stop(); } catch (e) { }
                 }
+
+                // Android: Server-side transcription after recording stops
+                if (isAndroid && rawBlob.size > 0) {
+                    await transcribeOnServer(rawBlob);
+                }
             };
 
             // Start MediaRecorder
             mediaRecorder.start(15000);
 
-            // Start Transcription (Hybrid Strategy)
-            // Start Transcription (Unified Web Speech API)
-            // if (isAndroid) { ... } // Removed Gemini Live support
+            // Start Transcription: Only on non-Android platforms
+            if (!isAndroid) {
+                const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                if (SpeechRecognitionWeb) {
+                    try {
+                        const recognition = new SpeechRecognitionWeb();
+                        recognition.lang = 'ja-JP';
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
 
-            // Start Web Speech API
-            const SpeechRecognitionWeb = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            if (SpeechRecognitionWeb) {
-                try {
-                    const recognition = new SpeechRecognitionWeb();
-                    recognition.lang = 'ja-JP';
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
+                        recognition.onresult = (event: any) => {
+                            let interim = '';
+                            let finalText = '';
 
-                    recognition.onresult = (event: any) => {
-                        let interim = '';
-                        let finalText = '';
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                                if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+                                else interim += event.results[i][0].transcript;
+                            }
 
-                        for (let i = event.resultIndex; i < event.results.length; i++) {
-                            if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
-                            else interim += event.results[i][0].transcript;
-                        }
+                            if (finalText) setTranscript(prev => prev + finalText + ' ');
+                            setInterimTranscript(interim);
+                        };
 
-                        if (finalText) setTranscript(prev => prev + finalText + ' ');
-                        setInterimTranscript(interim);
-                    };
+                        recognition.onerror = (event: any) => {
+                            console.warn('SpeechRecognition error:', event.error);
+                        };
 
-                    recognition.onerror = (event: any) => {
-                        console.warn('SpeechRecognition error:', event.error);
-                    };
+                        recognition.onend = () => {
+                            if (isRecordingRef.current) {
+                                try { recognition.start(); } catch (e) { }
+                            }
+                        };
 
-                    recognition.onend = () => {
-                        if (isRecording) {
-                            try { recognition.start(); } catch (e) { }
-                        }
-                    };
-
-                    speechRecognitionRef.current = recognition;
-                    recognition.start();
-                } catch (error) {
-                    console.error('Failed to init SpeechRecognition:', error);
-                    setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)');
+                        speechRecognitionRef.current = recognition;
+                        recognition.start();
+                    } catch (error) {
+                        console.error('Failed to init SpeechRecognition:', error);
+                        setInterimTranscript('(リアルタイム文字起こしは利用できません。録音は正常に動作します。)');
+                    }
                 }
+            } else {
+                addLog("🤖 Android: Skipping SpeechRecognition, will use server-side transcription");
             }
 
 
             setIsRecording(true);
+            isRecordingRef.current = true;
             if (!isResuming) {
                 setRecordingTime(0);
                 setTranscript("");
@@ -207,6 +221,42 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
         }
     };
 
+    // --- Android: Server-side Transcription ---
+    const transcribeOnServer = async (blob: Blob) => {
+        setIsTranscribing(true);
+        addLog("🤖 Starting server-side transcription...");
+        try {
+            const formData = new FormData();
+            formData.append("file", blob, "meeting-recording.webm");
+
+            const res = await fetch("/api/transcribe/partial", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.text) {
+                    setTranscript(data.text);
+                    addLog(`✅ Transcription complete: ${data.text.substring(0, 50)}...`);
+                } else {
+                    setTranscript("（音声を認識できませんでした）");
+                    addLog("⚠️ Transcription returned empty text");
+                }
+            } else {
+                console.error("Server transcription failed:", res.status);
+                setTranscript("（文字起こしに失敗しました。手動で入力してください）");
+                addLog(`❌ Transcription failed: ${res.status}`);
+            }
+        } catch (error) {
+            console.error("Transcription error:", error);
+            setTranscript("（文字起こしに失敗しました。手動で入力してください）");
+            addLog(`❌ Transcription error: ${error}`);
+        } finally {
+            setIsTranscribing(false);
+        }
+    };
+
     const stopRecording = () => {
         addLog("🛑 stopRecording requested");
 
@@ -223,6 +273,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
         }
 
         setIsRecording(false);
+        isRecordingRef.current = false;
 
         if (speechRecognitionRef.current) {
             try { speechRecognitionRef.current.stop(); } catch (e) { }
@@ -406,7 +457,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                 </div>
                             </div>
                             <p className="text-white/40 text-xs mb-4">
-                                {isRecording ? "会議の音声を聴いています..." : "マイクボタンをタップして開始してください"}
+                                {isRecording ? (isAndroid ? "音声を録音中... 停止後にAIが文字起こしします" : "会議の音声を聴いています...") : isTranscribing ? "AIが文字起こし中..." : "マイクボタンをタップして開始してください"}
                             </p>
 
                             {/* Recording Timer */}
@@ -505,15 +556,24 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                             }`}>
                                             {isRecording ? (
                                                 <div className="pt-1.5 px-3.5 pb-3.5 max-h-40 overflow-y-auto">
-                                                    <p className="text-white/70 text-sm leading-relaxed break-words">
-                                                        {transcript}
-                                                        {interimTranscript && (
-                                                            <span className="text-cyan-400/40">{interimTranscript}</span>
-                                                        )}
-                                                        {!transcript && !interimTranscript && (
-                                                            <span className="text-white/25 italic">録音中… 音声を認識しています</span>
-                                                        )}
-                                                    </p>
+                                                    {isAndroid ? (
+                                                        <span className="text-white/25 italic">音声を録音中… 停止後にAIが文字起こしします</span>
+                                                    ) : (
+                                                        <>
+                                                            {transcript}
+                                                            {interimTranscript && (
+                                                                <span className="text-cyan-400/40">{interimTranscript}</span>
+                                                            )}
+                                                            {!transcript && !interimTranscript && (
+                                                                <span className="text-white/25 italic">録音中… 音声を認識しています</span>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ) : isTranscribing ? (
+                                                <div className="flex items-center gap-2 text-cyan-400 text-sm py-4 px-3.5">
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    <span>AIが文字起こし中...</span>
                                                 </div>
                                             ) : (
                                                 <textarea

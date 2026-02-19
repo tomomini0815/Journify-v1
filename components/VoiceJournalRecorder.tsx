@@ -25,6 +25,7 @@ export default function VoiceJournalRecorder({
 }: VoiceJournalRecorderProps) {
     const router = useRouter();
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isTranscribing, setIsTranscribing] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [localMood, setLocalMood] = useState<number>(mood);
@@ -204,11 +205,13 @@ export default function VoiceJournalRecorder({
 
     // --- Android Detection ---
     const [isAndroid, setIsAndroid] = useState(false);
+    const [userAgent, setUserAgent] = useState("");
 
     useEffect(() => {
         const checkAndroid = () => {
-            const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-            if (/android/i.test(userAgent)) {
+            const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+            setUserAgent(typeof ua === 'string' ? ua : '');
+            if (/android/i.test(ua)) {
                 setIsAndroid(true);
             }
         };
@@ -222,24 +225,22 @@ export default function VoiceJournalRecorder({
             setRecordingTime(0);
             setAudioBlob(null);
             chunksRef.current = [];
+            setEditableTranscript("");
         }
 
-        // Always start SpeechRecognition (Even on Android for this mode)
-        SpeechRecognition.startListening({
-            continuous: true,
-            interimResults: true,
-            language: 'ja-JP',
-        });
-
-        // 2. Audio Recording
-        // Android: Skip MediaRecorder completely to avoid conflict
-        if (!isAndroid) {
+        if (isAndroid) {
+            // Android: MediaRecorder ONLY (SpeechRecognition conflicts with mic)
+            startRecording();
+        } else {
+            // Non-Android: Use both SpeechRecognition + MediaRecorder
+            SpeechRecognition.startListening({
+                continuous: true,
+                interimResults: true,
+                language: 'ja-JP',
+            });
             setTimeout(() => {
                 startRecording();
             }, 200);
-        } else {
-            // For Android, just set manual recording flag to true to show UI state
-            setIsManualRecording(true);
         }
 
         // Timer start
@@ -256,7 +257,7 @@ export default function VoiceJournalRecorder({
         }
 
         try {
-            // AudioContext Resume (Android Keep-Alive)
+            // AudioContext Resume
             const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
             if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
                 audioContextRef.current = new AudioContextClass();
@@ -265,9 +266,8 @@ export default function VoiceJournalRecorder({
                 await audioContextRef.current.resume();
             }
 
-            // Safe MediaRecorder Start
+            // MediaRecorder Start
             try {
-                // Set manual recording state (important for Android where SpeechRecognition is disabled)
                 setIsManualRecording(true);
 
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -294,18 +294,26 @@ export default function VoiceJournalRecorder({
                     if (e.data.size > 0) chunksRef.current.push(e.data);
                 };
 
-                mediaRecorder.onstop = () => {
+                mediaRecorder.onstop = async () => {
                     const blob = new Blob(chunksRef.current, { type: mimeType });
                     setAudioBlob(blob);
                     stream.getTracks().forEach(track => track.stop());
                     stopVisualizer();
+
+                    // Android: Server-side transcription after recording stops
+                    if (isAndroid && blob.size > 0) {
+                        await transcribeOnServer(blob);
+                    }
                 };
 
                 mediaRecorder.start(1000);
 
             } catch (mediaError: any) {
-                console.warn("MediaRecorder failed (Text-only mode active):", mediaError);
-                // Do NOT stop SpeechRecognition here. Allow text-only mode.
+                console.warn("MediaRecorder failed:", mediaError);
+                if (isAndroid) {
+                    alert("マイクへのアクセスに失敗しました。ブラウザの設定からマイクを許可してください。");
+                    setIsManualRecording(false);
+                }
             }
 
         } catch (e) {
@@ -313,15 +321,48 @@ export default function VoiceJournalRecorder({
         }
     };
 
-    const stopRecording = () => {
-        SpeechRecognition.stopListening();
+    // --- Android: Server-side Transcription ---
+    const transcribeOnServer = async (blob: Blob) => {
+        setIsTranscribing(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", blob, "voice-journal.webm");
 
-        if (!isAndroid) {
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                mediaRecorderRef.current.stop();
+            const res = await fetch("/api/transcribe/partial", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.text) {
+                    setEditableTranscript(data.text);
+                } else {
+                    setEditableTranscript("（音声を認識できませんでした）");
+                }
             } else {
-                stopVisualizer(); // Manual stop if MediaRecorder didn't trigger it
+                console.error("Server transcription failed:", res.status);
+                setEditableTranscript("（文字起こしに失敗しました。手動で入力してください）");
             }
+        } catch (error) {
+            console.error("Transcription error:", error);
+            setEditableTranscript("（文字起こしに失敗しました。手動で入力してください）");
+        } finally {
+            setIsTranscribing(false);
+        }
+    };
+
+    const stopRecording = () => {
+        // Stop SpeechRecognition only on non-Android (Android doesn't use it)
+        if (!isAndroid) {
+            SpeechRecognition.stopListening();
+        }
+
+        // Stop MediaRecorder on all platforms
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+        } else {
+            stopVisualizer();
         }
 
         if (timerRef.current) {
@@ -334,9 +375,6 @@ export default function VoiceJournalRecorder({
     };
 
     const resumeRecording = async () => {
-        if (!isAndroid) {
-            await startRecording();
-        }
         handleMicButtonClick({ isResuming: true });
     };
 
@@ -505,7 +543,7 @@ export default function VoiceJournalRecorder({
                             </div>
                         </div>
                         <p className="text-white/40 text-xs mb-4">
-                            {listening ? "あなたの声を聴いています..." : "小さな記録が、見える景色を変えていく"}
+                            {isRecording ? (isAndroid ? "音声を録音中... 停止後にAIが文字起こしします" : "あなたの声を聴いています...") : isTranscribing ? "AIが文字起こし中..." : "小さな記録が、見える景色を変えていく"}
                         </p>
 
                         {/* Visualizer & Transcript Area */}
@@ -519,13 +557,24 @@ export default function VoiceJournalRecorder({
                             <div className={isRecording ? "mt-2" : ""}>
                                 {isRecording ? (
                                     <p className="text-white/80 leading-relaxed text-sm">
-                                        {isAndroid && (
-                                            <span className="block text-[10px] text-emerald-400/80 mb-2">
-                                                ※Androidでは音声データは保存されません（文字起こしのみ）
-                                            </span>
+                                        {isAndroid ? (
+                                            <>
+                                                <span className="block text-[10px] text-emerald-400/80 mb-2">
+                                                    ※停止後にAIが自動で文字起こしします
+                                                </span>
+                                                <span className="text-white/30 italic">音声を録音中...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {transcript || (listening ? "お話しください..." : "完了しました")}
+                                            </>
                                         )}
-                                        {transcript || (listening ? "お話しください..." : "完了しました")}
                                     </p>
+                                ) : isTranscribing ? (
+                                    <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>AIが文字起こし中...</span>
+                                    </div>
                                 ) : (
                                     <>
                                         <textarea
@@ -755,15 +804,21 @@ export default function VoiceJournalRecorder({
                         <div className={isRecording ? "mt-4" : ""}>
                             {isRecording ? (
                                 <p className="text-white/80 leading-relaxed text-lg">
-                                    {isAndroid && (
-                                        <span className="block text-xs text-emerald-400/80 mb-4">
-                                            ※Androidでは音声データは保存されません（文字起こしのみ）
-                                        </span>
-                                    )}
-                                    {transcript}
-                                    <span className="text-white/40">{interimTranscript}</span>
-                                    {!transcript && !interimTranscript && (
-                                        <span className="text-white/30 italic">お話しください...</span>
+                                    {isAndroid ? (
+                                        <>
+                                            <span className="block text-xs text-emerald-400/80 mb-4">
+                                                ※停止後にAIが自動で文字起こしします
+                                            </span>
+                                            <span className="text-white/30 italic">音声を録音中...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {transcript}
+                                            <span className="text-white/40">{interimTranscript}</span>
+                                            {!transcript && !interimTranscript && (
+                                                <span className="text-white/30 italic">お話しください...</span>
+                                            )}
+                                        </>
                                     )}
                                 </p>
                             ) : (
@@ -775,6 +830,16 @@ export default function VoiceJournalRecorder({
                                     rows={6}
                                 />
                             )}
+                        </div>
+
+                        {/* Debug Info (Always Show for Diagnosis) */}
+                        <div className="mt-4 p-2 bg-black/40 rounded text-[10px] text-white/50 font-mono break-all">
+                            <p>Debug Info:</p>
+                            <p>UA: {userAgent}</p>
+                            <p>isAndroid: {isAndroid ? 'Yes' : 'No'}</p>
+                            <p>Supported: {browserSupportsSpeechRecognition ? 'Yes' : 'No'}</p>
+                            <p>Listening: {listening ? 'Yes' : 'No'}</p>
+                            <p>ManualRec: {isManualRecording ? 'Yes' : 'No'}</p>
                         </div>
                     </div>
 
