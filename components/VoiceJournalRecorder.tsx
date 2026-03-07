@@ -252,6 +252,7 @@ export default function VoiceJournalRecorder({
             // When resuming, reset speech recognition transcript but keep editableTranscript
             // so user edits are preserved and new speech is appended
             resetTranscript();
+            chunksRef.current = [];
             lastSyncedTranscriptLenRef.current = 0;
             isResumingRef.current = true;
         }
