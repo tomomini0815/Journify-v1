@@ -37,6 +37,9 @@ export default function VoiceJournalRecorder({
     // Track the last synced transcript length to only append new text
     const lastSyncedTranscriptLenRef = useRef(0);
 
+    // Track if current recording is a resume (for Android text append)
+    const isResumingRef = useRef(false);
+
     const {
         transcript,
         interimTranscript,
@@ -244,11 +247,13 @@ export default function VoiceJournalRecorder({
             chunksRef.current = [];
             setEditableTranscript("");
             lastSyncedTranscriptLenRef.current = 0;
+            isResumingRef.current = false;
         } else {
             // When resuming, reset speech recognition transcript but keep editableTranscript
             // so user edits are preserved and new speech is appended
             resetTranscript();
             lastSyncedTranscriptLenRef.current = 0;
+            isResumingRef.current = true;
         }
 
         if (isAndroid) {
@@ -376,7 +381,12 @@ export default function VoiceJournalRecorder({
             if (res.ok) {
                 const data = await res.json();
                 if (data.text) {
-                    setEditableTranscript(data.text);
+                    if (isResumingRef.current) {
+                        // Resuming: append new transcription to existing edited text
+                        setEditableTranscript(prev => prev ? prev + data.text : data.text);
+                    } else {
+                        setEditableTranscript(data.text);
+                    }
                 } else {
                     setEditableTranscript("（音声を認識できませんでした）");
                 }
