@@ -3,10 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DashboardLayout } from "@/components/DashboardLayout"
-import { Heart, Zap, Star, Cookie, Sparkles, Loader2, PawPrint, ArrowLeft, Gem, BookOpen, HelpCircle } from 'lucide-react'
+import { Heart, Zap, Star, Cookie, Sparkles, Loader2, PawPrint, ArrowLeft, Gem, BookOpen, HelpCircle, Shirt, Store, Coins, Trophy, Gift } from 'lucide-react'
 import { useGameStats } from '@/lib/hooks/useGame'
 import { PetGacha } from '@/components/adventure/PetGacha'
 import { PetGuide } from '@/components/adventure/PetGuide'
+import { PetDressUp } from '@/components/adventure/PetDressUp'
+import { PetOutfitShop } from '@/components/adventure/PetOutfitShop'
+import { PetAvatar } from '@/components/adventure/PetAvatar'
 
 interface UserCompanion {
     id: string
@@ -17,6 +20,11 @@ interface UserCompanion {
     energy: number
     loyalty: number
     isActive: boolean
+    equippedOutfits?: {
+        hat?: string
+        clothes?: string
+        accessory?: string
+    } | null
     companion: {
         id: string
         name: string
@@ -31,6 +39,9 @@ interface UserCompanion {
 const speciesEmoji: Record<string, string> = {
     cat: '🐱', fox: '🦊', dragon: '🐉', bird: '🐦', wolf: '🐺', sprite: '✨',
     dog: '🐶', rabbit: '🐰', hamster: '🐹', bear: '🐻', panda: '🐼',
+    usapyon: '🐰', nekorisu: '🐿️', mochikuma: '🧸', pentanuki: '🐧',
+    hamuri: '🐹', inkoala: '🦜', mikerisu: '🐿️', kotorisu: '🐦',
+    hoshinashi: '🍆', inudamashi: '🐕',
 }
 
 const moodEmojis = [
@@ -83,6 +94,11 @@ export default function AdventurePage() {
     // Modals
     const [isGachaOpen, setIsGachaOpen] = useState(false)
     const [isGuideOpen, setIsGuideOpen] = useState(false)
+    const [isDressUpOpen, setIsDressUpOpen] = useState(false)
+    const [isOutfitShopOpen, setIsOutfitShopOpen] = useState(false)
+
+    // Outfit emojis cache (for displaying equipped outfits)
+    const [outfitEmojiMap, setOutfitEmojiMap] = useState<Record<string, string>>({})
 
     const fetchCompanions = useCallback(async () => {
         try {
@@ -104,6 +120,15 @@ export default function AdventurePage() {
     }, [selectedId])
 
     useEffect(() => { fetchCompanions() }, [fetchCompanions])
+
+    // Fetch outfit emoji map for display
+    useEffect(() => {
+        fetch('/api/pet-outfits').then(r => r.json()).then(data => {
+            const map: Record<string, string> = {}
+                ; (data.outfits || []).forEach((o: any) => { map[o.id] = o.emoji })
+            setOutfitEmojiMap(map)
+        }).catch(() => { })
+    }, [])
 
     const selected = companions.find(c => c.id === selectedId) || null
 
@@ -261,6 +286,19 @@ export default function AdventurePage() {
                                 {stats?.crystals || 0}
                             </span>
                         </motion.button>
+
+                        {/* Outfit Shop Button */}
+                        <motion.button
+                            onClick={() => setIsOutfitShopOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all transform hover:scale-105"
+                        >
+                            <Store size={16} className="text-amber-200" />
+                            <span>衣装</span>
+                            <span className="bg-black/30 px-2 py-0.5 rounded-full text-xs font-mono ml-1">
+                                🪙{stats?.gold || 0}
+                            </span>
+                        </motion.button>
+
                     </motion.div>
                 </div>
 
@@ -355,24 +393,31 @@ export default function AdventurePage() {
                                     )}
                                 </AnimatePresence>
 
-                                {/* Pet Emoji */}
+                                {/* Pet Full-Body Avatar */}
                                 <motion.div
                                     key={selected.id}
                                     initial={{ scale: 0.5, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
-                                    className="relative z-10 flex items-center justify-center py-8"
+                                    className="relative z-10 flex items-center justify-center py-4"
                                 >
                                     <motion.div
                                         key={bounceKey}
                                         animate={{
-                                            y: [0, -15, 0],
-                                            rotate: showReaction ? [0, -5, 5, -5, 0] : 0,
+                                            y: [0, -10, 0],
+                                            rotate: showReaction ? [0, -3, 3, -3, 0] : 0,
                                         }}
                                         transition={{ duration: 0.6, ease: "easeInOut" }}
-                                        className="text-[120px] md:text-[160px] leading-none select-none cursor-pointer filter drop-shadow-2xl transition-transform hover:scale-105 active:scale-95"
-                                        onClick={handlePet}
                                     >
-                                        {speciesEmoji[selected.companion.species] || '🌟'}
+                                        <PetAvatar
+                                            species={selected.companion.species}
+                                            size={180}
+                                            onClick={handlePet}
+                                            equippedOutfits={{
+                                                hat: selected.equippedOutfits?.hat ? outfitEmojiMap[selected.equippedOutfits.hat] : undefined,
+                                                clothes: selected.equippedOutfits?.clothes ? outfitEmojiMap[selected.equippedOutfits.clothes] : undefined,
+                                                accessory: selected.equippedOutfits?.accessory ? outfitEmojiMap[selected.equippedOutfits.accessory] : undefined,
+                                            }}
+                                        />
                                     </motion.div>
                                 </motion.div>
 
@@ -389,6 +434,35 @@ export default function AdventurePage() {
                                             Lv.{selected.level}
                                         </span>
                                     </div>
+
+                                    {/* Equipped Outfits Display */}
+                                    {selected.equippedOutfits && Object.keys(selected.equippedOutfits).length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="flex items-center justify-center gap-2 flex-wrap pt-1"
+                                        >
+                                            {selected.equippedOutfits.hat && outfitEmojiMap[selected.equippedOutfits.hat] && (
+                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-pink-500/15 border border-pink-500/25 rounded-full">
+                                                    <span className="text-base">{outfitEmojiMap[selected.equippedOutfits.hat]}</span>
+                                                    <span className="text-[10px] font-bold text-pink-300">帽子</span>
+                                                </div>
+                                            )}
+                                            {selected.equippedOutfits.clothes && outfitEmojiMap[selected.equippedOutfits.clothes] && (
+                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/25 rounded-full">
+                                                    <span className="text-base">{outfitEmojiMap[selected.equippedOutfits.clothes]}</span>
+                                                    <span className="text-[10px] font-bold text-purple-300">服</span>
+                                                </div>
+                                            )}
+                                            {selected.equippedOutfits.accessory && outfitEmojiMap[selected.equippedOutfits.accessory] && (
+                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 border border-amber-500/25 rounded-full">
+                                                    <span className="text-base">{outfitEmojiMap[selected.equippedOutfits.accessory]}</span>
+                                                    <span className="text-[10px] font-bold text-amber-300">アクセ</span>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    )}
+
                                     {(() => {
                                         const mood = getMood(selected.happiness)
                                         return (
@@ -542,6 +616,17 @@ export default function AdventurePage() {
                                         <span className="text-xs font-bold">なでなで</span>
                                     </motion.button>
 
+                                    {/* Dress Up Button */}
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setIsDressUpOpen(true)}
+                                        className="w-full mt-2 p-3 bg-gradient-to-r from-pink-500/10 to-purple-500/10 hover:from-pink-500/20 hover:to-purple-500/20 border border-pink-500/20 rounded-xl transition-all flex items-center justify-center gap-2 group"
+                                    >
+                                        <Shirt size={16} className="text-pink-400 group-hover:scale-110 transition-transform" />
+                                        <span className="text-xs font-bold">きせかえ</span>
+                                    </motion.button>
+
                                     {/* Set Active */}
                                     {!selected.isActive && (
                                         <motion.button
@@ -590,8 +675,8 @@ export default function AdventurePage() {
                                                     ⭐
                                                 </div>
                                             )}
-                                            <div className="text-4xl mb-2 group-hover:scale-110 transition-transform duration-300">
-                                                {speciesEmoji[uc.companion.species] || '🌟'}
+                                            <div className="flex justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
+                                                <PetAvatar species={uc.companion.species} size={50} animate={false} />
                                             </div>
                                             <div className="text-xs font-bold truncate">
                                                 {uc.nickname || uc.companion.name}
@@ -626,6 +711,81 @@ export default function AdventurePage() {
                     isOpen={isGuideOpen}
                     onClose={() => setIsGuideOpen(false)}
                 />
+
+                {/* Dress Up Modal */}
+                {selected && (
+                    <PetDressUp
+                        isOpen={isDressUpOpen}
+                        onClose={() => setIsDressUpOpen(false)}
+                        companionId={selected.id}
+                        companionSpecies={selected.companion.species}
+                        companionName={selected.nickname || selected.companion.name}
+                        equippedOutfits={selected.equippedOutfits || {}}
+                        onEquipChange={(outfits) => {
+                            setCompanions(prev => prev.map(c =>
+                                c.id === selected.id ? { ...c, equippedOutfits: outfits } : c
+                            ))
+                        }}
+                    />
+                )}
+
+                {/* Outfit Shop Modal */}
+                <PetOutfitShop
+                    isOpen={isOutfitShopOpen}
+                    onClose={() => setIsOutfitShopOpen(false)}
+                    gold={stats?.gold || 0}
+                    petLevel={selected?.level || 1}
+                    onPurchase={() => mutateStats()}
+                />
+
+                {/* Loyalty Milestones Section */}
+                {selected && selected.loyalty > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-8"
+                    >
+                        <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <Trophy size={14} className="text-amber-400" /> なかよし度マイルストーン
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                            {[
+                                { level: 10, emoji: '💬', label: '新セリフ', desc: 'おしゃべり上手に' },
+                                { level: 30, emoji: '🎭', label: '特殊リアクション', desc: '新しい表情' },
+                                { level: 50, emoji: '👗', label: '限定衣装', desc: '特別な一着' },
+                                { level: 80, emoji: '🌟', label: '進化', desc: '見た目が変化！' },
+                                { level: 100, emoji: '🏆', label: 'レジェンド', desc: '最高の絆' },
+                            ].map(milestone => {
+                                const achieved = selected.loyalty >= milestone.level
+                                const progress = Math.min(100, (selected.loyalty / milestone.level) * 100)
+                                return (
+                                    <div
+                                        key={milestone.level}
+                                        className={`p-3 rounded-xl border text-center transition-all ${achieved
+                                            ? 'bg-amber-500/10 border-amber-500/30'
+                                            : 'bg-white/5 border-white/10 opacity-60'
+                                            }`}
+                                    >
+                                        <div className={`text-2xl mb-1 ${achieved ? '' : 'grayscale'}`}>
+                                            {achieved ? milestone.emoji : '🔒'}
+                                        </div>
+                                        <div className="text-xs font-bold truncate">{milestone.label}</div>
+                                        <div className="text-[10px] text-white/40">{milestone.desc}</div>
+                                        <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all ${achieved ? 'bg-amber-400' : 'bg-white/30'
+                                                    }`}
+                                                style={{ width: `${progress}%` }}
+                                            />
+                                        </div>
+                                        <div className="text-[10px] text-white/30 mt-1">{selected.loyalty}/{milestone.level}</div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </motion.div>
+                )}
             </div>
         </DashboardLayout>
     )

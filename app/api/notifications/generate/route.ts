@@ -1,6 +1,66 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
+import webpush from "web-push"
+
+// Initialize web-push
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT || 'mailto:admin@journify.app',
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    )
+}
+
+// ユーザーの全PushSubscriptionにWeb Pushを送信するヘルパー
+async function sendPushToUser(userId: string, notification: { title: string; message: string; url?: string }) {
+    try {
+        const subscriptions = await prisma.pushSubscription.findMany({
+            where: { userId }
+        })
+
+        if (subscriptions.length === 0) return
+
+        const payload = JSON.stringify({
+            title: notification.title,
+            body: notification.message,
+            icon: '/icons/icon-192x192.png',
+            url: notification.url || '/dashboard'
+        })
+
+        const results = await Promise.allSettled(
+            subscriptions.map(sub =>
+                webpush.sendNotification({
+                    endpoint: sub.endpoint,
+                    keys: {
+                        p256dh: sub.p256dh,
+                        auth: sub.auth
+                    }
+                }, payload)
+            )
+        )
+
+        // 失効したサブスクリプション（410 Gone）を削除
+        for (let i = 0; i < results.length; i++) {
+            const result = results[i]
+            if (result.status === 'rejected') {
+                const statusCode = (result.reason as any)?.statusCode
+                if (statusCode === 410 || statusCode === 404) {
+                    try {
+                        await prisma.pushSubscription.delete({
+                            where: { endpoint: subscriptions[i].endpoint }
+                        })
+                        console.log(`Deleted expired push subscription: ${subscriptions[i].endpoint}`)
+                    } catch (deleteError) {
+                        // Already deleted, ignore
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`Failed to send push to user ${userId}:`, error)
+    }
+}
 
 // 通知生成API - CRON jobまたは手動で実行
 export async function POST(request: Request) {
@@ -61,6 +121,12 @@ export async function POST(request: Request) {
                             actionUrl: `/goals?id=${goal.id}`
                         }
                     })
+                    // Web Push送信
+                    await sendPushToUser(user.id, {
+                        title: '目標の期日が近づいています',
+                        message: `「${goal.title}」の期日まであと ${daysUntil} 日です。`,
+                        url: `/goals?id=${goal.id}`
+                    })
                     createdCount++
                 }
             }
@@ -97,6 +163,12 @@ export async function POST(request: Request) {
                             message: `「${goal.title}」の期日を過ぎています。`,
                             actionUrl: `/goals?id=${goal.id}`
                         }
+                    })
+                    // Web Push送信
+                    await sendPushToUser(user.id, {
+                        title: '期限切れの目標があります',
+                        message: `「${goal.title}」の期日を過ぎています。`,
+                        url: `/goals?id=${goal.id}`
                     })
                     createdCount++
                 }
@@ -149,6 +221,12 @@ export async function POST(request: Request) {
                                 actionUrl: `/tasks?id=${task.id}`
                             }
                         })
+                        // Web Push送信
+                        await sendPushToUser(user.id, {
+                            title: 'タスクの期日が近づいています',
+                            message: `「${task.text}」の期日まであと ${daysUntil} 日です。`,
+                            url: `/tasks?id=${task.id}`
+                        })
                         createdCount++
                     }
                 }
@@ -195,6 +273,12 @@ export async function POST(request: Request) {
                             message: `「${task.text}」の期日を過ぎています。`,
                             actionUrl: `/tasks?id=${task.id}`
                         }
+                    })
+                    // Web Push送信
+                    await sendPushToUser(user.id, {
+                        title: '期限切れのタスクがあります',
+                        message: `「${task.text}」の期日を過ぎています。`,
+                        url: `/tasks?id=${task.id}`
                     })
                     createdCount++
                 }

@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -43,6 +44,7 @@ model User {
   userDecorations   UserDecoration[]
   userHomeLayout    UserHomeLayout?
   pushSubscriptions PushSubscription[]
+  userPetOutfits    UserPetOutfit[]
 }
 
 model UserSettings {
@@ -550,19 +552,20 @@ model Companion {
 }
 
 model UserCompanion {
-  id           String   @id @default(cuid())
-  userId       String
-  companionId  String
-  nickname     String?
-  level        Int      @default(1)
-  experience   Int      @default(0)
-  happiness    Int      @default(50)
-  energy       Int      @default(50)
-  loyalty      Int      @default(0)
-  isActive     Boolean  @default(false)
-  acquiredAt   DateTime @default(now())
-  lastFedAt    DateTime?
-  lastPlayedAt DateTime?
+  id               String   @id @default(cuid())
+  userId           String
+  companionId      String
+  nickname         String?
+  level            Int      @default(1)
+  experience       Int      @default(0)
+  happiness        Int      @default(50)
+  energy           Int      @default(50)
+  loyalty          Int      @default(0)
+  isActive         Boolean  @default(false)
+  equippedOutfits  Json?    // { hat?: outfitId, clothes?: outfitId, accessory?: outfitId }
+  acquiredAt       DateTime @default(now())
+  lastFedAt        DateTime?
+  lastPlayedAt     DateTime?
   
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   companion Companion @relation(fields: [companionId], references: [id])
@@ -570,6 +573,34 @@ model UserCompanion {
   @@unique([userId, companionId])
   @@index([userId])
   @@index([isActive])
+}
+
+// Pet Outfit System (着せ替え)
+model PetOutfit {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // "hat", "clothes", "accessory"
+  emoji       String   // Display emoji for the outfit
+  rarity      String   @default("common") // common, uncommon, rare, epic, legendary
+  price       Int      @default(50)
+  unlockLevel Int      @default(1)
+  description String?
+  createdAt   DateTime @default(now())
+  
+  userPetOutfits UserPetOutfit[]
+}
+
+model UserPetOutfit {
+  id         String   @id @default(cuid())
+  userId     String
+  outfitId   String
+  acquiredAt DateTime @default(now())
+  
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outfit PetOutfit @relation(fields: [outfitId], references: [id])
+  
+  @@unique([userId, outfitId])
+  @@index([userId])
 }
 
 // Home Decoration System

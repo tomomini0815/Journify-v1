@@ -5,7 +5,7 @@ import prisma from '../lib/prisma'
 const companions = [
     {
         name: "Cosmic Cat",
-        species: "cat",
+        species: "white_cat",
         rarity: "common",
         description: "A curious feline from the Andromeda galaxy. Loves to chase shooting stars and nap in nebula clouds.",
         imageUrl: "/images/companions/cosmic-cat.png",
