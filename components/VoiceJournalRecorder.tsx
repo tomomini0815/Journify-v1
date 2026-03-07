@@ -4,7 +4,7 @@ import 'regenerator-runtime/runtime';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { useState, useRef, useEffect, MouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Loader2, CheckCircle2, RotateCcw } from "lucide-react";
+import { Mic, Square, Loader2, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
 
@@ -32,6 +32,10 @@ export default function VoiceJournalRecorder({
     const [localTags, setLocalTags] = useState<string[]>(tags);
     const [newTag, setNewTag] = useState("");
     const [editableTranscript, setEditableTranscript] = useState("");
+    const [micError, setMicError] = useState<string | null>(null);
+
+    // Track the last synced transcript length to only append new text
+    const lastSyncedTranscriptLenRef = useRef(0);
 
     const {
         transcript,
@@ -49,7 +53,12 @@ export default function VoiceJournalRecorder({
 
     useEffect(() => {
         if (listening) {
-            setEditableTranscript(transcript);
+            // Only append newly recognized text, preserving user edits
+            const newText = transcript.slice(lastSyncedTranscriptLenRef.current);
+            if (newText) {
+                setEditableTranscript(prev => prev + newText);
+                lastSyncedTranscriptLenRef.current = transcript.length;
+            }
         }
     }, [listening, transcript]);
 
@@ -218,6 +227,14 @@ export default function VoiceJournalRecorder({
         checkAndroid();
     }, []);
 
+    // Auto-dismiss mic error after 8 seconds
+    useEffect(() => {
+        if (micError) {
+            const timer = setTimeout(() => setMicError(null), 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [micError]);
+
     // --- Step 1: Trigger ---
     const handleMicButtonClick = (options?: { isResuming?: boolean }) => {
         if (!options?.isResuming) {
@@ -226,6 +243,12 @@ export default function VoiceJournalRecorder({
             setAudioBlob(null);
             chunksRef.current = [];
             setEditableTranscript("");
+            lastSyncedTranscriptLenRef.current = 0;
+        } else {
+            // When resuming, reset speech recognition transcript but keep editableTranscript
+            // so user edits are preserved and new speech is appended
+            resetTranscript();
+            lastSyncedTranscriptLenRef.current = 0;
         }
 
         if (isAndroid) {
@@ -251,8 +274,9 @@ export default function VoiceJournalRecorder({
     };
 
     const startRecording = async () => {
+        setMicError(null);
         if (!browserSupportsSpeechRecognition && !isAndroid) {
-            alert("このブラウザは音声認識に対応していません。");
+            setMicError("このブラウザは音声認識に対応していません。Chrome または Edge をお使いください。");
             return;
         }
 
@@ -310,9 +334,25 @@ export default function VoiceJournalRecorder({
 
             } catch (mediaError: any) {
                 console.warn("MediaRecorder failed:", mediaError);
+
                 if (isAndroid) {
-                    alert("マイクへのアクセスに失敗しました。ブラウザの設定からマイクを許可してください。");
+                    // Android relies solely on MediaRecorder — this is a real failure
                     setIsManualRecording(false);
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current as any);
+                        timerRef.current = null;
+                    }
+                    if (mediaError.name === 'NotFoundError') {
+                        setMicError("🎤 マイクが見つかりません。マイクを接続してからもう一度お試しください。");
+                    } else if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
+                        setMicError("🔒 マイクへのアクセスが拒否されました。ブラウザの設定からマイクの使用を許可してください。");
+                    } else {
+                        setMicError(`⚠️ マイクの起動に失敗しました: ${mediaError.message}`);
+                    }
+                } else {
+                    // Non-Android (Web/iPhone): SpeechRecognition handles real-time transcription
+                    // independently of getUserMedia. Don't kill it — just let it keep working.
+                    // MediaRecorder is optional (for audio file saving).
                 }
             }
 
@@ -494,20 +534,40 @@ export default function VoiceJournalRecorder({
 
                 {!audioBlob && !isRecording ? (
                     // Initial State
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="text-xl font-bold text-white mb-1">音声ジャーナル</h3>
-                            <p className="text-white/40 text-sm">小さな記録が、見える景色を変えていく</p>
+                    <>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-1">音声ジャーナル</h3>
+                                <p className="text-white/40 text-sm">小さな記録が、見える景色を変えていく</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleMicButtonClick()}
+                                    className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
+                                >
+                                    <Mic className="w-6 h-6" />
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handleMicButtonClick()}
-                                className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
+
+                        {/* Inline Mic Error */}
+                        {micError && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                className="mt-3"
                             >
-                                <Mic className="w-6 h-6" />
-                            </button>
-                        </div>
-                    </div>
+                                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/30">
+                                    <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <p className="text-red-300 text-xs leading-relaxed">{micError}</p>
+                                    </div>
+                                    <button onClick={() => setMicError(null)} className="text-red-400/60 hover:text-red-300 text-xs flex-shrink-0">×</button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </>
                 ) : (
                     // Recording or Post-Recording State
                     <div className="space-y-6">
@@ -738,8 +798,9 @@ export default function VoiceJournalRecorder({
                             </motion.div>
                         )}
                     </div>
-                )}
-            </div>
+                )
+                }
+            </div >
         );
     }
 
@@ -759,6 +820,24 @@ export default function VoiceJournalRecorder({
                     </button>
                 )}
             </div>
+
+            {/* Inline Mic Error (Full View) */}
+            {micError && (
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="mb-6"
+                >
+                    <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/30">
+                        <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-red-300 text-sm leading-relaxed">{micError}</p>
+                        </div>
+                        <button onClick={() => setMicError(null)} className="text-red-400/60 hover:text-red-300 flex-shrink-0">×</button>
+                    </div>
+                </motion.div>
+            )}
 
             {(isRecording || audioBlob) && (
                 <div className="space-y-6">
