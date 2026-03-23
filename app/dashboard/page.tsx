@@ -295,7 +295,7 @@ async function StatsSection({ userId }: { userId: string }) {
     let streak = 0
     if (combinedDates.length > 0) {
         const uniqueDates = new Set(
-            combinedDates.map(j => new Date(j.createdAt).toISOString().split('T')[0])
+            combinedDates.map((j: any) => new Date(j.createdAt).toISOString().split('T')[0])
         )
 
         const today = new Date()
@@ -382,9 +382,9 @@ async function ChartsSection({ userId }: { userId: string }) {
             "仕事・キャリア", "経済的安定", "学習・成長", "自己実現", "趣味・余暇"
         ]
 
-        categories.forEach(c => latestLifeBalance[c] = 0)
+        categories.forEach((c: string) => latestLifeBalance[c] = 0)
 
-        lifeBalanceEntries.forEach((entry) => {
+        lifeBalanceEntries.forEach((entry: { category: string; score: number }) => {
             if (latestLifeBalance[entry.category] === 0) {
                 latestLifeBalance[entry.category] = entry.score
             }
@@ -397,7 +397,7 @@ async function ChartsSection({ userId }: { userId: string }) {
 
         // Calculate happiness data
         const dailyMap = new Map<string, { total: number, count: number }>()
-        journalEntries.forEach((entry) => {
+        journalEntries.forEach((entry: { mood: number | null; createdAt: string | number | Date }) => {
             if (!entry.mood || !entry.createdAt) return
             const dateObj = new Date(entry.createdAt)
             if (isNaN(dateObj.getTime())) return
@@ -416,13 +416,13 @@ async function ChartsSection({ userId }: { userId: string }) {
             current.count += 1
         })
 
-        const happinessData = Array.from(dailyMap.entries()).map(([date, data]) => ({
+        const happinessData = Array.from(dailyMap.entries()).map(([date, data]: [string, { total: number; count: number }]) => ({
             date,
             score: Math.round((data.total / data.count / 5) * 100)
-        })).sort((a, b) => a.date.localeCompare(b.date))
+        })).sort((a: any, b: any) => a.date.localeCompare(b.date))
 
         // Show empty state if no data
-        if (happinessData.length === 0 && lifeBalanceData.every(d => d.value === 0)) {
+        if (happinessData.length === 0 && lifeBalanceData.every((d: any) => d.value === 0)) {
             return (
                 <div className="p-8 text-center bg-white/5 rounded-3xl border border-white/10 mb-8">
                     <p className="text-white/60 mb-2">まだデータがありません</p>
@@ -452,8 +452,8 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
     // Combine and sort
     // Combine and sort
     const combinedJournals = [
-        ...recentTextJournals.map(j => ({ ...j, type: 'text', displayTitle: j.title })),
-        ...recentVoiceJournals.map(j => {
+        ...recentTextJournals.map((j: any) => ({ ...j, type: 'text', displayTitle: j.title })),
+        ...recentVoiceJournals.map((j: any) => {
             // Remove "ユーザーは" prefix if present
             let title = j.aiSummary || "音声ジャーナル";
             if (title.startsWith("ユーザーは")) {
@@ -461,7 +461,7 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
             }
             return { ...j, type: 'voice', displayTitle: title };
         })
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 3)
 
     return (
@@ -481,7 +481,7 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
             </div>
 
             <div className="space-y-3">
-                {combinedJournals.map((journal) => (
+                {combinedJournals.map((journal: any) => (
                     <Link
                         href={journal.type === 'text' ? `/journal/${journal.id}` : `/voice-journal/${journal.id}`}
                         key={`${journal.type}-${journal.id}`}
@@ -533,7 +533,7 @@ async function GoalProgressSection({ userId }: { userId: string }) {
             </div>
 
             <div className="space-y-4">
-                {goals.map((goal) => (
+                {goals.map((goal: any) => (
                     <div key={goal.id} className="space-y-2">
                         <div className="flex items-center justify-between">
                             <h4 className="font-medium">{goal.title}</h4>
