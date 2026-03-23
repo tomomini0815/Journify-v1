@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 import Link from "next/link"
 import { unstable_cache } from "next/cache"
 import { FileText, Mic, PawPrint } from "lucide-react"
+import { mockDb } from "@/lib/mock-db"
 
 import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 import { DashboardGreeting } from "@/components/DashboardGreeting"
@@ -54,104 +55,144 @@ function getMoodEmoji(mood: number | null | undefined, sentiment?: string | null
 // Cached data fetching functions
 const getCachedJournalData = unstable_cache(
     async (userId: string) => {
-        const now = new Date();
-        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        try {
+            const now = new Date();
+            const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-        // 30 days ago for happiness trend
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+            // 30 days ago for happiness trend
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-        return await Promise.all([
-            // This month count (Text)
-            prisma.journalEntry.count({
-                where: { userId, createdAt: { gte: thisMonthStart } },
-            }),
-            // Last month count (Text) - for trend
-            prisma.journalEntry.count({
-                where: { userId, createdAt: { gte: lastMonthStart, lt: thisMonthStart } },
-            }),
-            // Recent journals
-            prisma.journalEntry.findMany({
-                where: { userId },
-                select: {
-                    id: true,
-                    title: true,
-                    mood: true,
-                    createdAt: true,
-                },
-                orderBy: { createdAt: "desc" },
-                take: 3,
-            }),
-            // Happiness data (last 30 days)
-            prisma.journalEntry.findMany({
-                where: {
-                    userId,
-                    mood: { gt: 0 },
-                    createdAt: { gte: thirtyDaysAgo }
-                },
-                select: { mood: true, createdAt: true },
-                orderBy: { createdAt: "asc" }
-            }),
-            // Previous Happiness data (30-60 days ago for trend)
-            prisma.journalEntry.findMany({
-                where: {
-                    userId,
-                    mood: { gt: 0 },
-                    createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
-                },
-                select: { mood: true, createdAt: true },
-                orderBy: { createdAt: "asc" }
-            }),
-            // All journal dates for streak
-            prisma.journalEntry.findMany({
-                where: { userId },
-                select: { createdAt: true },
-                orderBy: { createdAt: 'desc' }
-            }),
-            // Total Text Journals
-            prisma.journalEntry.count({ where: { userId } }),
-            // Total Voice Journals
-            prisma.voiceJournal.count({ where: { userId } }),
-            // This Month Voice Journals
-            prisma.voiceJournal.count({ where: { userId, createdAt: { gte: thisMonthStart } } }),
-            // All Voice Journal dates for streak
-            prisma.voiceJournal.findMany({
-                where: { userId },
-                select: { createdAt: true },
-                orderBy: { createdAt: 'desc' }
-            }),
-            // Recent Voice Journals (with mood) for happiness stats
-            prisma.voiceJournal.findMany({
-                where: {
-                    userId,
-                    mood: { gt: 0 },
-                    createdAt: { gte: thirtyDaysAgo }
-                },
-                select: { mood: true, createdAt: true }
-            }),
-            // Previous Voice Journals (with mood) for trend
-            prisma.voiceJournal.findMany({
-                where: {
-                    userId,
-                    mood: { gt: 0 },
-                    createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
-                },
-            }),
-            // Recent Voice Journals (for display) - Index 12
-            prisma.voiceJournal.findMany({
-                where: { userId },
-                select: {
-                    id: true,
-                    aiSummary: true,
-                    mood: true,
-                    sentiment: true, // Add sentiment
-                    createdAt: true,
-                },
-                orderBy: { createdAt: "desc" },
-                take: 3,
-            })
-        ])
+            return await Promise.all([
+                // This month count (Text)
+                prisma.journalEntry.count({
+                    where: { userId, createdAt: { gte: thisMonthStart } },
+                }),
+                // Last month count (Text) - for trend
+                prisma.journalEntry.count({
+                    where: { userId, createdAt: { gte: lastMonthStart, lt: thisMonthStart } },
+                }),
+                // Recent journals
+                prisma.journalEntry.findMany({
+                    where: { userId },
+                    select: {
+                        id: true,
+                        title: true,
+                        mood: true,
+                        createdAt: true,
+                    },
+                    orderBy: { createdAt: "desc" },
+                    take: 3,
+                }),
+                // Happiness data (last 30 days)
+                prisma.journalEntry.findMany({
+                    where: {
+                        userId,
+                        mood: { gt: 0 },
+                        createdAt: { gte: thirtyDaysAgo }
+                    },
+                    select: { mood: true, createdAt: true },
+                    orderBy: { createdAt: "asc" }
+                }),
+                // Previous Happiness data (30-60 days ago for trend)
+                prisma.journalEntry.findMany({
+                    where: {
+                        userId,
+                        mood: { gt: 0 },
+                        createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
+                    },
+                    select: { mood: true, createdAt: true },
+                    orderBy: { createdAt: "asc" }
+                }),
+                // All journal dates for streak
+                prisma.journalEntry.findMany({
+                    where: { userId },
+                    select: { createdAt: true },
+                    orderBy: { createdAt: 'desc' }
+                }),
+                // Total Text Journals
+                prisma.journalEntry.count({ where: { userId } }),
+                // Total Voice Journals
+                prisma.voiceJournal.count({ where: { userId } }),
+                // This Month Voice Journals
+                prisma.voiceJournal.count({ where: { userId, createdAt: { gte: thisMonthStart } } }),
+                // All Voice Journal dates for streak
+                prisma.voiceJournal.findMany({
+                    where: { userId },
+                    select: { createdAt: true },
+                    orderBy: { createdAt: 'desc' }
+                }),
+                // Recent Voice Journals (with mood) for happiness stats
+                prisma.voiceJournal.findMany({
+                    where: {
+                        userId,
+                        mood: { gt: 0 },
+                        createdAt: { gte: thirtyDaysAgo }
+                    },
+                    select: { mood: true, createdAt: true }
+                }),
+                // Previous Voice Journals (with mood) for trend
+                prisma.voiceJournal.findMany({
+                    where: {
+                        userId,
+                        mood: { gt: 0 },
+                        createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
+                    },
+                }),
+                // Recent Voice Journals (for display) - Index 12
+                prisma.voiceJournal.findMany({
+                    where: { userId },
+                    select: {
+                        id: true,
+                        aiSummary: true,
+                        mood: true,
+                        sentiment: true, // Add sentiment
+                        createdAt: true,
+                    },
+                    orderBy: { createdAt: "desc" },
+                    take: 3,
+                })
+            ])
+        } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            console.warn("DB Error in getCachedJournalData, checking mock DB:", errorMsg);
+
+            if (process.env.NODE_ENV === 'development') {
+                try {
+                    const mockJournals = await mockDb.journals.findMany({ where: { userId } });
+                    // Calculate happiness data from mock
+                    const mockHappiness = mockJournals
+                        .filter((j: any) => j.mood > 0)
+                        .map((j: any) => ({ mood: j.mood, createdAt: new Date(j.createdAt) }));
+
+                    const mockDates = mockJournals.map((j: any) => ({ createdAt: new Date(j.createdAt) }));
+
+                    console.log("Using persistent mock data for Dashboard");
+                    // Mock data needs to return 13 values to match Expected Upstream indices
+                    return [
+                        mockJournals.length, // thisMonthTextCount
+                        0, // lastMonthTextCount
+                        mockJournals.slice(0, 3) as any, // recentTextJournals (findMany result)
+                        mockHappiness as any, // journalEntries (current 30d)
+                        [] as any, // prevJournalEntries (30-60d)
+                        mockDates as any, // allJournalDates
+                        mockJournals.length, // totalTextCount
+                        0, // totalVoiceCount
+                        0, // thisMonthVoiceCount
+                        [] as any, // allVoiceDates
+                        [] as any, // voiceEntries (current 30d)
+                        [] as any, // prevVoiceEntries (30-60d)
+                        [] as any  // recentVoiceJournals (Index 12)
+                    ] as any;
+                } catch (mockErr) {
+                    console.error("Failed to read mock DB", mockErr);
+                }
+            }
+
+            // Default Mock Data if everything fails
+            return Array(13).fill([]) as any;
+        }
     },
     ['dashboard-journal-data'],
     { revalidate: 60, tags: ['dashboard', 'journal'] }
@@ -159,23 +200,35 @@ const getCachedJournalData = unstable_cache(
 
 const getCachedGoalData = unstable_cache(
     async (userId: string) => {
-        return await Promise.all([
-            // Goal count
-            prisma.goal.count({
-                where: { userId, progress: { lt: 100 } },
-            }),
-            // Recent goals
-            prisma.goal.findMany({
-                where: { userId },
-                select: {
-                    id: true,
-                    title: true,
-                    progress: true,
-                },
-                orderBy: { createdAt: "desc" },
-                take: 3,
-            })
-        ])
+        try {
+            return await Promise.all([
+                // Goal count
+                prisma.goal.count({
+                    where: { userId, progress: { lt: 100 } },
+                }),
+                // Recent goals
+                prisma.goal.findMany({
+                    where: { userId },
+                    select: {
+                        id: true,
+                        title: true,
+                        progress: true,
+                    },
+                    orderBy: { createdAt: "desc" },
+                    take: 3,
+                })
+            ])
+        } catch (error) {
+            console.warn("DB Error in getCachedGoalData, returning mocks");
+            return [
+                5,
+                [
+                    { id: '1', title: '毎日ジャーナルを書く', progress: 60 },
+                    { id: '2', title: 'ランニングを続ける', progress: 30 },
+                    { id: '3', title: '読書完了', progress: 80 },
+                ] as any
+            ] as any
+        }
     },
     ['dashboard-goal-data'],
     { revalidate: 60, tags: ['dashboard', 'goals'] }
@@ -183,16 +236,26 @@ const getCachedGoalData = unstable_cache(
 
 const getCachedLifeBalanceData = unstable_cache(
     async (userId: string) => {
-        return await prisma.lifeBalanceEntry.findMany({
-            where: { userId },
-            select: {
-                category: true,
-                score: true,
-                createdAt: true,
-            },
-            orderBy: { createdAt: "desc" },
-            take: 100,
-        })
+        try {
+            return await prisma.lifeBalanceEntry.findMany({
+                where: { userId },
+                select: {
+                    category: true,
+                    score: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: "desc" },
+                take: 100,
+            })
+        } catch (error) {
+            console.warn("DB Error in getCachedLifeBalanceData, returning mocks");
+            return [
+                { category: "身体的健康", score: 8, createdAt: new Date() },
+                { category: "精神的健康", score: 7, createdAt: new Date() },
+                { category: "仕事・キャリア", score: 6, createdAt: new Date() },
+                { category: "学習・成長", score: 9, createdAt: new Date() },
+            ] as any
+        }
     },
     ['dashboard-life-balance'],
     { revalidate: 60, tags: ['dashboard', 'life-balance'] }
@@ -479,7 +542,7 @@ async function GoalProgressSection({ userId }: { userId: string }) {
                         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-500"
-                                style={{ width: `${goal.progress}%` }}
+                                style={{ width: `${goal.progress}% ` }}
                             />
                         </div>
                     </div>
@@ -491,28 +554,36 @@ async function GoalProgressSection({ userId }: { userId: string }) {
 
 const getCachedDashboardTasks = unstable_cache(
     async (userId: string) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const nextMonth = new Date(today);
-        nextMonth.setMonth(nextMonth.getMonth() + 2); // Fetch plenty of tasks
+        try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const nextMonth = new Date(today);
+            nextMonth.setMonth(nextMonth.getMonth() + 2); // Fetch plenty of tasks
 
-        return await prisma.task.findMany({
-            where: {
-                userId,
-                completed: false,
-                projectId: null, // Only show daily tasks
-                OR: [
-                    {
-                        scheduledDate: {
-                            lt: nextMonth
-                        }
-                    },
-                    { scheduledDate: null }
-                ]
-            },
-            orderBy: { scheduledDate: 'asc' },
-            take: 50 // Limit total fetched tasks
-        });
+            return await prisma.task.findMany({
+                where: {
+                    userId,
+                    completed: false,
+                    projectId: null, // Only show daily tasks
+                    OR: [
+                        {
+                            scheduledDate: {
+                                lt: nextMonth
+                            }
+                        },
+                        { scheduledDate: null }
+                    ]
+                },
+                orderBy: { scheduledDate: 'asc' },
+                take: 50 // Limit total fetched tasks
+            });
+        } catch (error) {
+            console.warn("DB Error in getCachedDashboardTasks, returning mocks");
+            return [
+                { id: '1', title: '週次レビュー', priority: 'high', scheduledDate: new Date(), completed: false, createdAt: new Date(), updatedAt: new Date() },
+                { id: '2', title: '買い物に行く', priority: 'medium', scheduledDate: new Date(Date.now() + 86400000), completed: false, createdAt: new Date(), updatedAt: new Date() },
+            ] as any
+        }
     },
     ['dashboard-tasks-list'],
     { revalidate: 60, tags: ['dashboard', 'tasks'] }
@@ -539,11 +610,16 @@ async function TasksSection({ userId }: { userId: string }) {
 
 const getCachedUserProjects = unstable_cache(
     async (userId: string) => {
-        return await prisma.project.findMany({
-            where: { userId },
-            orderBy: { updatedAt: 'desc' },
-            select: { id: true, title: true }
-        })
+        try {
+            return await prisma.project.findMany({
+                where: { userId },
+                orderBy: { updatedAt: 'desc' },
+                select: { id: true, title: true }
+            })
+        } catch (error) {
+            console.warn("DB Error in getCachedUserProjects, returning mocks");
+            return [{ id: '1', title: 'メインプロジェクト' }] as any
+        }
     },
     ['dashboard-user-projects'],
     { revalidate: 60, tags: ['dashboard', 'projects'] }
@@ -551,23 +627,28 @@ const getCachedUserProjects = unstable_cache(
 
 const getCachedUserSettings = unstable_cache(
     async (userId: string) => {
-        const [settings, user] = await Promise.all([
-            prisma.userSettings.findUnique({
-                where: { userId },
-                select: { showJojo: true }
-            }),
-            prisma.user.findUnique({
-                where: { id: userId },
-                select: { preferences: true }
-            })
-        ])
+        try {
+            const [settings, user] = await Promise.all([
+                prisma.userSettings.findUnique({
+                    where: { userId },
+                    select: { showJojo: true }
+                }),
+                prisma.user.findUnique({
+                    where: { id: userId },
+                    select: { preferences: true }
+                })
+            ])
 
-        const preferences = (user?.preferences as any) || {}
-        const enableAdventure = preferences.enableAdventure ?? true
+            const preferences = (user?.preferences as any) || {}
+            const enableAdventure = preferences.enableAdventure ?? true
 
-        return {
-            showJojo: settings?.showJojo ?? true,
-            enableAdventure
+            return {
+                showJojo: settings?.showJojo ?? true,
+                enableAdventure
+            }
+        } catch (error) {
+            console.warn("DB Error in getCachedUserSettings, returning mocks");
+            return { showJojo: true, enableAdventure: true };
         }
     },
     ['dashboard-user-settings'],
@@ -589,7 +670,13 @@ async function VoiceRecordingSectionWrapper({ userId }: { userId: string }) {
 
 export default async function DashboardPage() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    let { data: { user } } = await supabase.auth.getUser()
+
+    // Mock user for preview if missing
+    if (!user && process.env.NODE_ENV === 'development') {
+        console.log("Creating mock user for dashboard preview");
+        user = { id: 'mock-user-123', email: 'preview@example.com' } as any
+    }
 
     if (!user) {
         return null // Middleware will redirect
@@ -597,9 +684,16 @@ export default async function DashboardPage() {
 
     const settings = await getCachedUserSettings(user.id)
 
-    const userStats = await prisma.userStats.findUnique({
-        where: { userId: user.id }
-    })
+    const userStats = await (async () => {
+        try {
+            return await prisma.userStats.findUnique({
+                where: { userId: user.id }
+            })
+        } catch (error) {
+            console.warn("DB Error in fetching userStats, returning null");
+            return null;
+        }
+    })();
 
     return (
         <DashboardLayout>

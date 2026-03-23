@@ -19,6 +19,7 @@ const InfiniteGallery = dynamic(() => import("@/components/ui/3d-gallery-photogr
 })
 
 import { GradientLampEffects } from "@/components/ui/gradient-lamp"
+import { CyberneticBentoGrid } from "@/components/ui/cybernetic-bento-grid"
 
 const useParallax = (value: MotionValue<number>, distance: number) => {
   return useTransform(value, [0, 1], [-distance, distance])
@@ -88,23 +89,23 @@ export default function LandingPage() {
   const heroTextOpacity = useTransform(heroScrollProgress, [0, 0.5], [1, 0])
 
   // S-Curve animations
-  const x1 = useTransform(smoothProgress, [0.05, 0.25], ["-50%", "0%"])
-  const scale1 = useTransform(smoothProgress, [0.05, 0.12, 0.25], [1.2, 1.6, 0.8])
+  const x1 = useTransform(smoothProgress, [0.05, 0.25], isMobile ? ["0%", "0%"] : ["-25%", "0%"], { clamp: true })
+  const scale1 = useTransform(smoothProgress, [0.05, 0.12, 0.25], isMobile ? [0.92, 1.0, 0.95] : [1.0, 1.15, 0.9], { clamp: true })
 
-  const x2 = useTransform(smoothProgress, [0.20, 0.40], ["50%", "0%"])
-  const scale2 = useTransform(smoothProgress, [0.20, 0.27, 0.40], [1.2, 1.5, 0.8])
+  const x2 = useTransform(smoothProgress, [0.20, 0.40], isMobile ? ["0%", "0%"] : ["25%", "0%"], { clamp: true })
+  const scale2 = useTransform(smoothProgress, [0.20, 0.27, 0.40], isMobile ? [0.92, 1.0, 0.95] : [1.0, 1.15, 0.9], { clamp: true })
 
-  const x3 = useTransform(smoothProgress, [0.35, 0.55], ["-50%", "0%"])
-  const scale3 = useTransform(smoothProgress, [0.35, 0.42, 0.55], [1.2, 1.6, 0.8])
+  const x3 = useTransform(smoothProgress, [0.35, 0.55], isMobile ? ["0%", "0%"] : ["-25%", "0%"], { clamp: true })
+  const scale3 = useTransform(smoothProgress, [0.35, 0.42, 0.55], isMobile ? [0.92, 1.0, 0.95] : [1.0, 1.15, 0.9], { clamp: true })
 
-  const x4 = useTransform(smoothProgress, [0.50, 0.70], ["50%", "0%"])
-  const scale4 = useTransform(smoothProgress, [0.50, 0.57, 0.70], [1.2, 1.5, 0.8])
+  const x4 = useTransform(smoothProgress, [0.50, 0.70], isMobile ? ["0%", "0%"] : ["25%", "0%"], { clamp: true })
+  const scale4 = useTransform(smoothProgress, [0.50, 0.57, 0.70], isMobile ? [0.92, 1.0, 0.95] : [1.0, 1.15, 0.9], { clamp: true })
 
-  const x5 = useTransform(smoothProgress, [0.65, 0.85], ["-50%", "0%"])
-  const scale5 = useTransform(smoothProgress, [0.65, 0.72, 0.85], [1.2, 1.6, 0.8])
+  const x5 = useTransform(smoothProgress, [0.65, 0.85], isMobile ? ["0%", "0%"] : ["-25%", "0%"], { clamp: true })
+  const scale5 = useTransform(smoothProgress, [0.65, 0.72, 0.85], isMobile ? [0.92, 1.0, 0.95] : [1.0, 1.15, 0.9], { clamp: true })
 
-  const x6 = useTransform(smoothProgress, [0.80, 1.0], ["50%", "0%"])
-  const scale6 = useTransform(smoothProgress, [0.80, 0.87, 1.0], [1.2, 1.5, 0.8])
+  const x6 = useTransform(smoothProgress, [0.80, 1.0], isMobile ? ["0%", "0%"] : ["25%", "0%"], { clamp: true })
+  const scale6 = useTransform(smoothProgress, [0.80, 0.87, 1.0], isMobile ? [0.92, 1.0, 0.95] : [1.0, 1.15, 0.9], { clamp: true })
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000)
@@ -293,7 +294,7 @@ export default function LandingPage() {
 
       <div ref={containerRef} className="relative text-[#e1e1e1] selection:bg-white selection:text-black overflow-x-hidden">
 
-        <nav className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 md:px-8 py-6 mix-blend-difference">
+        <nav className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-8 py-6 mix-blend-difference">
           <MagneticButton>
             <img src="/journify-logo.png" alt="Journify" className="h-12 md:h-14 w-auto cursor-pointer" />
           </MagneticButton>
@@ -385,20 +386,20 @@ export default function LandingPage() {
                 transition={{ duration: 1, delay: 1.2 }}
                 className="pointer-events-auto"
               >
-                <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="flex flex-row items-center justify-center gap-4 md:gap-6 w-full">
                   <MagneticButton>
                     <Link
                       href="/signup"
-                      className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-full font-bold hover:from-emerald-600 hover:to-cyan-600 hover:scale-105 transition-all duration-300 text-lg cursor-none shadow-xl shadow-emerald-500/25"
+                      className="inline-flex items-center gap-2 px-5 md:px-8 py-3 md:py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-full font-bold hover:from-emerald-600 hover:to-cyan-600 hover:scale-105 transition-all duration-300 text-sm md:text-lg cursor-none shadow-xl shadow-emerald-500/25 whitespace-nowrap"
                     >
                       無料で始める
-                      <ArrowUpRight className="w-5 h-5" />
+                      <ArrowUpRight className="w-4 h-4 md:w-5 md:h-5" />
                     </Link>
                   </MagneticButton>
                   <MagneticButton>
                     <Link
                       href="/login"
-                      className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 text-white border border-white/20 rounded-full font-medium hover:bg-white/20 hover:border-white/40 hover:scale-105 transition-all duration-300 text-lg backdrop-blur-md cursor-none"
+                      className="inline-flex items-center gap-2 px-5 md:px-8 py-3 md:py-4 bg-white/10 text-white border border-white/20 rounded-full font-medium hover:bg-white/20 hover:border-white/40 hover:scale-105 transition-all duration-300 text-sm md:text-lg backdrop-blur-md cursor-none whitespace-nowrap"
                     >
                       ログイン
                     </Link>
@@ -411,361 +412,130 @@ export default function LandingPage() {
 
         </section>
 
-        {/* Features Section - Moved after Hero */}
-        <section className="relative py-24 md:py-32 px-6 bg-black/40 backdrop-blur-sm border-y border-white/5">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="text-center mb-20"
-            >
-              <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white tracking-tight">
-                主な機能
-              </h2>
-              <p className="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto">
-                日々の記録から目標達成まで、あなたの成長をサポートする統合プラットフォーム
-              </p>
-            </motion.div>
+        {/* Features Section - Cybernetic Bento Grid */}
+        <section id="features" className="relative bg-[#030712] overflow-hidden">
+          <CyberneticBentoGrid />
+        </section>
+        <section ref={sCurveRef} className="relative min-h-[400vh] py-20 md:py-40 overflow-hidden">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-              {/* Journal Feature */}
+          <div className="h-[60vh] md:h-[80vh] w-full px-4 relative">
+            <div className="h-full w-full relative flex items-center justify-center">
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                viewport={{ once: true }}
-                className="group"
+                style={{ x: isMobile ? 0 : x1, scale: scale1 }}
+                className="relative w-full md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
+                onTouchStart={() => isMobile && handleImageTouch('scurve-home1')}
               >
-                <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none h-full text-left">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-violet-500/20 rounded-2xl text-violet-400">
-                        <BarChart3 className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-[20px] md:text-[24px] font-bold group-hover:text-violet-400 transition-colors">
-                        ジャーナル
-                      </h3>
-                    </div>
-                    <ul className="space-y-3 text-white/70 text-lg">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-                        <span>リッチテキストエディタで自由な記述</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-                        <span>気分・エネルギー・ストレス・睡眠を5段階評価</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-                        <span>タグ付けによる分類と検索</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-                        <span>日々の活動記録（運動、社交、趣味など）</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-                        <span>音声ジャーナルの自動文字起こしと要約</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-violet-400 mt-1 flex-shrink-0" />
-                        <span>AIによる思考のマインドマップ自動生成</span>
-                      </li>
-                    </ul>
-                  </div>
-                </MagneticButton>
+                <Image src="/images/home.png" alt="Luxury Home" fill className={`object-cover ${touchedImages.has('scurve-home1') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
               </motion.div>
-
-              {/* Goals Feature */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true }}
-                className="group"
+                animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
+                transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+                className="absolute top-1/4 left-0 md:left-[10%] text-2xl md:text-6xl font-bold text-white z-20 px-6 max-w-[80vw] md:max-w-none pointer-events-none mix-blend-difference"
               >
-                <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none h-full text-left">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-emerald-500/20 rounded-2xl text-emerald-400">
-                        <CheckCircle2 className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-[20px] md:text-[24px] font-bold group-hover:text-emerald-400 transition-colors">
-                        目標管理
-                      </h3>
-                    </div>
-                    <ul className="space-y-3 text-white/70 text-lg">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
-                        <span>進捗を10%刻みで更新可能</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
-                        <span>優先度設定（高・中・低）</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
-                        <span>目標達成率の可視化</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
-                        <span>期日設定とリマインダー</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
-                        <span>カテゴリー別の目標整理</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
-                        <span>達成時の自動お祝いメッセージ</span>
-                      </li>
-                    </ul>
-                  </div>
-                </MagneticButton>
-              </motion.div>
-
-              {/* Tasks Feature */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                viewport={{ once: true }}
-                className="group"
-              >
-                <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none h-full text-left">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-blue-500/20 rounded-2xl text-blue-400">
-                        <CheckCircle2 className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-[20px] md:text-[24px] font-bold group-hover:text-blue-400 transition-colors">
-                        タスク管理
-                      </h3>
-                    </div>
-                    <ul className="space-y-3 text-white/70 text-lg">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
-                        <span>日々のタスクとプロジェクト紐付けタスク</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
-                        <span>完了状態の追跡</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
-                        <span>スケジュール設定（開始日・終了日）</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
-                        <span>タスクごとのカラー設定（10色）</span>
-                      </li>
-                    </ul>
-                  </div>
-                </MagneticButton>
-              </motion.div>
-
-              {/* Projects Feature */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                viewport={{ once: true }}
-                className="group"
-              >
-                <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none h-full text-left">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-amber-500/20 rounded-2xl text-amber-400">
-                        <Calendar className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-[20px] md:text-[24px] font-bold group-hover:text-amber-400 transition-colors">
-                        プロジェクト管理
-                      </h3>
-                    </div>
-                    <ul className="space-y-3 text-white/70 text-lg">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-amber-400 mt-1 flex-shrink-0" />
-                        <span>ガントチャート風タイムラインビュー</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-amber-400 mt-1 flex-shrink-0" />
-                        <span>マイルストーン設定</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-amber-400 mt-1 flex-shrink-0" />
-                        <span>日本の祝日表示対応</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-amber-400 mt-1 flex-shrink-0" />
-                        <span>プロジェクトステータス管理</span>
-                      </li>
-                    </ul>
-                  </div>
-                </MagneticButton>
-              </motion.div>
-
-              {/* Dashboard Feature */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                viewport={{ once: true }}
-                className="group md:col-span-2"
-              >
-                <MagneticButton className="w-full">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 rounded-3xl hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 hover:scale-[1.02] transition-all duration-300 cursor-none text-left">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-indigo-500/20 rounded-2xl text-indigo-400">
-                        <BarChart3 className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-[20px] md:text-[24px] font-bold group-hover:text-indigo-400 transition-colors">
-                        ダッシュボード & 分析
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <ul className="space-y-3 text-white/70 text-lg">
-                        <li className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
-                          <span>統計情報の可視化（ジャーナル数、連続記録日数）</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
-                          <span>気分の推移グラフ</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
-                          <span>ライフバランスチャート</span>
-                        </li>
-                      </ul>
-                      <ul className="space-y-3 text-white/70 text-lg">
-                        <li className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
-                          <span>最近のジャーナルと目標進捗の一覧</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
-                          <span>ビジョンボード（画像、夢、アファメーション）</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-indigo-400 mt-1 flex-shrink-0" />
-                          <span>未来の自分への手紙機能</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </MagneticButton>
+                COMFORT & PEACE
               </motion.div>
             </div>
           </div>
-        </section>
 
-        <section ref={sCurveRef} className="relative min-h-[400vh] py-20 md:py-40 overflow-hidden">
-
-          <div className="h-[60vh] md:h-[80vh] flex items-center justify-center relative">
-            <motion.div
-              style={{ x: isMobile ? 0 : x1, scale: scale1 }}
-              className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
-              onTouchStart={() => isMobile && handleImageTouch('scurve-home1')}
-            >
-              <Image src="/images/home.png" alt="Luxury Home" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-home1') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
-            </motion.div>
-            <motion.div
-              animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
-              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-              className="absolute top-1/4 left-5 md:left-1/4 text-3xl md:text-6xl font-bold text-white z-20 whitespace-nowrap pointer-events-none mix-blend-difference"
-            >
-              COMFORT & PEACE
-            </motion.div>
-          </div>
-
-          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative">
-            <motion.div style={{ x: isMobile ? 0 : x2, scale: scale2 }} className="relative z-20 max-w-xl px-6">
+          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative w-full px-4">
+            <motion.div style={{ x: isMobile ? 0 : x2, scale: scale2 }} className="relative z-20 max-w-xl w-full">
               <MagneticButton className="w-full">
-                <div className="group bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-3xl hover:border-violet-500/50 transition-colors cursor-none text-left">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2.5 bg-violet-500/20 rounded-xl text-violet-400">
-                        <BarChart3 className="w-6 h-6" />
-                      </div>
-                      <h4 className="text-[20px] md:text-[24px] font-medium group-hover:text-violet-400 transition-colors">Smart Analysis</h4>
+                <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-8 rounded-[2rem] hover:border-emerald-500/50 transition-all duration-500 cursor-none text-left overflow-hidden">
+                  <div className="noise-overlay opacity-[0.15]" />
+                  <div className="absolute inset-0 dot-pattern opacity-[0.05]" />
+                  
+                  {/* Decorative number background */}
+                  <span className="absolute -right-4 -bottom-8 text-[12rem] font-bold text-white/5 select-none pointer-events-none group-hover:text-emerald-500/10 transition-colors duration-500">01</span>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="h-8 w-1 bg-emerald-500 rounded-full group-hover:h-12 transition-all duration-500" />
+                      <h4 className="text-2xl md:text-3xl font-bold tracking-tight group-hover:text-emerald-400 transition-colors">Smart Analysis</h4>
                     </div>
-                    <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <p className="text-lg md:text-xl text-white/60 leading-relaxed max-w-md">AIがあなたの感情パターンを分析し、隠れた傾向を明らかにします。</p>
                   </div>
-                  <p className="text-base md:text-lg text-white/60">AIがあなたの感情パターンを分析し、隠れた傾向を明らかにします。</p>
                 </div>
               </MagneticButton>
             </motion.div>
           </div>
 
-          <div className="h-[60vh] md:h-[80vh] flex items-center justify-center relative">
-            <motion.div
-              style={{ x: isMobile ? 0 : x3, scale: scale3 }}
-              className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
-              onTouchStart={() => isMobile && handleImageTouch('scurve-party')}
-            >
-              <Image src="/images/japanese_celebration.png" alt="Celebration" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
-            </motion.div>
-            <motion.div
-              animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
-              transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
-              className="absolute bottom-1/4 right-5 md:right-1/4 text-3xl md:text-6xl font-bold text-white z-20 whitespace-nowrap pointer-events-none mix-blend-difference"
-            >
-              JOY & CELEBRATION
-            </motion.div>
+          <div className="h-[60vh] md:h-[80vh] w-full px-4 relative">
+            <div className="h-full w-full relative flex items-center justify-center">
+              <motion.div
+                style={{ x: isMobile ? 0 : x3, scale: scale3 }}
+                className="relative w-full md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
+                onTouchStart={() => isMobile && handleImageTouch('scurve-party')}
+              >
+                <Image src="/images/japanese_celebration.png" alt="Celebration" fill className={`object-cover ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+              </motion.div>
+              <motion.div
+                animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
+                transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
+                className="absolute bottom-1/4 right-0 md:right-[10%] text-2xl md:text-6xl font-bold text-white z-20 px-6 max-w-[80vw] md:max-w-none text-right pointer-events-none mix-blend-difference"
+              >
+                JOY & CELEBRATION
+              </motion.div>
+            </div>
           </div>
 
-          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative">
-            <motion.div style={{ x: isMobile ? 0 : x4, scale: scale4 }} className="relative z-20 max-w-xl px-6">
+          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative w-full px-4">
+            <motion.div style={{ x: isMobile ? 0 : x4, scale: scale4 }} className="relative z-20 max-w-xl w-full">
               <MagneticButton className="w-full">
-                <div className="group bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-3xl hover:border-violet-500/50 transition-colors cursor-none text-left">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400">
-                        <CheckCircle2 className="w-6 h-6" />
-                      </div>
-                      <h4 className="text-[20px] md:text-[24px] font-medium group-hover:text-emerald-400 transition-colors">Goal Tracking</h4>
+                <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-8 rounded-[2rem] hover:border-cyan-500/50 transition-all duration-500 cursor-none text-left overflow-hidden">
+                  <div className="noise-overlay opacity-[0.15]" />
+                  <div className="absolute inset-0 dot-pattern opacity-[0.05]" />
+
+                  {/* Decorative number background */}
+                  <span className="absolute -right-4 -bottom-8 text-[12rem] font-bold text-white/5 select-none pointer-events-none group-hover:text-cyan-500/10 transition-colors duration-500">02</span>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="h-8 w-1 bg-cyan-500 rounded-full group-hover:h-12 transition-all duration-500" />
+                      <h4 className="text-2xl md:text-3xl font-bold tracking-tight group-hover:text-cyan-400 transition-colors">Goal Tracking</h4>
                     </div>
-                    <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <p className="text-lg md:text-xl text-white/60 leading-relaxed max-w-md">大きな夢を、日々の実行可能なステップに分解します。</p>
                   </div>
-                  <p className="text-base md:text-lg text-white/60">大きな夢を、日々の実行可能なステップに分解します。</p>
                 </div>
               </MagneticButton>
             </motion.div>
           </div>
 
-          <div className="h-[60vh] md:h-[80vh] flex items-center justify-center relative">
-            <motion.div
-              style={{ x: isMobile ? 0 : x5, scale: scale5 }}
-              className="relative w-[80vw] md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none"
-              onTouchStart={() => isMobile && handleImageTouch('scurve-beach')}
-            >
-              <Image src="/images/beach.png" alt="Beach" fill className={`object-cover rounded-3xl shadow-2xl ${touchedImages.has('scurve-beach') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
-            </motion.div>
-            <motion.div
-              animate={{ x: [0, 40, 0], y: [0, 40, 0] }}
-              transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-              className="absolute top-1/3 right-5 md:right-1/3 text-3xl md:text-6xl font-bold text-white z-20 whitespace-nowrap pointer-events-none mix-blend-difference"
-            >
-              FREEDOM & DISCOVERY
-            </motion.div>
+          <div className="h-[60vh] md:h-[80vh] w-full px-4 relative">
+            <div className="h-full w-full relative flex items-center justify-center">
+              <motion.div
+                style={{ x: isMobile ? 0 : x5, scale: scale5 }}
+                className="relative w-full md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
+                onTouchStart={() => isMobile && handleImageTouch('scurve-beach')}
+              >
+                <Image src="/images/beach.png" alt="Beach" fill className={`object-cover ${touchedImages.has('scurve-beach') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+              </motion.div>
+              <motion.div
+                animate={{ x: [0, 40, 0], y: [0, 40, 0] }}
+                transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+                className="absolute top-1/3 right-0 md:right-[15%] text-2xl md:text-6xl font-bold text-white z-20 px-6 max-w-[80vw] md:max-w-none text-right pointer-events-none mix-blend-difference"
+              >
+                FREEDOM & DISCOVERY
+              </motion.div>
+            </div>
           </div>
 
-          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative">
-            <motion.div style={{ x: isMobile ? 0 : x6, scale: scale6 }} className="relative z-20 max-w-xl px-6">
+          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative w-full px-4">
+            <motion.div style={{ x: isMobile ? 0 : x6, scale: scale6 }} className="relative z-20 max-w-xl w-full">
               <MagneticButton className="w-full">
-                <div className="group bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-3xl hover:border-violet-500/50 transition-colors cursor-none text-left">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2.5 bg-blue-500/20 rounded-xl text-blue-400">
-                        <Calendar className="w-6 h-6" />
-                      </div>
-                      <h4 className="text-[20px] md:text-[24px] font-medium group-hover:text-blue-400 transition-colors">Calendar Sync</h4>
+                <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-8 rounded-[2rem] hover:border-blue-500/50 transition-all duration-500 cursor-none text-left overflow-hidden">
+                  <div className="noise-overlay opacity-[0.15]" />
+                  <div className="absolute inset-0 dot-pattern opacity-[0.05]" />
+
+                  {/* Decorative number background */}
+                  <span className="absolute -right-4 -bottom-8 text-[12rem] font-bold text-white/5 select-none pointer-events-none group-hover:text-blue-500/10 transition-colors duration-500">03</span>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="h-8 w-1 bg-blue-500 rounded-full group-hover:h-12 transition-all duration-500" />
+                      <h4 className="text-2xl md:text-3xl font-bold tracking-tight group-hover:text-blue-400 transition-colors">Calendar Sync</h4>
                     </div>
-                    <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <p className="text-lg md:text-xl text-white/60 leading-relaxed max-w-md">Google、Outlook、Appleカレンダーとシームレスに連携します。</p>
                   </div>
-                  <p className="text-base md:text-lg text-white/60">Google、Outlook、Appleカレンダーとシームレスに連携します。</p>
                 </div>
               </MagneticButton>
             </motion.div>
@@ -774,7 +544,7 @@ export default function LandingPage() {
         </section>
 
         {/* Final Message Section */}
-        <section className="relative py-32 md:py-48 px-6 text-center">
+        <section className="relative py-32 md:py-48 px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -801,7 +571,7 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        <footer className="py-12 md:py-20 px-6 md:px-8 border-t border-white/10 text-center">
+        <footer className="py-12 md:py-20 px-4 md:px-8 border-t border-white/10 text-center">
           <h2 className="text-[15vw] font-bold tracking-tighter leading-none opacity-10 select-none pointer-events-none">
             JOURNIFY
           </h2>
