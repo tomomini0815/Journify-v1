@@ -266,3 +266,70 @@ body {
   background-size: 200% 200%;
   animation: gradient-shift 4s ease infinite;
 }
+
+/* Advanced Glassmorphism & Glowing Border Utilities */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.glow-border-cyan { border-color: rgba(6, 182, 212, 0.2); box-shadow: 0 0 20px rgba(6, 182, 212, 0.1); }
+.glow-border-emerald { border-color: rgba(16, 185, 129, 0.2); box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
+.glow-border-blue { border-color: rgba(59, 130, 246, 0.2); box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+.glow-border-slate { border-color: rgba(148, 163, 184, 0.2); box-shadow: 0 0 20px rgba(148, 163, 184, 0.1); }
+.glow-border-indigo { border-color: rgba(99, 102, 241, 0.2); box-shadow: 0 0 20px rgba(99, 102, 241, 0.1); }
+
+.glass-card:hover.glow-border-cyan { border-color: rgba(6, 182, 212, 0.5); box-shadow: 0 0 30px rgba(6, 182, 212, 0.2); }
+.glass-card:hover.glow-border-emerald { border-color: rgba(16, 185, 129, 0.5); box-shadow: 0 0 30px rgba(16, 185, 129, 0.2); }
+.glass-card:hover.glow-border-blue { border-color: rgba(59, 130, 246, 0.5); box-shadow: 0 0 30px rgba(59, 130, 246, 0.2); }
+.glass-card:hover.glow-border-slate { border-color: rgba(148, 163, 184, 0.5); box-shadow: 0 0 30px rgba(148, 163, 184, 0.2); }
+.glass-card:hover.glow-border-indigo { border-color: rgba(99, 102, 241, 0.5); box-shadow: 0 0 30px rgba(99, 102, 241, 0.2); }
+
+/* Feature Card Specific Backgrounds */
+.bg-feature-journal { background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.05), transparent 60%); }
+.bg-feature-goal { background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.05), transparent 60%); }
+.bg-feature-task { background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 60%); }
+.bg-feature-project { background: radial-gradient(circle at top right, rgba(148, 163, 184, 0.05), transparent 60%); }
+.bg-feature-dash { background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.05), transparent 60%); }
+
+/* Premium Textures & Refinements */
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.2;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.dot-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bento-item-border-glow {
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(
+    400px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+    rgba(255, 255, 255, 0.15),
+    transparent 40%
+  );
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.bento-item:hover .bento-item-border-glow {
+  opacity: 1;
+}
+
+.tracking-premium {
+  letter-spacing: 0.05em;
+}
+

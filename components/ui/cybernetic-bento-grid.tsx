@@ -46,10 +46,7 @@ const BentoItem = ({ className, children, showDots = false }: BentoItemProps) =>
   return (
     <div 
       ref={itemRef} 
-      className={`bento-item shadow-2xl group ${className}`}
-      style={{
-        position: 'relative',
-      }}
+      className={`relative bg-white/[0.03] border border-white/[0.08] rounded-[1.5rem] overflow-hidden transition-all duration-500 hover:border-white/20 hover:-translate-y-1.5 backdrop-blur-[10px] shadow-2xl group ${className}`}
     >
       {/* Background patterns */}
       <div className="noise-overlay" />
@@ -75,7 +72,7 @@ const BentoItem = ({ className, children, showDots = false }: BentoItemProps) =>
         }}
       />
       
-      <div className="bento-content">
+      <div className="relative z-20 h-full">
         {children}
       </div>
     </div>
@@ -105,7 +102,7 @@ export const CyberneticBentoGrid = () => {
         </p>
       </motion.div>
 
-      <div className="bento-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-auto lg:auto-rows-[minmax(160px,auto)]">
         {/* Journal */}
         <BentoItem className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 flex flex-col justify-between group border-cyan-500/5 p-6 md:p-8">
           <div className="space-y-4 md:space-y-6 relative z-20">
