@@ -416,135 +416,236 @@ export default function LandingPage() {
         <section id="features" className="relative bg-[#030712] overflow-hidden">
           <CyberneticBentoGrid />
         </section>
-        <section ref={sCurveRef} className="relative min-h-[400vh] py-20 md:py-40 overflow-hidden">
+        <section ref={sCurveRef} className="relative min-h-[300vh] py-12 md:py-24 overflow-hidden">
 
-          <div className="h-[60vh] md:h-[80vh] w-full px-4 relative">
+          {/* ── Section Intro ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9 }}
+            viewport={{ once: true }}
+            className="text-center mb-12 md:mb-24 px-6 relative z-20"
+          >
+            <p className="text-white/40 text-sm md:text-base tracking-[0.25em] uppercase mb-4 font-light">The Journey Begins</p>
+            <h2 className="text-[28px] md:text-[42px] font-bold text-white mb-5 tracking-tight leading-tight">
+              あなたの成長を、<br className="md:hidden" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-white/70">見える化する</span>
+            </h2>
+            <p className="text-base md:text-lg text-white/40 max-w-xl mx-auto leading-relaxed font-light">
+              日々の記録が、やがて大きな物語になる。<br className="hidden md:block" />
+              Journifyはその一歩一歩に寄り添います。
+            </p>
+          </motion.div>
+
+          {/* ── Panel 1: Image – 安らぎ ── */}
+          <div className="h-[50vh] md:h-[60vh] w-full px-4 relative">
             <div className="h-full w-full relative flex items-center justify-center">
               <motion.div
                 style={{ x: isMobile ? 0 : x1, scale: scale1 }}
-                className="relative w-full md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
+                className="relative w-full md:w-[42vw] h-[42vh] md:h-[52vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
                 onTouchStart={() => isMobile && handleImageTouch('scurve-home1')}
               >
                 <Image src="/images/home.png" alt="Luxury Home" fill className={`object-cover ${touchedImages.has('scurve-home1') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
+                <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+                  <p className="text-white/90 text-sm md:text-base font-light">心が落ち着く場所で、自分と向き合う時間を</p>
+                </div>
               </motion.div>
               <motion.div
-                animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
+                animate={{ x: [0, 15, 0], y: [0, -15, 0] }}
                 transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-                className="absolute top-1/4 left-0 md:left-[10%] text-2xl md:text-6xl font-bold text-white z-20 px-6 max-w-[80vw] md:max-w-none pointer-events-none mix-blend-difference"
+                className="absolute top-1/4 left-0 md:left-[10%] z-20 px-6 max-w-[80vw] md:max-w-none pointer-events-none mix-blend-difference"
               >
-                COMFORT & PEACE
+                <span className="text-2xl md:text-6xl font-bold text-white tracking-tight">COMFORT & PEACE</span>
+                <p className="text-white/40 text-[10px] md:text-xs mt-1.5 tracking-[0.2em] uppercase font-light">安らぎと平穏</p>
               </motion.div>
             </div>
           </div>
 
-          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative w-full px-4">
-            <motion.div style={{ x: isMobile ? 0 : x2, scale: scale2 }} className="relative z-20 max-w-xl w-full">
-              <MagneticButton className="w-full">
-                <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-8 rounded-[2rem] hover:border-emerald-500/50 transition-all duration-500 cursor-none text-left overflow-hidden">
-                  <div className="noise-overlay opacity-[0.15]" />
-                  <div className="absolute inset-0 dot-pattern opacity-[0.05]" />
-                  
-                  {/* Decorative number background */}
-                  <span className="absolute -right-4 -bottom-8 text-[12rem] font-bold text-white/5 select-none pointer-events-none group-hover:text-emerald-500/10 transition-colors duration-500">01</span>
+          {/* ── Card 1: 書く瞑想 ── */}
+          <div className="h-[45vh] md:h-[55vh] flex items-center justify-center relative w-full px-4">
+            <motion.div style={{ x: isMobile ? 0 : x2, scale: scale2 }} className="relative z-20 max-w-2xl w-full">
+              <div className="group relative bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] p-7 md:p-10 rounded-[2rem] hover:border-emerald-500/40 transition-all duration-500 cursor-none text-left overflow-hidden">
 
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="h-8 w-1 bg-emerald-500 rounded-full group-hover:h-12 transition-all duration-500" />
-                      <h4 className="text-2xl md:text-3xl font-bold tracking-tight group-hover:text-emerald-400 transition-colors">Smart Analysis</h4>
+                <span className="absolute -right-6 -bottom-10 text-[14rem] font-bold text-white/[0.03] select-none pointer-events-none leading-none group-hover:text-emerald-500/[0.08] transition-colors duration-500">01</span>
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="h-8 w-[3px] bg-white/30 rounded-full group-hover:bg-emerald-500 group-hover:h-10 transition-all duration-500" />
+                    <div>
+                      <h4 className="text-xl md:text-2xl font-semibold tracking-tight text-white/90 group-hover:text-emerald-400 transition-colors duration-500">書く瞑想</h4>
+                      <p className="text-white/30 text-xs mt-0.5 tracking-wider">Writing Meditation</p>
                     </div>
-                    <p className="text-lg md:text-xl text-white/60 leading-relaxed max-w-md">AIがあなたの感情パターンを分析し、隠れた傾向を明らかにします。</p>
+                  </div>
+
+                  <p className="text-base md:text-lg text-white/50 leading-relaxed mb-6">
+                    毎日の思考や感情を、言葉として書き出す。<br className="hidden md:block" />
+                    それだけで、心が整理され、新しい気づきが生まれます。
+                  </p>
+
+                  <div className="space-y-3 mb-6">
+                    {['リッチテキストで自由に表現、テンプレートも選べる', '気分・エネルギー・睡眠の質を記録して変化を可視化', 'タグ付けで後から振り返りやすく整理'].map((item, i) => (
+                      <motion.div key={i} initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.15 + i * 0.08 }} viewport={{ once: true }}
+                        className="flex items-start gap-3">
+                        <span className="w-1 h-1 rounded-full bg-white/30 mt-2.5 flex-shrink-0" />
+                        <span className="text-white/45 text-sm md:text-[15px] leading-relaxed">{item}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="border-l-2 border-white/10 pl-4">
+                    <p className="text-white/30 text-sm italic leading-relaxed">&ldquo;書くことは、考えることの最良の形である&rdquo;</p>
                   </div>
                 </div>
-              </MagneticButton>
+              </div>
             </motion.div>
           </div>
 
-          <div className="h-[60vh] md:h-[80vh] w-full px-4 relative">
+          {/* ── Panel 2: Image – 達成の喜び ── */}
+          <div className="h-[50vh] md:h-[60vh] w-full px-4 relative">
             <div className="h-full w-full relative flex items-center justify-center">
               <motion.div
                 style={{ x: isMobile ? 0 : x3, scale: scale3 }}
-                className="relative w-full md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
+                className="relative w-full md:w-[42vw] h-[42vh] md:h-[52vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
                 onTouchStart={() => isMobile && handleImageTouch('scurve-party')}
               >
                 <Image src="/images/japanese_celebration.png" alt="Celebration" fill className={`object-cover ${touchedImages.has('scurve-party') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
+                <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+                  <p className="text-white/90 text-sm md:text-base font-light">目標を達成した瞬間の喜びを、分かち合う</p>
+                </div>
               </motion.div>
               <motion.div
-                animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
+                animate={{ x: [0, -20, 0], y: [0, 20, 0] }}
                 transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
-                className="absolute bottom-1/4 right-0 md:right-[10%] text-2xl md:text-6xl font-bold text-white z-20 px-6 max-w-[80vw] md:max-w-none text-right pointer-events-none mix-blend-difference"
+                className="absolute bottom-1/4 right-0 md:right-[10%] z-20 px-6 max-w-[80vw] md:max-w-none text-right pointer-events-none mix-blend-difference"
               >
-                JOY & CELEBRATION
+                <span className="text-2xl md:text-6xl font-bold text-white tracking-tight">JOY & CELEBRATION</span>
+                <p className="text-white/40 text-[10px] md:text-xs mt-1.5 tracking-[0.2em] uppercase font-light text-right">喜びと達成</p>
               </motion.div>
             </div>
           </div>
 
-          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative w-full px-4">
-            <motion.div style={{ x: isMobile ? 0 : x4, scale: scale4 }} className="relative z-20 max-w-xl w-full">
-              <MagneticButton className="w-full">
-                <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-8 rounded-[2rem] hover:border-cyan-500/50 transition-all duration-500 cursor-none text-left overflow-hidden">
-                  <div className="noise-overlay opacity-[0.15]" />
-                  <div className="absolute inset-0 dot-pattern opacity-[0.05]" />
+          {/* ── Card 2: 目標と習慣 ── */}
+          <div className="h-[45vh] md:h-[55vh] flex items-center justify-center relative w-full px-4">
+            <motion.div style={{ x: isMobile ? 0 : x4, scale: scale4 }} className="relative z-20 max-w-2xl w-full">
+              <div className="group relative bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] p-7 md:p-10 rounded-[2rem] hover:border-cyan-500/40 transition-all duration-500 cursor-none text-left overflow-hidden">
 
-                  {/* Decorative number background */}
-                  <span className="absolute -right-4 -bottom-8 text-[12rem] font-bold text-white/5 select-none pointer-events-none group-hover:text-cyan-500/10 transition-colors duration-500">02</span>
+                <span className="absolute -right-6 -bottom-10 text-[14rem] font-bold text-white/[0.03] select-none pointer-events-none leading-none group-hover:text-cyan-500/[0.08] transition-colors duration-500">02</span>
 
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="h-8 w-1 bg-cyan-500 rounded-full group-hover:h-12 transition-all duration-500" />
-                      <h4 className="text-2xl md:text-3xl font-bold tracking-tight group-hover:text-cyan-400 transition-colors">Goal Tracking</h4>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="h-8 w-[3px] bg-white/30 rounded-full group-hover:bg-cyan-500 group-hover:h-10 transition-all duration-500" />
+                    <div>
+                      <h4 className="text-xl md:text-2xl font-semibold tracking-tight text-white/90 group-hover:text-cyan-400 transition-colors duration-500">目標と習慣づくり</h4>
+                      <p className="text-white/30 text-xs mt-0.5 tracking-wider">Goals & Habits</p>
                     </div>
-                    <p className="text-lg md:text-xl text-white/60 leading-relaxed max-w-md">大きな夢を、日々の実行可能なステップに分解します。</p>
+                  </div>
+
+                  <p className="text-base md:text-lg text-white/50 leading-relaxed mb-6">
+                    大きな夢も、日々の小さなステップに分ければ<br className="hidden md:block" />
+                    必ず近づける。進捗を見える化して、モチベーションを保ちます。
+                  </p>
+
+                  <div className="space-y-3 mb-6">
+                    {['目標を細かく分解し、10%刻みで進捗を更新', '21日・66日チャレンジで習慣化をサポート', '達成時にはお祝いメッセージで気持ちを後押し'].map((item, i) => (
+                      <motion.div key={i} initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.15 + i * 0.08 }} viewport={{ once: true }}
+                        className="flex items-start gap-3">
+                        <span className="w-1 h-1 rounded-full bg-white/30 mt-2.5 flex-shrink-0" />
+                        <span className="text-white/45 text-sm md:text-[15px] leading-relaxed">{item}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Mini progress visualization */}
+                  <div className="flex gap-1.5 items-center">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <motion.div key={i} initial={{ scaleY: 0 }} whileInView={{ scaleY: 1 }}
+                        transition={{ duration: 0.3, delay: i * 0.04 }} viewport={{ once: true }}
+                        className={`h-2 flex-1 rounded-full ${i < 9 ? 'bg-white/20' : 'bg-white/[0.06]'}`}
+                      />
+                    ))}
+                    <span className="text-white/25 text-xs ml-2 tabular-nums">9/12</span>
                   </div>
                 </div>
-              </MagneticButton>
+              </div>
             </motion.div>
           </div>
 
-          <div className="h-[60vh] md:h-[80vh] w-full px-4 relative">
+          {/* ── Panel 3: Image – 自由と冒険 ── */}
+          <div className="h-[50vh] md:h-[60vh] w-full px-4 relative">
             <div className="h-full w-full relative flex items-center justify-center">
               <motion.div
                 style={{ x: isMobile ? 0 : x5, scale: scale5 }}
-                className="relative w-full md:w-[40vw] h-[40vh] md:h-[50vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
+                className="relative w-full md:w-[42vw] h-[42vh] md:h-[52vh] z-0 group cursor-none overflow-hidden rounded-3xl shadow-2xl"
                 onTouchStart={() => isMobile && handleImageTouch('scurve-beach')}
               >
                 <Image src="/images/beach.png" alt="Beach" fill className={`object-cover ${touchedImages.has('scurve-beach') ? '' : 'grayscale'} group-hover:grayscale-0 transition-all duration-700 ease-out`} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
+                <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+                  <p className="text-white/90 text-sm md:text-base font-light">新しい世界を探求し、視野を広げる冒険へ</p>
+                </div>
               </motion.div>
               <motion.div
-                animate={{ x: [0, 40, 0], y: [0, 40, 0] }}
+                animate={{ x: [0, 25, 0], y: [0, 25, 0] }}
                 transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                className="absolute top-1/3 right-0 md:right-[15%] text-2xl md:text-6xl font-bold text-white z-20 px-6 max-w-[80vw] md:max-w-none text-right pointer-events-none mix-blend-difference"
+                className="absolute top-1/3 right-0 md:right-[15%] z-20 px-6 max-w-[80vw] md:max-w-none text-right pointer-events-none mix-blend-difference"
               >
-                FREEDOM & DISCOVERY
+                <span className="text-2xl md:text-6xl font-bold text-white tracking-tight">FREEDOM & DISCOVERY</span>
+                <p className="text-white/40 text-[10px] md:text-xs mt-1.5 tracking-[0.2em] uppercase font-light text-right">自由と発見</p>
               </motion.div>
             </div>
           </div>
 
-          <div className="h-[40vh] md:h-[60vh] flex items-center justify-center relative w-full px-4">
-            <motion.div style={{ x: isMobile ? 0 : x6, scale: scale6 }} className="relative z-20 max-w-xl w-full">
-              <MagneticButton className="w-full">
-                <div className="group relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-8 rounded-[2rem] hover:border-blue-500/50 transition-all duration-500 cursor-none text-left overflow-hidden">
-                  <div className="noise-overlay opacity-[0.15]" />
-                  <div className="absolute inset-0 dot-pattern opacity-[0.05]" />
+          {/* ── Card 3: 声で記録する ── */}
+          <div className="h-[45vh] md:h-[55vh] flex items-center justify-center relative w-full px-4">
+            <motion.div style={{ x: isMobile ? 0 : x6, scale: scale6 }} className="relative z-20 max-w-2xl w-full">
+              <div className="group relative bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] p-7 md:p-10 rounded-[2rem] hover:border-blue-500/40 transition-all duration-500 cursor-none text-left overflow-hidden">
 
-                  {/* Decorative number background */}
-                  <span className="absolute -right-4 -bottom-8 text-[12rem] font-bold text-white/5 select-none pointer-events-none group-hover:text-blue-500/10 transition-colors duration-500">03</span>
+                <span className="absolute -right-6 -bottom-10 text-[14rem] font-bold text-white/[0.03] select-none pointer-events-none leading-none group-hover:text-blue-500/[0.08] transition-colors duration-500">03</span>
 
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="h-8 w-1 bg-blue-500 rounded-full group-hover:h-12 transition-all duration-500" />
-                      <h4 className="text-2xl md:text-3xl font-bold tracking-tight group-hover:text-blue-400 transition-colors">Calendar Sync</h4>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="h-8 w-[3px] bg-white/30 rounded-full group-hover:bg-blue-500 group-hover:h-10 transition-all duration-500" />
+                    <div>
+                      <h4 className="text-xl md:text-2xl font-semibold tracking-tight text-white/90 group-hover:text-blue-400 transition-colors duration-500">声で記録する</h4>
+                      <p className="text-white/30 text-xs mt-0.5 tracking-wider">Voice Journal</p>
                     </div>
-                    <p className="text-lg md:text-xl text-white/60 leading-relaxed max-w-md">Google、Outlook、Appleカレンダーとシームレスに連携します。</p>
+                  </div>
+
+                  <p className="text-base md:text-lg text-white/50 leading-relaxed mb-6">
+                    書くのが難しい日は、話すだけでいい。<br className="hidden md:block" />
+                    散歩中、通勤中、寝る前。思いついた瞬間に声で残せます。
+                  </p>
+
+                  <div className="space-y-3 mb-6">
+                    {['ワンタップで録音、AIが自動で文字起こし', '話した言葉からキーワードやテーマを自動抽出', '音声メモから目標やタスクへの変換も可能'].map((item, i) => (
+                      <motion.div key={i} initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.15 + i * 0.08 }} viewport={{ once: true }}
+                        className="flex items-start gap-3">
+                        <span className="w-1 h-1 rounded-full bg-white/30 mt-2.5 flex-shrink-0" />
+                        <span className="text-white/45 text-sm md:text-[15px] leading-relaxed">{item}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="border-l-2 border-white/10 pl-4">
+                    <p className="text-white/30 text-sm italic leading-relaxed">&ldquo;言葉にすることで、はじめて自分の気持ちに気づく&rdquo;</p>
                   </div>
                 </div>
-              </MagneticButton>
+              </div>
             </motion.div>
           </div>
+
+
 
         </section>
 
         {/* Final Message Section */}
-        <section className="relative py-32 md:py-48 px-4 text-center">
+        <section className="relative py-16 md:py-24 px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -552,9 +653,12 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="max-w-5xl mx-auto"
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white md:whitespace-nowrap">
-              あなたの物語は、<br className="md:hidden" />今日から始まる
-            </h2>
+            <div className="mb-8 md:mb-12">
+              <p className="text-3xl md:text-5xl lg:text-6xl text-white/15 italic mb-2 tracking-wider" style={{ fontFamily: 'var(--font-dancing), cursive', textShadow: '0 0 30px rgba(255,255,255,0.05)' }}>At Your Own Pace, In Your Own Way</p>
+              <h2 className="text-2xl md:text-[38px] lg:text-[42px] font-bold text-white tracking-[0.15em] leading-tight">
+                あなたのペース、あなたのやり方で。
+              </h2>
+            </div>
             <p className="text-lg md:text-2xl text-white/70 mb-12 leading-relaxed">
               一歩ずつ、確実に。<br />
               あなたの夢を現実に変える旅を、<br className="md:hidden" />
@@ -571,17 +675,14 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        <footer className="py-12 md:py-20 px-4 md:px-8 border-t border-white/10 text-center">
+        <footer className="py-8 md:py-12 px-4 md:px-8 border-t border-white/10 text-center">
           <h2 className="text-[15vw] font-bold tracking-tighter leading-none opacity-10 select-none pointer-events-none">
             JOURNIFY
           </h2>
-          <div className="flex flex-col md:flex-row items-center justify-between mt-8 md:mt-10 text-xs md:text-sm text-white/40">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 mt-8 md:mt-10 text-xs md:text-sm text-white/40">
             <p>&copy; 2025 Journify.</p>
-            <div className="flex gap-6 md:gap-8 mt-4 md:mt-0">
-              <MagneticButton><Link href="#" className="hover:text-white transition-colors cursor-none">Twitter</Link></MagneticButton>
-              <MagneticButton><Link href="#" className="hover:text-white transition-colors cursor-none">Instagram</Link></MagneticButton>
-              <MagneticButton><Link href="#" className="hover:text-white transition-colors cursor-none">LinkedIn</Link></MagneticButton>
-            </div>
+            <Link href="/terms" className="hover:text-white transition-colors duration-300">利用規約</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors duration-300">プライバシーポリシー</Link>
           </div>
         </footer>
       </div>

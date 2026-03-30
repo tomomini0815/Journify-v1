@@ -41,6 +41,8 @@ export async function middleware(request: NextRequest) {
         !request.nextUrl.pathname.startsWith('/signup') &&
         !request.nextUrl.pathname.startsWith('/auth/callback') &&
         !request.nextUrl.pathname.startsWith('/api') &&
+        !request.nextUrl.pathname.startsWith('/terms') &&
+        !request.nextUrl.pathname.startsWith('/privacy') &&
         request.nextUrl.pathname !== '/'
     ) {
         // no user, potentially respond by redirecting the user to the login page

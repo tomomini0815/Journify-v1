@@ -93,7 +93,7 @@ export const CyberneticBentoGrid = () => {
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em]">Next-Gen Platform</span>
         </div>
-        <h2 className="text-3xl md:text-7xl font-bold text-white text-center tracking-tight leading-tight">
+        <h2 className="text-[28px] md:text-[42px] font-bold text-white text-center tracking-tight leading-tight">
           主な機能
         </h2>
         <div className="h-1 w-24 md:w-32 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50" />
