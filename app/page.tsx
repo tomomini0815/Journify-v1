@@ -287,6 +287,30 @@ export default function LandingPage() {
               }}
             />
           ))}
+          {/* Large Shooting Stars */}
+          {[...Array(2)].map((_, i) => (
+            <motion.div
+              key={`large-shooting-${i}`}
+              className="absolute w-1.5 h-1.5 bg-white rounded-full"
+              style={{
+                left: `${Math.random() * 40}%`,
+                top: `${Math.random() * 40}%`,
+                boxShadow: '0 0 10px 4px rgba(255, 255, 255, 0.9)',
+              }}
+              animate={{
+                x: [0, 600],
+                y: [0, 300],
+                opacity: [0, 1, 1, 0],
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                repeatDelay: Math.random() * 10 + 10,
+                delay: Math.random() * 10,
+                ease: "easeOut",
+              }}
+            />
+          ))}
         </motion.div>
       )}
 
@@ -550,7 +574,7 @@ export default function LandingPage() {
                   </p>
 
                   <div className="space-y-3 mb-6">
-                    {['目標を細かく分解し、10%刻みで進捗を更新', '21日・66日チャレンジで習慣化をサポート', '達成時にはお祝いメッセージで気持ちを後押し'].map((item, i) => (
+                    {['目標を細かく分解し、10%刻みで進捗を更新', '短期から長期まで期間別の目標管理し、無理なく理想に近づく', '達成時にはお祝いメッセージで気持ちを後押し'].map((item, i) => (
                       <motion.div key={i} initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.15 + i * 0.08 }} viewport={{ once: true }}
                         className="flex items-start gap-3">
@@ -622,7 +646,7 @@ export default function LandingPage() {
                   </p>
 
                   <div className="space-y-3 mb-6">
-                    {['ワンタップで録音、AIが自動で文字起こし', '話した言葉からキーワードやテーマを自動抽出', '音声メモから目標やタスクへの変換も可能'].map((item, i) => (
+                    {['ワンタップで録音、AIが自動で文字起こし', '話した言葉からキーワードやテーマを自動抽出', '過去の記録をAIが分析し、思考のつながりをマインドマップで可視化'].map((item, i) => (
                       <motion.div key={i} initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.15 + i * 0.08 }} viewport={{ once: true }}
                         className="flex items-start gap-3">
@@ -680,7 +704,7 @@ export default function LandingPage() {
             JOURNIFY
           </h2>
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 mt-8 md:mt-10 text-xs md:text-sm text-white/40">
-            <p>&copy; 2025 Journify.</p>
+            <p>&copy; 2025-2026 Journify.</p>
             <Link href="/terms" className="hover:text-white transition-colors duration-300">利用規約</Link>
             <Link href="/privacy" className="hover:text-white transition-colors duration-300">プライバシーポリシー</Link>
           </div>

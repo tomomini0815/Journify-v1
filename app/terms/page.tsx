@@ -17,7 +17,7 @@ export default function TermsPage() {
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 pt-28 pb-20">
         <h1 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">利用規約</h1>
-        <p className="text-white/30 text-sm mb-12">最終更新日：2025年4月1日</p>
+        <p className="text-white/30 text-sm mb-12">最終更新日：2026年3月30日</p>
 
         <div className="space-y-10 text-white/70 leading-relaxed text-sm md:text-base">
           <section>
@@ -104,7 +104,7 @@ export default function TermsPage() {
       {/* Footer */}
       <footer className="border-t border-white/10 py-8 px-6">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/30">
-          <p>&copy; 2025 Journify.</p>
+          <p>&copy; 2025-2026 Journify.</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-white/60 transition-colors">プライバシーポリシー</Link>
             <Link href="/" className="hover:text-white/60 transition-colors">トップページ</Link>
