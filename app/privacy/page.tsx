@@ -130,10 +130,10 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg md:text-xl font-semibold text-white mb-4">11. お問い合わせ</h2>
             <p>
-              プライバシーに関するご質問やご要望は、以下までお問い合わせください。
+              プライバシーに関するご質問やご要望がございましたら、ログイン後にダッシュボードの設定画面内「お問い合わせ」よりご連絡ください。
             </p>
             <div className="mt-4 p-4 rounded-lg bg-white/5 border border-white/10">
-              <p className="text-white/50">メール：support@journify.app</p>
+              <p className="text-white/50">※ お問い合わせにはログインが必要です。アカウントをお持ちでない場合は、新規登録のうえご利用ください。</p>
             </div>
           </section>
         </div>
