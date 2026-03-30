@@ -234,3 +234,115 @@ Please retry in 7.302246898s. [{"@type":"type.googleapis.com/google.rpc.Help","l
     at async Server.requestListener (C:\Users\userv\Journify-v1\node_modules\next\dist\server\lib\start-server.js:226:13)
 Audio Path: C:\Users\userv\Journify-v1\public\uploads\aeb8274b-f1a1-4b58-98d0-2f5f6b2b70c9-voice-journal.webm
 ---
+[2026-02-02T01:30:11.585Z] Transcription Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]
+Stack: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]
+    at handleResponseNotOk (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7213:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async makeRequest (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7185:9)
+    at async generateContent (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7627:22)
+    at async POST (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\[root-of-the-server]__b4e6f998._.js:214:32)
+    at async AppRouteRouteModule.do (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:37789)
+    at async AppRouteRouteModule.handle (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:45045)
+    at async responseGenerator (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15485:38)
+    at async AppRouteRouteModule.handleResponse (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:187851)
+    at async handleResponse (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15547:32)
+    at async handler (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15600:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1413:9)
+    at async DevServer.renderPageComponent (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1465:24)
+    at async DevServer.renderToResponseImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1515:32)
+    at async DevServer.pipeImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1021:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\next-server.js:394:17)
+    at async DevServer.handleRequestImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:912:17)
+    at async C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\dev\next-dev-server.js:382:20
+    at async Span.traceAsyncFn (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\trace\trace.js:157:20)
+    at async DevServer.handleRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\dev\next-dev-server.js:378:24)
+    at async invokeRender (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:240:21)
+    at async handleRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:436:24)
+    at async requestHandlerImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:484:13)
+    at async Server.requestListener (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\start-server.js:226:13)
+Audio Path: C:\Users\tomom\OneDrive\Desktop\Journify\public\uploads\eb403bcc-d135-4a28-9925-2307f02c6094-voice-journal.webm
+---
+[2026-02-02T01:38:44.074Z] Transcription Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]
+Stack: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]
+    at handleResponseNotOk (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7213:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async makeRequest (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7185:9)
+    at async generateContent (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7627:22)
+    at async POST (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\[root-of-the-server]__b4e6f998._.js:214:32)
+    at async AppRouteRouteModule.do (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:37789)
+    at async AppRouteRouteModule.handle (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:45045)
+    at async responseGenerator (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15485:38)
+    at async AppRouteRouteModule.handleResponse (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:187851)
+    at async handleResponse (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15547:32)
+    at async handler (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15600:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1413:9)
+    at async DevServer.renderPageComponent (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1465:24)
+    at async DevServer.renderToResponseImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1515:32)
+    at async DevServer.pipeImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1021:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\next-server.js:394:17)
+    at async DevServer.handleRequestImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:912:17)
+    at async C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\dev\next-dev-server.js:382:20
+    at async Span.traceAsyncFn (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\trace\trace.js:157:20)
+    at async DevServer.handleRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\dev\next-dev-server.js:378:24)
+    at async invokeRender (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:240:21)
+    at async handleRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:436:24)
+    at async requestHandlerImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:484:13)
+    at async Server.requestListener (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\start-server.js:226:13)
+Audio Path: C:\Users\tomom\OneDrive\Desktop\Journify\public\uploads\d07d40bc-a7b6-4716-a9f7-c7b9369f4ade-voice-journal.webm
+---
+[2026-02-02T01:50:49.807Z] Transcription Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]
+Stack: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]
+    at handleResponseNotOk (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7213:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async makeRequest (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7185:9)
+    at async generateContent (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7627:22)
+    at async POST (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\[root-of-the-server]__521f70e8._.js:351:32)
+    at async AppRouteRouteModule.do (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:37789)
+    at async AppRouteRouteModule.handle (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:45045)
+    at async responseGenerator (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15485:38)
+    at async AppRouteRouteModule.handleResponse (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:187851)
+    at async handleResponse (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15547:32)
+    at async handler (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15600:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1413:9)
+    at async DevServer.renderPageComponent (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1465:24)
+    at async DevServer.renderToResponseImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1515:32)
+    at async DevServer.pipeImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1021:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\next-server.js:394:17)
+    at async DevServer.handleRequestImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:912:17)
+    at async C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\dev\next-dev-server.js:382:20
+    at async Span.traceAsyncFn (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\trace\trace.js:157:20)
+    at async DevServer.handleRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\dev\next-dev-server.js:378:24)
+    at async invokeRender (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:240:21)
+    at async handleRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:436:24)
+    at async requestHandlerImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:484:13)
+    at async Server.requestListener (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\start-server.js:226:13)
+Audio Path: C:\Users\tomom\OneDrive\Desktop\Journify\public\uploads\65a00d58-c08c-4f8d-b618-5dab0831255f-voice-journal.webm
+---
+[2026-02-02T01:53:37.577Z] Transcription Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]
+Stack: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]
+    at handleResponseNotOk (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7213:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async makeRequest (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7185:9)
+    at async generateContent (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_585c22aa._.js:7627:22)
+    at async POST (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\[root-of-the-server]__521f70e8._.js:351:32)
+    at async AppRouteRouteModule.do (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:37789)
+    at async AppRouteRouteModule.handle (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:45045)
+    at async responseGenerator (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15485:38)
+    at async AppRouteRouteModule.handleResponse (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:187851)
+    at async handleResponse (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15547:32)
+    at async handler (C:\Users\tomom\OneDrive\Desktop\Journify\.next\dev\server\chunks\node_modules_next_9ad79742._.js:15600:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1413:9)
+    at async DevServer.renderPageComponent (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1465:24)
+    at async DevServer.renderToResponseImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1515:32)
+    at async DevServer.pipeImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:1021:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\next-server.js:394:17)
+    at async DevServer.handleRequestImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\base-server.js:912:17)
+    at async C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\dev\next-dev-server.js:382:20
+    at async Span.traceAsyncFn (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\trace\trace.js:157:20)
+    at async DevServer.handleRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\dev\next-dev-server.js:378:24)
+    at async invokeRender (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:240:21)
+    at async handleRequest (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:436:24)
+    at async requestHandlerImpl (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\router-server.js:484:13)
+    at async Server.requestListener (C:\Users\tomom\OneDrive\Desktop\Journify\node_modules\next\dist\server\lib\start-server.js:226:13)
+Audio Path: C:\Users\tomom\OneDrive\Desktop\Journify\public\uploads\dc6546d5-abfa-452b-97d6-c2004a23621a-voice-journal.webm
+---

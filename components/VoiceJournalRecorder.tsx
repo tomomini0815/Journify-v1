@@ -554,7 +554,7 @@ export default function VoiceJournalRecorder({
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleMicButtonClick()}
-                                    className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
+                                    className="w-14 h-14 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                                 >
                                     <Mic className="w-6 h-6" />
                                 </button>
@@ -605,7 +605,7 @@ export default function VoiceJournalRecorder({
                                         </div>
                                         <button
                                             onClick={stopRecording}
-                                            className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"
+                                            className="w-10 h-10 shrink-0 rounded-full bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"
                                         >
                                             <Square className="w-4 h-4 fill-current" />
                                         </button>
@@ -825,7 +825,7 @@ export default function VoiceJournalRecorder({
                 {!isRecording && !audioBlob && (
                     <button
                         onClick={() => handleMicButtonClick()}
-                        className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
+                        className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                     >
                         <Mic className="w-8 h-8" />
                     </button>
@@ -875,7 +875,7 @@ export default function VoiceJournalRecorder({
                             {isRecording && (
                                 <button
                                     onClick={stopRecording}
-                                    className="flex items-center gap-2 px-6 py-2 rounded-full bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-lg shadow-red-500/20"
+                                    className="flex items-center gap-2 px-6 py-2 shrink-0 rounded-full bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-lg shadow-red-500/20"
                                 >
                                     <Square className="w-4 h-4 fill-current" />
                                     <span>停止</span>
@@ -922,15 +922,7 @@ export default function VoiceJournalRecorder({
                             )}
                         </div>
 
-                        {/* Debug Info (Always Show for Diagnosis) */}
-                        <div className="mt-4 p-2 bg-black/40 rounded text-[10px] text-white/50 font-mono break-all">
-                            <p>Debug Info:</p>
-                            <p>UA: {userAgent}</p>
-                            <p>isAndroid: {isAndroid ? 'Yes' : 'No'}</p>
-                            <p>Supported: {browserSupportsSpeechRecognition ? 'Yes' : 'No'}</p>
-                            <p>Listening: {listening ? 'Yes' : 'No'}</p>
-                            <p>ManualRec: {isManualRecording ? 'Yes' : 'No'}</p>
-                        </div>
+
                     </div>
 
                     {!isRecording && audioBlob && (
@@ -959,7 +951,7 @@ export default function VoiceJournalRecorder({
                                                 }`}
                                         >
                                             <span className="text-2xl mb-1">{item.emoji}</span>
-                                            <span className="text-[10px] sm:text-xs font-medium">{item.label}</span>
+                                            <span className="text-[9px] sm:text-[10px] font-medium whitespace-nowrap">{item.label}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -1039,7 +1031,7 @@ export default function VoiceJournalRecorder({
                                             保存中...
                                         </span>
                                     ) : (
-                                        "ジャーナルを保存"
+                                        "保存"
                                     )}
                                 </button>
                             </div>

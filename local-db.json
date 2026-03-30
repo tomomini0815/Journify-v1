@@ -1,0 +1,43 @@
+{
+  "users": [
+    {
+      "id": "mock-user-123",
+      "email": "preview@example.com",
+      "name": "Preview User"
+    }
+  ],
+  "voiceJournals": [
+    {
+      "id": "mock-vj-1769997053881",
+      "createdAt": "2026-02-02T01:50:53.881Z",
+      "updatedAt": "2026-02-02T01:50:53.881Z",
+      "userId": "mock-user-123",
+      "transcript": "音声を認識できませんでした",
+      "aiSummary": "これはプレビュー環境用のモックレスポンスです。",
+      "sentiment": "positive",
+      "tags": [
+        "preview",
+        "mock"
+      ],
+      "mood": 3,
+      "audioUrl": "C:\\Users\\tomom\\OneDrive\\Desktop\\Journify\\public\\uploads\\65a00d58-c08c-4f8d-b618-5dab0831255f-voice-journal.webm"
+    },
+    {
+      "id": "mock-vj-1769997221641",
+      "createdAt": "2026-02-02T01:53:41.641Z",
+      "updatedAt": "2026-02-02T01:53:41.641Z",
+      "userId": "mock-user-123",
+      "transcript": "音声を認識できませんでした",
+      "aiSummary": "これはプレビュー環境用のモックレスポンスです。",
+      "sentiment": "positive",
+      "tags": [
+        "preview",
+        "mock"
+      ],
+      "mood": 2,
+      "audioUrl": "C:\\Users\\tomom\\OneDrive\\Desktop\\Journify\\public\\uploads\\dc6546d5-abfa-452b-97d6-c2004a23621a-voice-journal.webm"
+    }
+  ],
+  "journals": [],
+  "mindMaps": []
+}

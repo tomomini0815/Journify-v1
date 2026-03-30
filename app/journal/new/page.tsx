@@ -177,13 +177,13 @@ function NewJournalContent() {
     return (
         <DashboardLayout>
             {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-[28px] font-bold">
+                    <h1 className="text-[28px] font-bold whitespace-nowrap">
                         {mode === 'voice' ? '音声ジャーナル' : '新しいジャーナル'}
                     </h1>
                     <p className="text-white/60 mt-1">
@@ -191,7 +191,7 @@ function NewJournalContent() {
                     </p>
                 </motion.div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
                     <Link href="/journal">
                         <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl">
                             <X className="w-4 h-4 mr-2" />

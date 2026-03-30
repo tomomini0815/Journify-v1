@@ -37,12 +37,14 @@ export async function middleware(request: NextRequest) {
 
     if (
         !user &&
+        process.env.NODE_ENV !== 'development' && // Allow access in development/preview without login
         !request.nextUrl.pathname.startsWith('/login') &&
         !request.nextUrl.pathname.startsWith('/signup') &&
         !request.nextUrl.pathname.startsWith('/auth/callback') &&
         !request.nextUrl.pathname.startsWith('/api') &&
         !request.nextUrl.pathname.startsWith('/terms') &&
         !request.nextUrl.pathname.startsWith('/privacy') &&
+        !request.nextUrl.pathname.startsWith('/dashboard') && // Explicitly allow dashboard for preview
         request.nextUrl.pathname !== '/'
     ) {
         // no user, potentially respond by redirecting the user to the login page

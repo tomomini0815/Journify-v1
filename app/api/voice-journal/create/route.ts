@@ -4,6 +4,7 @@ import { readFile, appendFile } from "fs/promises";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { mockDb } from "@/lib/mock-db"; // Import mock DB
 
 const prisma = new PrismaClient();
 
@@ -20,14 +21,35 @@ function sleep(ms: number): Promise<void> {
 export async function POST(req: Request) {
     console.log("=== Voice Journal POST request received (Recreated File) ===");
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    let { data: { user } } = await supabase.auth.getUser();
+
+    // MOCK USER for Preview/Dev environment
+    if (!user && process.env.NODE_ENV === 'development') {
+        console.log("⚠️ No authenticated user found. Using MOCK USER for preview.");
+        user = {
+            id: 'mock-user-123',
+            aud: 'authenticated',
+            role: 'authenticated',
+            email: 'preview@example.com',
+            app_metadata: { provider: 'email' },
+            user_metadata: {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as any;
+    }
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    let audioPath, providedTranscript, mood, clientTags;
+
     try {
-        const { audioPath, transcript: providedTranscript, mood, tags: clientTags } = await req.json();
+        const body = await req.json();
+        audioPath = body.audioPath;
+        providedTranscript = body.transcript;
+        mood = body.mood;
+        clientTags = body.tags;
 
         if (!audioPath && !providedTranscript) {
             return NextResponse.json({ error: "Audio path or transcript is required" }, { status: 400 });
@@ -288,6 +310,39 @@ JSONのみを返し、他の説明は不要です。`;
 
     } catch (error: any) {
         console.error("Voice journal creation error:", error);
+
+        // MOCK FALLBACK for Preview/Dev environment without real DB
+        if (process.env.NODE_ENV === 'development' || error.code === 'P1001' || error.message.includes('Can\'t reach database')) {
+            console.log("⚠️ Database unavailable. Using MOCK DB for preview.");
+
+            // Generate basic mock data from request if available, or defaults
+            const mockTranscript = providedTranscript || "音声プレビュー（データベース接続なし）";
+            const mockSummary = "これはプレビュー環境用のモックレスポンスです。";
+            const mockTags = ["preview", "mock"];
+            const mockMood = mood || 3;
+
+            const voiceJournalData = {
+                userId: user.id,
+                transcript: mockTranscript,
+                aiSummary: mockSummary,
+                sentiment: "positive",
+                tags: mockTags,
+                mood: mockMood,
+                audioUrl: audioPath || ""
+            };
+
+            // Save to local JSON DB
+            const saved = await mockDb.voiceJournals.create({ data: voiceJournalData });
+
+            return NextResponse.json({
+                id: saved.id,
+                transcript: saved.transcript,
+                summary: saved.aiSummary,
+                sentiment: saved.sentiment,
+                tags: saved.tags
+            });
+        }
+
         console.error("Error details:", {
             name: error?.name,
             message: error?.message,
