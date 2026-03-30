@@ -111,6 +111,12 @@ body {
   width: 100%;
 }
 
+/* Ensure button text never wraps */
+button, 
+.button {
+  white-space: nowrap;
+}
+
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
 

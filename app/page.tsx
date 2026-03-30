@@ -678,9 +678,9 @@ export default function LandingPage() {
             className="max-w-5xl mx-auto"
           >
             <div className="mb-8 md:mb-12">
-              <p className="text-3xl md:text-5xl lg:text-6xl text-white/15 italic mb-2 tracking-wider" style={{ fontFamily: 'var(--font-dancing), cursive', textShadow: '0 0 30px rgba(255,255,255,0.05)' }}>At Your Own Pace, In Your Own Way</p>
+              <p className="text-3xl md:text-5xl lg:text-6xl text-white/15 italic mb-2 tracking-wider" style={{ fontFamily: 'var(--font-dancing), cursive', textShadow: '0 0 30px rgba(255,255,255,0.05)' }}>A New Future, Guided by Your Records</p>
               <h2 className="text-2xl md:text-[38px] lg:text-[42px] font-bold text-white tracking-[0.15em] leading-tight">
-                あなたのペース、あなたのやり方で。
+                記録が導く、新しい未来へ
               </h2>
             </div>
             <p className="text-lg md:text-2xl text-white/70 mb-12 leading-relaxed">

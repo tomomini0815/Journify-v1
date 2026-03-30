@@ -177,25 +177,27 @@ function NewJournalContent() {
     return (
         <DashboardLayout>
             {/* Header */}
-            <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-4 overflow-hidden">
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
+                    className="max-w-full"
                 >
-                    <h1 className="text-[28px] font-bold whitespace-nowrap">
+                    <h1 className="text-[24px] sm:text-[28px] font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                         {mode === 'voice' ? '音声ジャーナル' : '新しいジャーナル'}
                     </h1>
-                    <p className="text-white/60 mt-1">
+                    <p className="text-white/60 mt-1 text-sm md:text-base">
                         {mode === 'voice' ? '声を録音して、思いを記録する' : 'あなたの思考と感情を記録する'}
                     </p>
                 </motion.div>
 
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 shrink-0 self-end md:self-auto">
                     <Link href="/journal">
                         <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl">
-                            <X className="w-4 h-4 mr-2" />
-                            キャンセル
+                            <X className="w-4 h-4 mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">キャンセル</span>
+                            <span className="sm:hidden">中止</span>
                         </Button>
                     </Link>
                     {mode !== 'voice' && (
@@ -204,7 +206,7 @@ function NewJournalContent() {
                             disabled={isSaving}
                             className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl"
                         >
-                            <Save className="w-4 h-4 mr-2" />
+                            <Save className="w-4 h-4 mr-1 sm:mr-2" />
                             {isSaving ? "保存中..." : "保存"}
                         </Button>
                     )}

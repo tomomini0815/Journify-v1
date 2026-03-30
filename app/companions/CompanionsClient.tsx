@@ -64,14 +64,24 @@ export default function CompanionsClient() {
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-8"
+                className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
             >
-                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                    マイ・コンパニオン
-                </h1>
-                <p className="text-white/60">
-                    {companions.length} 体の仲間と出会いました
-                </p>
+                <div className="text-left">
+                    <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 bg-clip-text text-transparent whitespace-nowrap">
+                        マイ・コンパニオン
+                    </h1>
+                    <p className="text-white/60">
+                        {companions.length} 体の仲間と出会いました
+                    </p>
+                </div>
+                <div className="self-end md:self-auto">
+                    <button
+                        onClick={() => router.push('/adventure')}
+                        className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-lg shadow-cyan-500/20 rounded-xl font-bold hover:scale-105 transition-transform whitespace-nowrap"
+                    >
+                        ペットハウスへ戻る
+                    </button>
+                </div>
             </motion.div>
 
             {/* Companions Grid */}
@@ -85,7 +95,7 @@ export default function CompanionsClient() {
                     <p className="text-white/60 mb-6">ガチャで最初の仲間を召喚しましょう！</p>
                     <button
                         onClick={() => router.push('/adventure')}
-                        className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-bold hover:scale-105 transition-transform"
+                        className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-lg shadow-cyan-500/20 rounded-xl font-bold hover:scale-105 transition-transform"
                     >
                         ペットハウスへ戻る
                     </button>

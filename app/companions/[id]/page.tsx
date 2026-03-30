@@ -320,7 +320,7 @@ export default function CompanionDetailPage({ params }: { params: Promise<{ id: 
                             <button
                                 onClick={handlePlay}
                                 disabled={actionLoading || companion.energy < 10}
-                                className="w-full p-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full p-4 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-lg shadow-cyan-500/20"
                             >
                                 {actionLoading ? (
                                     <Loader2 className="w-5 h-5 animate-spin mx-auto" />

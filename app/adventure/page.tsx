@@ -245,18 +245,18 @@ export default function AdventurePage() {
         <DashboardLayout>
             <div className="max-w-5xl mx-auto pb-20">
                 {/* Header with Actions */}
-                <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-center md:text-left"
+                        className="text-left"
                     >
-                        <h1 className="text-4xl md:text-5xl font-black mb-2">
+                        <h1 className="text-4xl md:text-5xl font-black mb-2 whitespace-nowrap">
                             <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 bg-clip-text text-transparent">
                                 🐾 ペットハウス
                             </span>
                         </h1>
-                        <p className="text-white/50 text-sm mt-1">
+                        <p className="text-white/50 text-sm mt-1 whitespace-nowrap">
                             ペットのお世話をして仲良くなろう！
                         </p>
                     </motion.div>
@@ -264,7 +264,7 @@ export default function AdventurePage() {
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-3"
+                        className="flex items-center gap-3 self-end md:self-auto"
                     >
                         {/* Guide Button */}
                         <button
@@ -564,7 +564,7 @@ export default function AdventurePage() {
                                             whileTap={{ scale: 0.9 }}
                                             onClick={() => handleFeed('treat')}
                                             disabled={actionLoading}
-                                            className="p-3 bg-white/5 hover:bg-amber-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-amber-500/30 group"
+                                            className="p-3 bg-white/5 hover:bg-amber-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-amber-500/30 group whitespace-nowrap"
                                         >
                                             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🍪</div>
                                             <div className="text-xs font-bold">おやつ</div>
@@ -575,7 +575,7 @@ export default function AdventurePage() {
                                             whileTap={{ scale: 0.9 }}
                                             onClick={() => handleFeed('meal')}
                                             disabled={actionLoading}
-                                            className="p-3 bg-white/5 hover:bg-orange-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-orange-500/30 group"
+                                            className="p-3 bg-white/5 hover:bg-orange-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-orange-500/30 group whitespace-nowrap"
                                         >
                                             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🍖</div>
                                             <div className="text-xs font-bold">ごはん</div>
@@ -586,7 +586,7 @@ export default function AdventurePage() {
                                             whileTap={{ scale: 0.9 }}
                                             onClick={() => handleFeed('deluxe')}
                                             disabled={actionLoading}
-                                            className="p-3 bg-white/5 hover:bg-sky-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-sky-500/30 group"
+                                            className="p-3 bg-white/5 hover:bg-sky-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-sky-500/30 group whitespace-nowrap"
                                         >
                                             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🧁</div>
                                             <div className="text-xs font-bold">ごちそう</div>
@@ -597,7 +597,7 @@ export default function AdventurePage() {
                                             whileTap={{ scale: 0.9 }}
                                             onClick={handlePlay}
                                             disabled={actionLoading}
-                                            className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-emerald-500/30 group"
+                                            className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-emerald-500/30 group whitespace-nowrap"
                                         >
                                             <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎾</div>
                                             <div className="text-xs font-bold">あそぶ</div>
@@ -610,7 +610,7 @@ export default function AdventurePage() {
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={handlePet}
-                                        className="w-full mt-2 p-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border border-cyan-500/20 rounded-xl transition-all flex items-center justify-center gap-2 group"
+                                        className="w-full mt-2 p-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border border-cyan-500/20 rounded-xl transition-all flex items-center justify-center gap-2 group whitespace-nowrap"
                                     >
                                         <span className="text-xl group-hover:scale-125 transition-transform">🤗</span>
                                         <span className="text-xs font-bold">なでなで</span>
@@ -621,9 +621,9 @@ export default function AdventurePage() {
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={() => setIsDressUpOpen(true)}
-                                        className="w-full mt-2 p-3 bg-gradient-to-r from-pink-500/10 to-purple-500/10 hover:from-pink-500/20 hover:to-purple-500/20 border border-pink-500/20 rounded-xl transition-all flex items-center justify-center gap-2 group"
+                                        className="w-full mt-2 p-3 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-cyan-500/20 border border-emerald-500/20 rounded-xl transition-all flex items-center justify-center gap-2 group whitespace-nowrap"
                                     >
-                                        <Shirt size={16} className="text-pink-400 group-hover:scale-110 transition-transform" />
+                                        <Shirt size={16} className="text-emerald-400 group-hover:scale-110 transition-transform" />
                                         <span className="text-xs font-bold">きせかえ</span>
                                     </motion.button>
 
@@ -634,7 +634,7 @@ export default function AdventurePage() {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={handleActivate}
                                             disabled={actionLoading}
-                                            className="w-full mt-2 p-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                            className="w-full mt-2 p-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
                                         >
                                             <Sparkles size={16} className="text-yellow-400" />
                                             パートナーにする
