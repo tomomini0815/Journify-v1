@@ -118,7 +118,13 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
         }
     }
 
-    const filteredGoals = goals.filter(goal => goal.timeframe === activeTab)
+    const filteredGoals = goals
+        .filter(goal => goal.timeframe === activeTab)
+        .sort((a, b) => {
+            if (a.progress === 100 && b.progress < 100) return 1
+            if (a.progress < 100 && b.progress === 100) return -1
+            return 0
+        })
 
     return (
         <>
@@ -191,9 +197,9 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
             </div>
 
             {/* Goals List */}
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {filteredGoals.length === 0 ? (
-                    <div className="text-center py-12 text-white/60">
+                    <div className="text-center py-12 text-white/60 col-span-full">
                         {activeTab === 'short' && '短期目標がまだありません。新しい目標を追加しましょう!'}
                         {activeTab === 'mid' && '中期目標がまだありません。新しい目標を追加しましょう!'}
                         {activeTab === 'long' && '長期目標がまだありません。新しい目標を追加しましょう!'}
@@ -205,74 +211,83 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 ${goal.progress === 100 ? "opacity-60" : ""}`}
+                            className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 ${goal.progress === 100 ? "opacity-40" : ""}`}
                         >
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-start gap-3">
                                 {/* Checkbox */}
                                 <button
                                     onClick={() => toggleComplete(goal.id)}
                                     className="mt-1 flex-shrink-0"
                                 >
                                     {goal.progress === 100 ? (
-                                        <CheckCircle2 className="w-6 h-6 text-green-400" />
+                                        <CheckCircle2 className="w-5 h-5 text-green-400" />
                                     ) : (
-                                        <Circle className="w-6 h-6 text-white/40 hover:text-white/60 transition-colors" />
+                                        <Circle className="w-5 h-5 text-white/40 hover:text-white/60 transition-colors" />
                                     )}
                                 </button>
 
-                                {/* Content */}
+                                {/* Content Container */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className="flex-1">
-                                            <h3 className={`text-lg font-semibold mb-1 ${goal.progress === 100 ? "line-through" : ""}`}>
-                                                {goal.title}
-                                            </h3>
-                                            <p className="text-white/60 text-sm mb-3">{goal.description}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getPriorityColor(goal.priority)}`}>
+                                    {/* Top Row: Title + Priority + Delete */}
+                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                        <h3 className={`text-base font-semibold truncate ${goal.progress === 100 ? "line-through text-white/40" : "text-white"}`}>
+                                            {goal.title}
+                                        </h3>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor(goal.priority)}`}>
                                                 {getPriorityLabel(goal.priority)}
                                             </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Progress Slider */}
-                                    <div className="mb-3">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-sm text-white/60">進捗状況</span>
-                                            <span className="text-sm font-medium">{goal.progress}%</span>
-                                        </div>
-
-                                        <div className="relative h-6 flex items-center">
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="100"
-                                                step="10"
-                                                value={goal.progress}
-                                                onChange={(e) => updateProgress(goal.id, parseInt(e.target.value))}
-                                                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
-                                            />
-                                            <div
-                                                className="absolute left-0 top-1/2 -translate-y-1/2 h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-lg pointer-events-none"
-                                                style={{ width: `${goal.progress}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Footer */}
-                                    <div className="flex items-center justify-between mt-4">
-                                        <p className="text-sm text-white/40">
-                                            期限: {goal.targetDate ? new Date(goal.targetDate).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', year: 'numeric' }) : '設定なし'}
-                                        </p>
-                                        <div className="flex gap-2">
                                             <button
                                                 onClick={() => deleteGoal(goal.id)}
-                                                className="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
+                                                className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors text-white/20 hover:text-red-400"
                                             >
-                                                <Trash2 className="w-4 h-4" />
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
+                                    </div>
+
+                                    {/* Description (Smaller) */}
+                                    {goal.description && (
+                                        <p className="text-white/40 text-xs mb-3 line-clamp-1">{goal.description}</p>
+                                    )}
+
+                                    {/* Progress Section (Show only if < 100) */}
+                                    {goal.progress < 100 ? (
+                                        <div className="mt-2">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-[10px] text-white/40 uppercase tracking-wider">Progress</span>
+                                                <span className="text-[10px] font-medium text-emerald-400">{goal.progress}%</span>
+                                            </div>
+                                            <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                <input
+                                                    type="range"
+                                                    min="0"
+                                                    max="100"
+                                                    step="10"
+                                                    value={goal.progress}
+                                                    onChange={(e) => updateProgress(goal.id, parseInt(e.target.value))}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                />
+                                                <motion.div
+                                                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-500 to-cyan-500"
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${goal.progress}%` }}
+                                                    transition={{ duration: 0.5 }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-2 flex items-center text-[10px] text-green-400/60 font-medium uppercase tracking-wider">
+                                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                                            Completed
+                                        </div>
+                                    )}
+
+                                    {/* Deadline (Very Footer) */}
+                                    <div className="mt-3 flex items-center justify-between">
+                                        <p className="text-[10px] text-white/20">
+                                            {goal.targetDate ? `Deadline: ${new Date(goal.targetDate).toLocaleDateString('ja-JP')}` : 'No deadline'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>

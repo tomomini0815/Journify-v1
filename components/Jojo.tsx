@@ -87,7 +87,7 @@ export default function Jojo({ userId }: JojoProps) {
                         className="absolute bottom-0 right-20 mb-2"
                     >
                         <div className="relative w-[70vw] max-w-sm md:w-80">
-                            <div className="bg-gradient-to-br from-emerald-500/95 to-teal-500/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-emerald-400/20">
+                            <div className="bg-slate-900/80 backdrop-blur-2xl rounded-2xl p-6 shadow-2xl border border-emerald-500/40">
                                 <button
                                     onClick={() => setShowMessage(false)}
                                     className="absolute -top-2 -left-2 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors shadow-lg"
@@ -109,7 +109,7 @@ export default function Jojo({ userId }: JojoProps) {
                                 </div>
                             </div>
                             {/* Speech bubble tail - pointing right to Jojo */}
-                            <div className="absolute bottom-6 -right-2 w-4 h-4 bg-teal-500/95 rotate-45" />
+                            <div className="absolute bottom-6 -right-2 w-4 h-4 bg-slate-900/80 rotate-45 border-r border-t border-emerald-500/40" />
                         </div>
                     </motion.div>
                 )}
@@ -141,10 +141,10 @@ export default function Jojo({ userId }: JojoProps) {
                     className="relative group"
                 >
                     {/* Glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-blue-500/20 rounded-full blur-xl opacity-40 group-hover:opacity-60 transition-opacity" />
 
                     {/* Main character circle */}
-                    <div className="relative w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center shadow-2xl border-2 border-emerald-400/50 group-hover:scale-110 transition-transform cursor-pointer">
+                    <div className="relative w-16 h-16 bg-slate-800/90 rounded-full flex items-center justify-center shadow-2xl border border-white/10 group-hover:scale-110 transition-transform cursor-pointer">
                         {/* Jojo face */}
                         <div className="text-3xl">
                             {isSpeaking ? "🗣️" : "🤖"}

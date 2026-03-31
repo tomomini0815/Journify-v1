@@ -65,7 +65,7 @@ export default function NanobananaProPage() {
 
     return (
         <DashboardLayout>
-            <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col gap-6 p-6">
+            <div className="max-w-4xl mx-auto min-h-[calc(100vh-140px)] flex flex-col gap-6 p-6 pb-24">
 
                 {/* Header */}
                 <motion.div
@@ -78,7 +78,7 @@ export default function NanobananaProPage() {
                         <span className="text-sm font-medium text-cyan-200">Nanobanana Pro</span>
                     </div>
                     <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-200 via-cyan-200 to-emerald-200 mb-2">
-                        Gemini AI Studio
+                        Gemini AI
                     </h1>
                     <p className="text-white/60">
                         AIでアイデアを生成し、ビジョンボードにコレクションしましょう
@@ -90,7 +90,7 @@ export default function NanobananaProPage() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="flex-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative overflow-hidden flex flex-col items-center justify-center text-center group hover:bg-white/10 transition-colors"
+                    className="flex-1 min-h-[400px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative overflow-hidden flex flex-col items-center justify-center text-center group hover:bg-white/10 transition-colors"
                 >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 

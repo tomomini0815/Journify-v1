@@ -364,25 +364,6 @@ export default function VisionBoardPage() {
                                     <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-cyan-400 transition-colors" />
                                 </Link>
 
-                                <a
-                                    href="https://aistudio.google.com/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group flex items-center justify-between p-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 border border-indigo-500/30 hover:border-purple-500/50 rounded-xl transition-all"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center">
-                                            <Sparkles className="w-5 h-5 text-indigo-300" />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-white flex items-center gap-1">
-                                                Gemini AI Studio
-                                            </p>
-                                            <p className="text-xs text-white/40">Geminiでプロンプト作成</p>
-                                        </div>
-                                    </div>
-                                    <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-indigo-400 transition-colors" />
-                                </a>
                             </div>
 
                             <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">

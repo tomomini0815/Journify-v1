@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Heart, Zap, Star, Cookie, Sparkles, Loader2, PawPrint, ArrowLeft, Gem, BookOpen, HelpCircle, Shirt, Store, Coins, Trophy, Gift } from 'lucide-react'
@@ -96,6 +96,7 @@ export default function AdventurePage() {
     const [isGuideOpen, setIsGuideOpen] = useState(false)
     const [isDressUpOpen, setIsDressUpOpen] = useState(false)
     const [isOutfitShopOpen, setIsOutfitShopOpen] = useState(false)
+    const petSectionRef = useRef<HTMLDivElement>(null)
 
     // Outfit emojis cache (for displaying equipped outfits)
     const [outfitEmojiMap, setOutfitEmojiMap] = useState<Record<string, string>>({})
@@ -147,7 +148,14 @@ export default function AdventurePage() {
     const triggerReaction = (emoji: string) => {
         setShowReaction(emoji)
         setBounceKey(prev => prev + 1)
+        scrollToPet()
         setTimeout(() => setShowReaction(''), 1500)
+    }
+
+    const scrollToPet = () => {
+        if (typeof window !== 'undefined' && window.innerWidth < 768 && petSectionRef.current) {
+            petSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
     }
 
     const handleFeed = async (foodType: 'treat' | 'meal' | 'deluxe') => {
@@ -290,9 +298,9 @@ export default function AdventurePage() {
                         {/* Outfit Shop Button */}
                         <motion.button
                             onClick={() => setIsOutfitShopOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all transform hover:scale-105"
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-full font-bold shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-105"
                         >
-                            <Store size={16} className="text-amber-200" />
+                            <Store size={16} className="text-emerald-200" />
                             <span>衣装</span>
                             <span className="bg-black/30 px-2 py-0.5 rounded-full text-xs font-mono ml-1">
                                 🪙{stats?.gold || 0}
@@ -347,6 +355,7 @@ export default function AdventurePage() {
                         <div className="grid md:grid-cols-5 gap-6 mb-8">
                             {/* Left: Pet Visual (3 cols) */}
                             <motion.div
+                                ref={petSectionRef}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 className="md:col-span-3 relative bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 overflow-hidden min-h-[400px] flex flex-col justify-center"
