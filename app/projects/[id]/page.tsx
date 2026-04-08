@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { createPortal } from "react-dom"
 import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor, useDroppable, DragEndEvent, DragStartEvent, useDraggable, defaultDropAnimation } from "@dnd-kit/core"
 import { TaskDescriptionEditor } from '@/components/TaskDescriptionEditor'
 import { FileUploader } from '@/components/FileUploader'
@@ -16,6 +17,7 @@ import { motion } from "framer-motion"
 import { Calendar, Clock, CheckSquare, Plus, ArrowLeft, MoreVertical, Flag, Pencil, Trash2, ChevronDown, ChevronRight, Download, File as FileIcon, Paperclip, Link as LinkIcon, Share2, Copy, Check, MessageSquare, Send, X, AlertCircle, FileText } from "lucide-react"
 import DocumentsView from './components/DocumentsView'
 import { DashboardLayout } from '@/components/DashboardLayout'
+import { createClient } from '@/lib/supabase/client'
 
 // ... imports remain the same
 
@@ -205,6 +207,86 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
     // UI State for Meeting Logs
     const [expandedLogIds, setExpandedLogIds] = useState<Set<string>>(new Set())
+
+    // Real-time tracking of current time
+    const [currentTime, setCurrentTime] = useState(new Date())
+    const [hoveredTaskForTooltip, setHoveredTaskForTooltip] = useState<Task | null>(null)
+    const [tooltipRect, setTooltipRect] = useState<DOMRect | null>(null)
+    const [tooltipRowIndex, setTooltipRowIndex] = useState<number | null>(null)
+
+    useEffect(() => {
+        // Update current time every minute to keep the 'Now' line accurate
+        const interval = setInterval(() => {
+            setCurrentTime(new Date())
+        }, 60000)
+        return () => clearInterval(interval)
+    }, [])
+
+    // Supabase Realtime subscription
+    useEffect(() => {
+        if (!id) return
+
+        const supabase = createClient()
+        const channel = supabase
+            .channel(`project-realtime-${id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'Task',
+                    filter: `projectId=eq.${id}`
+                },
+                () => {
+                    console.log('Real-time task update received')
+                    fetchProject()
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'Milestone',
+                    filter: `projectId=eq.${id}`
+                },
+                () => {
+                    console.log('Real-time milestone update received')
+                    fetchProject()
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'Comment',
+                    filter: `projectId=eq.${id}`
+                },
+                () => {
+                    console.log('Real-time comment update received')
+                    fetchProject()
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'MeetingLog',
+                    filter: `projectId=eq.${id}`
+                },
+                () => {
+                    console.log('Real-time meeting log update received')
+                    fetchProject()
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [id])
 
     const toggleLog = (logId: string) => {
         const newSet = new Set(expandedLogIds)
@@ -1225,8 +1307,8 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
     // Calculate timeline range
     const dates = [
-        project.startDate ? new Date(project.startDate).getTime() : Date.now(),
-        project.endDate ? new Date(project.endDate).getTime() : Date.now(),
+        project.startDate ? new Date(project.startDate).getTime() : currentTime.getTime(),
+        project.endDate ? new Date(project.endDate).getTime() : currentTime.getTime(),
         ...project.tasks.flatMap(t => [
             t.startDate ? new Date(t.startDate).getTime() : null,
             t.endDate ? new Date(t.endDate).getTime() : null
@@ -1234,12 +1316,12 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         ...project.milestones.map(m => new Date(m.date).getTime())
     ]
 
-    const minDate = new Date(Math.min(Date.now(), ...dates))
-    const maxDate = new Date(Math.max(...dates))
+    const minDate = new Date(Math.min(currentTime.getTime(), ...dates))
+    const maxDate = new Date(Math.max(currentTime.getTime(), ...dates))
 
-    // Add padding to dates
-    minDate.setDate(minDate.getDate() - 3)
-    maxDate.setDate(maxDate.getDate() + 7)
+    // Add padding to dates (ensure at least 2 weeks shown)
+    minDate.setDate(minDate.getDate() - 7)
+    maxDate.setDate(maxDate.getDate() + 14)
 
     const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24))
     const dayWidth = 50 // px per day
@@ -1340,6 +1422,25 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             プロジェクト工程表
                         </h2>
                         <div className="flex gap-2 w-full sm:w-auto">
+                            <button
+                                onClick={() => {
+                                    const scrollContainer = document.getElementById('timeline-scroll-container')
+                                    const bottomScrollContainer = document.getElementById('bottom-calendar-scroll-container')
+                                    const dayWidth = 50
+                                    const todayOffset = ((new Date().getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
+
+                                    if (scrollContainer) {
+                                        scrollContainer.scrollTo({ left: todayOffset - 100, behavior: 'smooth' })
+                                    }
+                                    if (bottomScrollContainer) {
+                                        bottomScrollContainer.scrollTo({ left: todayOffset - 100, behavior: 'smooth' })
+                                    }
+                                }}
+                                className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-lg text-sm text-indigo-400 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                            >
+                                <Clock className="w-4 h-4" />
+                                今日
+                            </button>
                             <button
                                 onClick={() => {
                                     setNewMilestone({ title: "", date: "" })
@@ -1785,14 +1886,16 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
                                                     {/* Today Marker Line */}
                                                     {(() => {
-                                                        const today = new Date()
+                                                        const today = currentTime
                                                         const todayOffset = ((today.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
                                                         if (todayOffset >= 0 && todayOffset <= totalDays * dayWidth) {
                                                             return (
                                                                 <div
-                                                                    className="absolute top-0 bottom-0 w-0.5 bg-indigo-500/50 pointer-events-none z-10"
+                                                                    className="absolute top-0 bottom-0 w-0.5 bg-red-500/60 pointer-events-none z-10"
                                                                     style={{ left: `${todayOffset + dayWidth / 2}px` }}
-                                                                />
+                                                                >
+                                                                    <div className="absolute top-0 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full border-2 border-[#1a1a1a]" />
+                                                                </div>
                                                             )
                                                         }
                                                         return null
@@ -1812,7 +1915,6 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                             const taskEnd = new Date(task.endDate)
                                                             const left = ((taskStart.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth
                                                             const width = Math.max(((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) * dayWidth, dayWidth)
-                                                            const duration = Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24))
                                                             const taskColor = task.color || '#6366f1'
 
                                                             return (
@@ -1828,44 +1930,18 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                             borderWidth: '1px'
                                                                         }}
                                                                         onClick={() => openEditTaskModal(task)}
+                                                                        onMouseEnter={(e) => {
+                                                                            const rect = e.currentTarget.getBoundingClientRect()
+                                                                            setTooltipRect(rect)
+                                                                            setHoveredTaskForTooltip(task)
+                                                                            setTooltipRowIndex(i)
+                                                                        }}
+                                                                        onMouseLeave={() => {
+                                                                            setHoveredTaskForTooltip(null)
+                                                                            setTooltipRect(null)
+                                                                        }}
                                                                     >
                                                                         <span className="text-xs text-white font-medium truncate">{task.text}</span>
-                                                                        {/* Tooltip on hover */}
-                                                                        <div
-                                                                            className={`absolute ${(() => {
-                                                                                const taskIndex = i // Use loop index for basic position logic
-                                                                                return taskIndex < 3 ? 'top-full mt-2' : 'bottom-full mb-2'
-                                                                            })()} left-0 opacity-0 group-hover:opacity-100 transition-opacity z-20`}
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                        >
-                                                                            <div className="bg-[#1a1a1a] border border-white/20 rounded-lg px-3 py-2 shadow-xl min-w-[200px] max-w-[320px]">
-                                                                                <div className="text-sm font-medium text-white mb-1">{task.text}</div>
-                                                                                <div className="text-xs text-white/60">
-                                                                                    {taskStart.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} - {taskEnd.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                                                                </div>
-                                                                                <div className="text-xs text-white/40 mt-1">期限: {duration}日</div>
-                                                                                {task.description && (
-                                                                                    <div className="mt-3 pt-3 border-t border-white/10">
-                                                                                        <div className="text-xs text-white/70 mb-2 font-medium">細分化タスク:</div>
-                                                                                        <div
-                                                                                            className="text-xs text-white/60 max-h-48 overflow-y-auto prose prose-invert prose-sm max-w-none"
-                                                                                            dangerouslySetInnerHTML={{ __html: task.description }}
-                                                                                            onClick={(e) => {
-                                                                                                const target = e.target as HTMLElement
-                                                                                                if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
-                                                                                                    const checkbox = target as HTMLInputElement
-                                                                                                    const checkboxes = Array.from(
-                                                                                                        e.currentTarget.querySelectorAll('input[type="checkbox"]')
-                                                                                                    )
-                                                                                                    const index = checkboxes.indexOf(checkbox)
-                                                                                                    handleSubtaskToggle(task.id, index, checkbox.checked)
-                                                                                                }
-                                                                                            }}
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             )
@@ -2040,510 +2116,45 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             </div>
                         )
                     }
-                </div >
-
                 {/* Milestone Modal */}
-                {
-                    showMilestoneModal && (
-                        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
-                            <div className="flex min-h-full items-center justify-center p-4">
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md relative"
-                                >
-                                    <h2 className="text-xl font-bold mb-6">
-                                        {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
-                                    </h2>
-                                    <form onSubmit={createMilestone} className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={newMilestone.title}
-                                                onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
-                                            <input
-                                                type="date"
-                                                required
-                                                value={newMilestone.date}
-                                                onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                            />
-                                        </div>
-                                        <div className="flex justify-end gap-3 mt-6">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowMilestoneModal(false)}
-                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
-                                            >
-                                                キャンセル
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors whitespace-nowrap"
-                                            >
-                                                {editingItem ? '更新' : '作成'}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </motion.div>
-                            </div>
-                        </div>
-                    )
-                }
-
-
-                {/* Task Modal */}
-                {
-                    showTaskModal && (
-                        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
-                            <div className="flex min-h-full items-center justify-center p-4">
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md relative"
-                                >
-
-                                    <h2 className="text-xl font-bold mb-6">
-                                        {editingItem ? 'タスクを編集' : '新規タスク'}
-                                    </h2>
-                                    <form onSubmit={createTask} className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={newTask.text}
-                                                onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">URL</label>
-                                            <div className="bg-white/5 border border-white/10 rounded-xl flex items-center px-3">
-                                                <LinkIcon className="w-4 h-4 text-white/40 mr-2" />
-                                                <input
-                                                    type="url"
-                                                    value={newTask.url || ""}
-                                                    onChange={(e) => setNewTask({ ...newTask, url: e.target.value })}
-                                                    placeholder="https://example.com"
-                                                    className="w-full bg-transparent border-none h-12 text-white focus:outline-none focus:ring-0"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">詳細説明</label>
-                                            <TaskDescriptionEditor
-                                                content={newTask.description}
-                                                onChange={(content) => setNewTask({ ...newTask, description: content })}
-                                            />
-                                        </div>
-
-                                        {editingItem && editingItem.type === 'task' && (
-                                            <div>
-                                                <label className="block text-sm font-medium text-white/60 mb-2">添付ファイル</label>
-                                                <div className="space-y-3">
-                                                    {taskAttachments.length > 0 && (
-                                                        <div className="grid grid-cols-1 gap-2">
-                                                            {taskAttachments.map((file) => (
-                                                                <div key={file.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg group">
-                                                                    <div className="flex items-center gap-3 overflow-hidden">
-                                                                        <div className="w-8 h-8 rounded bg-indigo-500/20 flex items-center justify-center flex-shrink-0 text-indigo-400">
-                                                                            <FileIcon className="w-4 h-4" />
-                                                                        </div>
-                                                                        <div className="min-w-0">
-                                                                            <div className="text-sm font-medium text-white truncate">{file.name}</div>
-                                                                            <div className="text-xs text-white/40">{(file.size / 1024).toFixed(1)} KB</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <a
-                                                                        href={file.url}
-                                                                        download
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                                                                    >
-                                                                        <Download className="w-4 h-4" />
-                                                                    </a>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    <div className="flex gap-2">
-                                                        <FileUploader
-                                                            taskId={editingItem.id}
-                                                            onUploadComplete={(attachment) => {
-                                                                setTaskAttachments([...taskAttachments, attachment])
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-white/60 mb-2">ステータス</label>
-                                                <select
-                                                    value={newTask.status}
-                                                    onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
-                                                >
-                                                    <option value="todo">未着手</option>
-                                                    <option value="in_progress">進行中</option>
-                                                    <option value="done">完了</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-white/60 mb-2">優先度</label>
-                                                <select
-                                                    value={newTask.priority}
-                                                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
-                                                >
-                                                    <option value="high">高</option>
-                                                    <option value="medium">中</option>
-                                                    <option value="low">低</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/60 mb-2">カラー</label>
-                                            <div className="flex gap-2">
-                                                {['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'].map((color) => (
-                                                    <button
-                                                        key={color}
-                                                        type="button"
-                                                        onClick={() => setNewTask({ ...newTask, color })}
-                                                        className={`w-8 h-8 rounded-lg transition-all ${newTask.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1a1a] scale-110' : 'hover:scale-105'}`}
-                                                        style={{ backgroundColor: color }}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-white/60 mb-2">開始日時</label>
-                                                <input
-                                                    type="datetime-local"
-                                                    value={newTask.startDate}
-                                                    onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-white/60 mb-2">終了日時</label>
-                                                <input
-                                                    type="datetime-local"
-                                                    value={newTask.endDate}
-                                                    onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-end gap-3 mt-6">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowTaskModal(false)}
-                                                className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
-                                            >
-                                                キャンセル
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors whitespace-nowrap"
-                                            >
-                                                {editingItem ? '更新' : '作成'}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </motion.div>
-                            </div>
-                        </div>
-                    )
-                }
-
-                {/* Delete Confirmation Modal */}
-                {
-                    deleteConfirm && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                {showMilestoneModal && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
+                        <div className="flex min-h-full items-center justify-center p-4">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md relative"
                             >
-                                <h2 className="text-xl font-bold mb-4">削除の確認</h2>
-                                <p className="text-white/60 mb-6">
-                                    {deleteConfirm.type === 'task' ? 'タスク' :
-                                        deleteConfirm.type === 'milestone' ? 'マイルストーン' :
-                                            'ワークフロー'}「{deleteConfirm.title}」を削除してもよろしいですか？
-                                    {deleteConfirm.type === 'workflow' && (
-                                        <span className="block mt-2 text-red-400 text-sm">
-                                            ※このテンプレートに含まれるすべてのタスクが削除されます。
-                                        </span>
-                                    )}
-                                </p>
-                                <div className="flex justify-end gap-3">
-                                    <button
-                                        onClick={() => setDeleteConfirm(null)}
-                                        className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
-                                    >
-                                        キャンセル
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (deleteConfirm.type === 'task') {
-                                                handleDeleteTask(deleteConfirm.id)
-                                            } else if (deleteConfirm.type === 'milestone') {
-                                                handleDeleteMilestone(deleteConfirm.id)
-                                            } else if (deleteConfirm.type === 'workflow') {
-                                                handleDeleteWorkflow(deleteConfirm.id)
-                                                setDeleteConfirm(null)
-                                            }
-                                        }}
-                                        className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl font-medium transition-colors whitespace-nowrap"
-                                    >
-                                        削除
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )
-                }
-
-                {/* Share Modal */}
-                {
-                    showShareModal && shareUrl && (
-                        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-6 max-w-md w-full"
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                        <Share2 className="w-5 h-5 text-emerald-400" />
-                                        プロジェクトを共有
-                                    </h3>
-                                    <button
-                                        onClick={() => setShowShareModal(false)}
-                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                                    >
-                                        <Trash2 className="w-5 h-5 text-white/60" />
-                                    </button>
-                                </div>
-
-                                <p className="text-white/60 text-sm mb-4">
-                                    このリンクを共有すると、誰でもプロジェクトを閲覧できます（編集不可）
-                                </p>
-
-                                <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={shareUrl}
-                                            readOnly
-                                            className="flex-1 bg-transparent text-white text-sm outline-none"
-                                        />
-                                        <button
-                                            onClick={copyShareLink}
-                                            className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg transition-colors"
-                                        >
-                                            {copied ? (
-                                                <Check className="w-4 h-4 text-emerald-400" />
-                                            ) : (
-                                                <Copy className="w-4 h-4 text-emerald-400" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setShowShareModal(false)}
-                                        className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white whitespace-nowrap"
-                                    >
-                                        閉じる
-                                    </button>
-                                    <button
-                                        onClick={removeShareLink}
-                                        className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 rounded-xl transition-colors text-rose-300 whitespace-nowrap"
-                                    >
-                                        共有を解除
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )
-                }
-
-                {/* Meeting Log Modal */}
-                {
-                    showMeetingModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-2xl my-8"
-                            >
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-2xl font-bold">議事録作成</h2>
-                                    <button
-                                        onClick={() => {
-                                            setShowMeetingModal(false)
-                                            setAudioBlob(null)
-                                            setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
-                                        }}
-                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <form onSubmit={createMeetingLog} className="space-y-4">
-                                    {/* Recording Section */}
-                                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 overflow-hidden relative">
-                                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                            音声録音
-                                            {isRecording && <span className="text-xs text-red-500 animate-pulse">● 録音中</span>}
-                                        </h3>
-
-                                        {/* AI Status Bar (Notion Style) */}
-                                        {aiStatus !== 'idle' && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: "auto", opacity: 1 }}
-                                                className="absolute top-0 left-0 right-0 bg-indigo-500/10 border-b border-indigo-500/20 backdrop-blur-sm z-10"
-                                            >
-                                                <div className="px-4 py-2 flex items-center gap-3 text-sm text-indigo-300">
-                                                    {aiStatus === 'uploading' && (
-                                                        <>
-                                                            <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                                                            音声をアップロード中...
-                                                        </>
-                                                    )}
-                                                    {aiStatus === 'transcribing' && (
-                                                        <>
-                                                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
-                                                            AIが会話を分析しています...
-                                                        </>
-                                                    )}
-                                                    {aiStatus === 'writing' && (
-                                                        <>
-                                                            <MessageSquare className="w-4 h-4 animate-pulse" />
-                                                            議事録を作成中...
-                                                        </>
-                                                    )}
-                                                    {aiStatus === 'error' && (
-                                                        <div className="flex items-center gap-2 text-red-400 w-full">
-                                                            <X className="w-4 h-4" />
-                                                            <span>{errorMessage}</span>
-                                                            <button
-                                                                onClick={() => audioBlob && processAudioWithAI(audioBlob)}
-                                                                className="ml-auto text-xs bg-red-500/20 hover:bg-red-500/30 px-2 py-1 rounded"
-                                                            >
-                                                                再試行
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        )}
-
-                                        <div className="flex items-center gap-3 mt-2">
-                                            {!isRecording ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={startRecording}
-                                                    disabled={aiStatus !== 'idle' && aiStatus !== 'error'}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all shadow-lg shadow-red-900/20"
-                                                >
-                                                    <div className="w-2 h-2 bg-white rounded-full" />
-                                                    録音開始
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    type="button"
-                                                    onClick={stopRecording}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-white/10"
-                                                >
-                                                    <div className="w-3 h-3 bg-red-500 rounded-sm" />
-                                                    停止してAI要約
-                                                </button>
-                                            )}
-
-                                            {audioBlob && !isRecording && aiStatus === 'idle' && (
-                                                <motion.span
-                                                    initial={{ opacity: 0, x: -10 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    className="text-sm text-emerald-400 flex items-center gap-1"
-                                                >
-                                                    <Check className="w-4 h-4" />
-                                                    AI要約が完了しました
-                                                </motion.span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Form Fields */}
+                                <h2 className="text-xl font-bold mb-6">
+                                    {editingItem ? 'マイルストーンを編集' : '新規マイルストーン'}
+                                </h2>
+                                <form onSubmit={createMilestone} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">タイトル *</label>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">タイトル</label>
                                         <input
                                             type="text"
                                             required
-                                            value={newMeeting.title}
-                                            onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
+                                            value={newMilestone.title}
+                                            onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                            placeholder="会議のタイトル"
                                         />
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">日付 *</label>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">日付</label>
                                         <input
-                                            type="datetime-local"
+                                            type="date"
                                             required
-                                            value={newMeeting.date}
-                                            onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
+                                            value={newMilestone.date}
+                                            onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
                                         />
                                     </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2">内容 *</label>
-                                        <div className="relative">
-                                            <textarea
-                                                required
-                                                value={isRecording ? transcriptPreview : newMeeting.content}
-                                                onChange={(e) => setNewMeeting({ ...newMeeting, content: e.target.value })}
-                                                rows={8}
-                                                className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors resize-none ${isRecording ? 'animate-pulse border-red-500/30' : ''}`}
-                                                placeholder={isRecording ? "話した内容がここに表示されます..." : "議事録の内容を入力してください"}
-                                                readOnly={isRecording}
-                                            />
-                                            {isRecording && (
-                                                <div className="absolute bottom-4 right-4 text-xs text-white/40 flex items-center gap-2">
-                                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                                                    リアルタイム文字起こし中
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-end gap-3 pt-4">
+                                    <div className="flex justify-end gap-3 mt-6">
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                setShowMeetingModal(false)
-                                                setAudioBlob(null)
-                                                setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
+                                                setShowMilestoneModal(false)
+                                                setEditingItem(null)
                                             }}
                                             className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
                                         >
@@ -2553,16 +2164,554 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                             type="submit"
                                             className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors whitespace-nowrap"
                                         >
-                                            保存
+                                            {editingItem ? '更新' : '作成'}
                                         </button>
                                     </div>
                                 </form>
                             </motion.div>
                         </div>
-                    )
-                }
-            </div >
-        </DashboardLayout >
+                    </div>
+                )}
+
+                {/* Task Modal */}
+                {showTaskModal && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md relative"
+                            >
+                                <h2 className="text-xl font-bold mb-6">
+                                    {editingItem ? 'タスクを編集' : '新規タスク'}
+                                </h2>
+                                <form onSubmit={createTask} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">タスク内容</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={newTask.text}
+                                            onChange={(e) => setNewTask({ ...newTask, text: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">URL</label>
+                                        <div className="bg-white/5 border border-white/10 rounded-xl flex items-center px-3">
+                                            <LinkIcon className="w-4 h-4 text-white/40 mr-2" />
+                                            <input
+                                                type="url"
+                                                value={newTask.url || ""}
+                                                onChange={(e) => setNewTask({ ...newTask, url: e.target.value })}
+                                                placeholder="https://example.com"
+                                                className="w-full bg-transparent border-none h-12 text-white focus:outline-none focus:ring-0"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">詳細説明</label>
+                                        <TaskDescriptionEditor
+                                            content={newTask.description}
+                                            onChange={(content) => setNewTask({ ...newTask, description: content })}
+                                        />
+                                    </div>
+
+                                    {editingItem && editingItem.type === 'task' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">添付ファイル</label>
+                                            <div className="space-y-3">
+                                                {taskAttachments.length > 0 && (
+                                                    <div className="grid grid-cols-1 gap-2">
+                                                        {taskAttachments.map((file) => (
+                                                            <div key={file.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg group">
+                                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                                    <div className="w-8 h-8 rounded bg-indigo-500/20 flex items-center justify-center flex-shrink-0 text-indigo-400">
+                                                                        <FileIcon className="w-4 h-4" />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <div className="text-sm font-medium text-white truncate">{file.name}</div>
+                                                                        <div className="text-xs text-white/40">{(file.size / 1024).toFixed(1)} KB</div>
+                                                                    </div>
+                                                                </div>
+                                                                <a
+                                                                    href={file.url}
+                                                                    download
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                </a>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div className="flex gap-2">
+                                                    <FileUploader
+                                                        taskId={editingItem.id}
+                                                        onUploadComplete={(attachment) => {
+                                                            setTaskAttachments([...taskAttachments, attachment])
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">ステータス</label>
+                                            <select
+                                                value={newTask.status}
+                                                onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
+                                            >
+                                                <option value="todo">未着手</option>
+                                                <option value="in_progress">進行中</option>
+                                                <option value="done">完了</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">優先度</label>
+                                            <select
+                                                value={newTask.priority}
+                                                onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [&>option]:bg-[#1a1a1a]"
+                                            >
+                                                <option value="high">高</option>
+                                                <option value="medium">中</option>
+                                                <option value="low">低</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-white/60 mb-2">カラー</label>
+                                        <div className="flex gap-2">
+                                            {['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'].map((color) => (
+                                                <button
+                                                    key={color}
+                                                    type="button"
+                                                    onClick={() => setNewTask({ ...newTask, color })}
+                                                    className={`w-8 h-8 rounded-lg transition-all ${newTask.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#1a1a1a] scale-110' : 'hover:scale-105'}`}
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">開始日時</label>
+                                            <input
+                                                type="datetime-local"
+                                                value={newTask.startDate}
+                                                onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-white/60 mb-2">終了日時</label>
+                                            <input
+                                                type="datetime-local"
+                                                value={newTask.endDate}
+                                                onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-3 mt-6">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowTaskModal(false)
+                                                setEditingItem(null)
+                                            }}
+                                            className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
+                                        >
+                                            キャンセル
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors whitespace-nowrap"
+                                        >
+                                            {editingItem ? '更新' : '作成'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Delete Confirmation Modal */}
+                {deleteConfirm && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                            <div className="flex items-center gap-3 text-red-400 mb-4">
+                                <AlertCircle className="w-6 h-6" />
+                                <h3 className="text-lg font-bold">確認</h3>
+                            </div>
+                            <p className="text-white/80 mb-6">
+                                「{deleteConfirm.title}」を削除してもよろしいですか？この操作は取り消せません。
+                                {deleteConfirm.type === 'workflow' && (
+                                    <span className="block mt-2 text-red-300 text-sm italic">
+                                        ※このテンプレートに含まれるすべてのタスクが削除されます。
+                                    </span>
+                                )}
+                            </p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setDeleteConfirm(null)}
+                                    className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                >
+                                    キャンセル
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (deleteConfirm.type === 'task') {
+                                            await handleDeleteTask(deleteConfirm.id)
+                                        } else if (deleteConfirm.type === 'milestone') {
+                                            try {
+                                                const res = await fetch(`/api/projects/${id}/milestones/${deleteConfirm.id}`, { method: 'DELETE' })
+                                                if (res.ok) fetchProject()
+                                            } catch (e) { console.error(e) }
+                                        } else if (deleteConfirm.type === 'workflow') {
+                                            try {
+                                                const res = await fetch(`/api/projects/${id}/workflows/${deleteConfirm.id}`, { method: 'DELETE' })
+                                                if (res.ok) fetchProject()
+                                            } catch (e) { console.error(e) }
+                                        }
+                                        setDeleteConfirm(null)
+                                    }}
+                                    className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-xl text-sm font-medium transition-colors"
+                                >
+                                    削除する
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Share Modal */}
+                {showShareModal && shareUrl && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-6 max-w-md w-full"
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Share2 className="w-5 h-5 text-emerald-400" />
+                                    プロジェクトを共有
+                                </h3>
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <X className="w-5 h-5 text-white/60" />
+                                </button>
+                            </div>
+
+                            <p className="text-white/60 text-sm mb-4">
+                                このリンクを共有すると、誰でもプロジェクトを閲覧できます（編集不可）
+                            </p>
+
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4">
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={shareUrl}
+                                        readOnly
+                                        className="flex-1 bg-transparent text-white text-sm outline-none"
+                                    />
+                                    <button
+                                        onClick={copyShareLink}
+                                        className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg transition-colors"
+                                    >
+                                        {copied ? (
+                                            <Check className="w-4 h-4 text-emerald-400" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-emerald-400" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white whitespace-nowrap"
+                                >
+                                    閉じる
+                                </button>
+                                <button
+                                    onClick={removeShareLink}
+                                    className="flex-1 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 rounded-xl transition-colors text-rose-300 whitespace-nowrap"
+                                >
+                                    共有を解除
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Meeting Log Modal */}
+                {showMeetingModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-2xl my-8"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold">議事録作成</h2>
+                                <button
+                                    onClick={() => {
+                                        setShowMeetingModal(false)
+                                        setAudioBlob(null)
+                                        setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
+                                    }}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={createMeetingLog} className="space-y-4">
+                                {/* Recording Section */}
+                                <div className="bg-white/5 border border-white/10 rounded-xl p-4 overflow-hidden relative">
+                                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                        音声録音
+                                        {isRecording && <span className="text-xs text-red-500 animate-pulse">● 録音中</span>}
+                                    </h3>
+
+                                    {/* AI Status Bar (Notion Style) */}
+                                    {aiStatus !== 'idle' && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            className="absolute top-0 left-0 right-0 bg-indigo-500/10 border-b border-indigo-500/20 backdrop-blur-sm z-10"
+                                        >
+                                            <div className="px-4 py-2 flex items-center gap-3 text-sm text-indigo-300">
+                                                {aiStatus === 'uploading' && (
+                                                    <>
+                                                        <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                                                        音声をアップロード中...
+                                                    </>
+                                                )}
+                                                {aiStatus === 'transcribing' && (
+                                                    <>
+                                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
+                                                        AIが会話を分析しています...
+                                                    </>
+                                                )}
+                                                {aiStatus === 'writing' && (
+                                                    <>
+                                                        <MessageSquare className="w-4 h-4 animate-pulse" />
+                                                        議事録を作成中...
+                                                    </>
+                                                )}
+                                                {aiStatus === 'error' && (
+                                                    <div className="flex items-center gap-2 text-red-400 w-full">
+                                                        <X className="w-4 h-4" />
+                                                        <span>{errorMessage}</span>
+                                                        <button
+                                                            onClick={() => audioBlob && processAudioWithAI(audioBlob)}
+                                                            className="ml-auto text-xs bg-red-500/20 hover:bg-red-500/30 px-2 py-1 rounded"
+                                                        >
+                                                            再試行
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    <div className="flex items-center gap-3 mt-2">
+                                        {!isRecording ? (
+                                            <button
+                                                type="button"
+                                                onClick={startRecording}
+                                                disabled={aiStatus !== 'idle' && aiStatus !== 'error'}
+                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all shadow-lg shadow-red-900/20"
+                                            >
+                                                <div className="w-2 h-2 bg-white rounded-full" />
+                                                録音開始
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={stopRecording}
+                                                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors border border-white/10"
+                                            >
+                                                <div className="w-3 h-3 bg-red-500 rounded-sm" />
+                                                停止してAI要約
+                                            </button>
+                                        )}
+
+                                        {audioBlob && !isRecording && aiStatus === 'idle' && (
+                                            <motion.span
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                className="text-sm text-emerald-400 flex items-center gap-1"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                                AI要約が完了しました
+                                            </motion.span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Form Fields */}
+                                <div>
+                                    <label className="block text-sm font-medium text-white/60 mb-2">タイトル *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={newMeeting.title}
+                                        onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                        placeholder="会議のタイトル"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-white/60 mb-2">日付 *</label>
+                                    <input
+                                        type="datetime-local"
+                                        required
+                                        value={newMeeting.date}
+                                        onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-white/60 mb-2">内容 *</label>
+                                    <div className="relative">
+                                        <textarea
+                                            required
+                                            value={isRecording ? transcriptPreview : newMeeting.content}
+                                            onChange={(e) => setNewMeeting({ ...newMeeting, content: e.target.value })}
+                                            rows={8}
+                                            className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors resize-none ${isRecording ? 'animate-pulse border-red-500/30' : ''}`}
+                                            placeholder={isRecording ? "話した内容がここに表示されます..." : "議事録の内容を入力してください"}
+                                            readOnly={isRecording}
+                                        />
+                                        {isRecording && (
+                                            <div className="absolute bottom-4 right-4 text-xs text-white/40 flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                                リアルタイム文字起こし中
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowMeetingModal(false)
+                                            setAudioBlob(null)
+                                            setNewMeeting({ title: "", date: "", content: "", audioUrl: "", transcript: "" })
+                                        }}
+                                        className="px-4 py-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
+                                    >
+                                        キャンセル
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors whitespace-nowrap"
+                                    >
+                                        保存
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Timeline Tooltip Portal */}
+                {hoveredTaskForTooltip && tooltipRect && tooltipRowIndex !== null && (
+                    <TimelineTooltip
+                        task={hoveredTaskForTooltip}
+                        rect={tooltipRect}
+                        rowIndex={tooltipRowIndex}
+                    />
+                )}
+            </div>
+        </div>
+        </DashboardLayout>
+    )
+}
+
+// Tooltip Component using Portal
+function TimelineTooltip({ task, rect, rowIndex }: { task: Task, rect: DOMRect, rowIndex: number }) {
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => setMounted(true), [])
+
+    if (!mounted || typeof document === 'undefined') return null
+
+    const taskStart = task.startDate ? new Date(task.startDate) : null
+    const taskEnd = task.endDate ? new Date(task.endDate) : null
+    const duration = (taskStart && taskEnd) ? Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) : 0
+
+    // Threshold for showing below instead of above
+    const showBelow = rect.top < 240
+    const padding = 12
+
+    // Edge detection for horizontal position
+    let leftPos = rect.left
+    const tooltipWidth = 320 // max-w-[320px]
+    if (typeof window !== 'undefined') {
+        if (leftPos + tooltipWidth > window.innerWidth - 16) {
+            leftPos = window.innerWidth - tooltipWidth - 16
+        }
+    }
+    const left = Math.max(16, leftPos)
+    const top = showBelow ? rect.bottom + padding : rect.top - padding
+
+    return createPortal(
+        <div 
+            className="fixed z-[10000] pointer-events-none transition-opacity duration-200"
+            style={{ 
+                left: `${left}px`,
+                top: `${top}px`,
+                transform: showBelow ? 'none' : 'translateY(-100%)'
+            }}
+        >
+            <div className="bg-[#1a1a1a] border border-white/20 rounded-xl px-4 py-3 shadow-[0_0_50px_rgba(0,0,0,0.5)] min-w-[240px] max-w-[320px] animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: task.color || '#6366f1' }} />
+                    <div className="text-sm font-bold text-white leading-tight">{task.text}</div>
+                </div>
+                <div className="space-y-1.5 mb-3">
+                    <div className="flex items-center gap-2 text-[11px] text-white/60">
+                        <Calendar className="w-3 h-3" />
+                        {taskStart?.toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        <span>-</span>
+                        {taskEnd?.toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-indigo-300">
+                        <Clock className="w-3 h-3" />
+                        期間: {duration}日間
+                    </div>
+                </div>
+                {task.description && (
+                    <div className="pt-2 border-t border-white/10">
+                        <div className="text-[10px] text-white/40 mb-1.5 font-medium uppercase tracking-wider">詳細説明:</div>
+                        <div className="text-[11px] text-white/70 max-h-48 overflow-y-auto prose prose-invert prose-sm max-w-none scrollbar-hide"
+                            dangerouslySetInnerHTML={{ __html: task.description }}
+                        />
+                    </div>
+                )}
+                <div className="absolute -bottom-1 left-4 w-2 h-2 bg-[#1a1a1a] border-r border-b border-white/20 rotate-45" style={{ display: showBelow ? 'none' : 'block' }} />
+                <div className="absolute -top-1 left-4 w-2 h-2 bg-[#1a1a1a] border-l border-t border-white/20 rotate-45" style={{ display: showBelow ? 'block' : 'none' }} />
+            </div>
+        </div>,
+        document.body
     )
 }
 

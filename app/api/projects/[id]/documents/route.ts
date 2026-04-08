@@ -7,16 +7,29 @@ export async function GET(
 ) {
     try {
         const { id } = await params
-        const documents = await prisma.projectDocument.findMany({
+        
+        // Fetch project-specific documents
+        const projectDocuments = await prisma.projectDocument.findMany({
             where: {
                 projectId: id
-            },
-            orderBy: {
-                createdAt: 'desc'
             }
         })
 
-        return NextResponse.json(documents)
+        // Fetch attachments associated with tasks in this project
+        const taskAttachments = await prisma.attachment.findMany({
+            where: {
+                task: {
+                    projectId: id
+                }
+            }
+        })
+
+        // Merge and sort by createdAt desc
+        const allDocuments = [...projectDocuments, ...taskAttachments].sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+
+        return NextResponse.json(allDocuments)
     } catch (error) {
         console.error('Failed to fetch documents:', error)
         return NextResponse.json(
