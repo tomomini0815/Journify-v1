@@ -374,14 +374,14 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     const hasTranscript = transcript || interimTranscript
 
     return (
-        <div className="mb-4">
+        <div>
             {/* Tab Switcher */}
-            <div className="mb-3">
-                <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10 w-full sm:w-fit">
+            <div className="mb-2">
+                <div className="flex gap-1 p-1 dashboard-panel-subtle w-full sm:w-fit">
                     <button
                         onClick={() => setActiveTab("journal")}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${activeTab === "journal"
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20"
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-1.5 rounded-md font-medium text-sm transition-all whitespace-nowrap ${activeTab === "journal"
+                            ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/15"
                             : "text-white/50 hover:text-white/80 hover:bg-white/5"
                             }`}
                     >
@@ -391,8 +391,8 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
 
                     <button
                         onClick={() => setActiveTab("meeting")}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${activeTab === "meeting"
-                            ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20"
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-1.5 rounded-md font-medium text-sm transition-all whitespace-nowrap ${activeTab === "meeting"
+                            ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/15"
                             : "text-white/50 hover:text-white/80 hover:bg-white/5"
                             }`}
                     >
@@ -407,7 +407,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                 {activeTab === "journal" ? (
                     <VoiceJournalRecorder compact={true} />
                 ) : (
-                    <div className="relative overflow-hidden rounded-2xl bg-[#0c1425] border border-white/[0.06] shadow-2xl">
+                    <div className="relative overflow-hidden dashboard-panel-subtle">
                         {/* Ambient Glow */}
                         <div className="absolute -top-20 -right-20 w-80 h-80 bg-cyan-500/[0.04] rounded-full blur-[80px]" />
                         <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-blue-500/[0.04] rounded-full blur-[80px]" />

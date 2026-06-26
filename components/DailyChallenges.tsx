@@ -77,7 +77,7 @@ export default function DailyChallenges() {
 
     if (loading) {
         return (
-            <div className="rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-6 backdrop-blur-xl">
+            <div className="dashboard-panel p-4">
                 <div className="animate-pulse">
                     <div className="h-6 bg-white/10 rounded w-1/2 mb-4"></div>
                     <div className="space-y-3">
@@ -91,14 +91,17 @@ export default function DailyChallenges() {
     }
 
     return (
-        <div className="rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-6 backdrop-blur-xl relative overflow-hidden">
+        <div className="dashboard-panel relative overflow-hidden p-4 h-full">
 
 
             {/* Header */}
             <div className="relative z-10 mb-6">
                 <div className="flex items-center gap-2">
                     <Zap className="w-5 h-5 text-emerald-400" />
-                    <h3 className="text-xl font-bold text-white">今日のチャレンジ</h3>
+                    <div>
+                        <p className="dashboard-section-label mb-1">Daily</p>
+                        <h3 className="text-lg font-semibold leading-tight text-white">今日のチャレンジ</h3>
+                    </div>
                 </div>
             </div>
 
@@ -140,9 +143,9 @@ export default function DailyChallenges() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className={`p-4 rounded-xl transition-all ${item.completed
+                        className={`p-3 rounded-lg transition-all ${item.completed
                             ? "bg-emerald-500/20 border border-emerald-500/30"
-                            : "bg-white/5 border border-white/10"
+                            : "bg-white/[0.045] border border-white/[0.08]"
                             }`}
                     >
                         <div className="flex items-center justify-between">

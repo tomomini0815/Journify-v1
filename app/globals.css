@@ -338,4 +338,33 @@ button,
 .tracking-premium {
   letter-spacing: 0.05em;
 }
-
+
+/* Dashboard polish */
+.dashboard-shell {
+  max-width: 1560px;
+  margin-inline: auto;
+}
+
+.dashboard-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+    rgba(8, 13, 23, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.dashboard-panel-subtle {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.dashboard-section-label {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+

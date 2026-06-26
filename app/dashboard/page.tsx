@@ -4,11 +4,10 @@ import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
 import { unstable_cache } from "next/cache"
-import { FileText, Mic, PawPrint } from "lucide-react"
+import { ArrowUpRight, FileText, Mic, PawPrint } from "lucide-react"
 import { mockDb } from "@/lib/mock-db"
 
 import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
-import { DashboardGreeting } from "@/components/DashboardGreeting"
 import Jojo from "@/components/Jojo"
 import DailyChallenges from "@/components/DailyChallenges"
 import { ActiveCompanionDisplay } from "@/components/ActiveCompanionDisplay"
@@ -424,7 +423,7 @@ async function ChartsSection({ userId }: { userId: string }) {
         // Show empty state if no data
         if (happinessData.length === 0 && lifeBalanceData.every((d: any) => d.value === 0)) {
             return (
-                <div className="p-8 text-center bg-white/5 rounded-3xl border border-white/10 mb-8">
+                <div className="dashboard-panel p-8 text-center">
                     <p className="text-white/60 mb-2">まだデータがありません</p>
                     <p className="text-sm text-white/40">ジャーナルを記録すると、ここにチャートが表示されます</p>
                 </div>
@@ -465,18 +464,21 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
         .slice(0, 3)
 
     return (
-        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+        <div className="dashboard-panel p-4 h-full">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-xl font-bold mb-1">最近の記録</h3>
+                    <p className="dashboard-section-label mb-1">Journal</p>
+                    <h3 className="text-lg font-semibold leading-tight">最近の記録</h3>
                     <p className="text-white/60 text-sm">最新のエントリー</p>
                 </div>
                 <Link
                     href="/journal"
                     prefetch={true}
-                    className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                    aria-label="最近の記録をすべて表示"
+                    title="すべて表示"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-emerald-300 transition-colors hover:border-emerald-300/25 hover:bg-emerald-400/10 hover:text-emerald-200"
                 >
-                    すべて表示 →
+                    <ArrowUpRight className="h-4 w-4" />
                 </Link>
             </div>
 
@@ -488,7 +490,7 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
                         className="block group"
                     >
                         <div
-                            className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border border-white/5 group-hover:border-emerald-500/30"
+                            className="p-3 rounded-lg bg-white/[0.045] hover:bg-white/[0.075] transition-colors cursor-pointer border border-white/[0.06] group-hover:border-emerald-500/30"
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2 overflow-hidden">
@@ -517,18 +519,21 @@ async function GoalProgressSection({ userId }: { userId: string }) {
     const [, goals] = await getCachedGoalData(userId)
 
     return (
-        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+        <div className="dashboard-panel p-4 h-full">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-xl font-bold mb-1">目標の進捗</h3>
+                    <p className="dashboard-section-label mb-1">Goals</p>
+                    <h3 className="text-lg font-semibold leading-tight">目標の進捗</h3>
                     <p className="text-white/60 text-sm">達成への道のり</p>
                 </div>
                 <Link
                     href="/goals"
                     prefetch={true}
-                    className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                    aria-label="目標をすべて表示"
+                    title="すべて表示"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-emerald-300 transition-colors hover:border-emerald-300/25 hover:bg-emerald-400/10 hover:text-emerald-200"
                 >
-                    すべて表示 →
+                    <ArrowUpRight className="h-4 w-4" />
                 </Link>
             </div>
 
@@ -697,22 +702,25 @@ export default async function DashboardPage() {
 
     return (
         <DashboardLayout>
-            {/* Welcome Section */}
-            <DashboardGreeting />
+            <div className="dashboard-shell space-y-4">
+            <section className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.55fr)]">
+                <div className="dashboard-panel p-4 sm:p-5">
+                    <Suspense fallback={null}>
+                        <VoiceRecordingSectionWrapper userId={user.id} />
+                    </Suspense>
+                </div>
 
-
-
-
-
-            {/* Voice Recording Section with Tab Switcher */}
-            <Suspense fallback={null}>
-                <VoiceRecordingSectionWrapper userId={user.id} />
-            </Suspense>
-
-            {/* Stats Cards */}
-            <Suspense fallback={<StatsSkeleton />}>
-                <StatsSection userId={user.id} />
-            </Suspense>
+                <div className="dashboard-panel p-4 sm:p-5">
+                    <div className="mb-3">
+                        <p className="dashboard-section-label mb-1">Summary</p>
+                        <h2 className="text-lg font-semibold leading-tight text-white">活動サマリー</h2>
+                    </div>
+                    {/* Stats Cards */}
+                    <Suspense fallback={<StatsSkeleton />}>
+                        <StatsSection userId={user.id} />
+                    </Suspense>
+                </div>
+            </section>
 
             {/* Charts Grid */}
             <Suspense fallback={<ChartsSkeleton />}>
@@ -720,39 +728,40 @@ export default async function DashboardPage() {
             </Suspense>
 
             {/* Tasks, Goals, Recent Journals, and Daily Challenges (Reordered) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-                <Suspense fallback={<div className="h-48 bg-white/5 rounded-3xl animate-pulse" />}>
-                    <TasksSection userId={user.id} />
-                </Suspense>
-                <Suspense fallback={<GoalProgressSkeleton />}>
-                    <GoalProgressSection userId={user.id} />
-                </Suspense>
-                <Suspense fallback={<RecentJournalsSkeleton />}>
-                    <RecentJournalsSection userId={user.id} />
-                </Suspense>
-                <DailyChallenges />
-            </div>
+            <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+                <div className="xl:col-span-5">
+                    <Suspense fallback={<div className="h-96 dashboard-panel animate-pulse" />}>
+                        <TasksSection userId={user.id} />
+                    </Suspense>
+                </div>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 xl:col-span-7">
+                    <Suspense fallback={<GoalProgressSkeleton />}>
+                        <GoalProgressSection userId={user.id} />
+                    </Suspense>
+                    <Suspense fallback={<RecentJournalsSkeleton />}>
+                        <RecentJournalsSection userId={user.id} />
+                    </Suspense>
+                    <DailyChallenges />
+                </div>
+            </section>
 
 
             {/* Pet Adventure Link */}
             {(settings?.enableAdventure ?? true) && (
-                <div className="mb-8">
+                <div>
                     <Link
                         href="/adventure"
-                        className="group relative block w-full overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 border border-white/10 p-1 transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-emerald-500/10"
+                        className="group dashboard-panel relative block w-full overflow-hidden p-4 transition-colors hover:border-emerald-400/30"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                        <div className="relative flex flex-col md:flex-row md:items-center justify-between p-6 gap-4">
+                        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
-                                <div className="relative w-16 h-16 shrink-0 rounded-2xl bg-black/60 border border-white/20 flex items-center justify-center overflow-hidden group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-white/5">
-                                    <PawPrint className="w-8 h-8 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" />
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
+                                <div className="relative w-12 h-12 shrink-0 rounded-lg bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center overflow-hidden">
+                                    <PawPrint className="w-6 h-6 text-emerald-200" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                                    <h3 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
                                         PET ADVENTURE
-                                        <span className="text-xs font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">NEW</span>
+                                        <span className="text-xs font-semibold bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">NEW</span>
                                     </h3>
                                     <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
                                         クリスタルを集めて、かわいいペットを育てよう！お世話や冒険で絆が深まります。
@@ -760,12 +769,12 @@ export default async function DashboardPage() {
                                 </div>
                             </div>
 
-                            <div className="hidden md:flex w-10 h-10 rounded-full bg-white/5 border border-white/10 items-center justify-center group-hover:bg-emerald-500/20 group-hover:border-emerald-500/50 group-hover:text-emerald-300 transition-all">
+                            <div className="hidden md:flex w-9 h-9 rounded-lg bg-white/5 border border-white/10 items-center justify-center group-hover:bg-emerald-500/15 group-hover:border-emerald-500/40 group-hover:text-emerald-300 transition-all">
                                 →
                             </div>
 
                             {/* Mobile arrow */}
-                            <div className="md:hidden flex items-center justify-end text-emerald-400 font-bold text-sm">
+                            <div className="md:hidden flex items-center justify-end text-emerald-300 font-semibold text-sm">
                                 ペットハウスに行く →
                             </div>
                         </div>
@@ -775,6 +784,7 @@ export default async function DashboardPage() {
 
             {/* Jojo AI Mascot */}
             {(settings?.showJojo ?? true) && <Jojo userId={user.id} />}
-        </DashboardLayout >
+            </div>
+        </DashboardLayout>
     )
 }

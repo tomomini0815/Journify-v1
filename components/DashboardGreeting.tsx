@@ -50,7 +50,11 @@ function pickRandom<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)]
 }
 
-export function DashboardGreeting() {
+interface DashboardGreetingProps {
+    variant?: "page" | "header"
+}
+
+export function DashboardGreeting({ variant = "page" }: DashboardGreetingProps) {
     const [greeting, setGreeting] = useState({ title: "", message: "" })
 
     useEffect(() => {
@@ -66,19 +70,35 @@ export function DashboardGreeting() {
         }
     }, [])
 
-    if (!greeting.title) return <div className="h-20" /> // Loading placeholder
+    if (!greeting.title) return <div className={variant === "header" ? "h-9" : "h-16"} /> // Loading placeholder
+
+    if (variant === "header") {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="min-w-0"
+            >
+                <div className="flex items-center gap-2">
+                    <h1 className="truncate text-base font-semibold leading-tight text-white">{greeting.title}</h1>
+                </div>
+                <p className="mt-0.5 max-w-[760px] truncate text-xs leading-5 text-white/48">{greeting.message}</p>
+            </motion.div>
+        )
+    }
 
     return (
         <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mb-8"
+            className="mb-0"
         >
             <div className="flex items-center gap-4 mb-2">
-                <h1 className="text-[28px] font-bold">{greeting.title}</h1>
+                <h1 className="text-[23px] font-semibold leading-tight tracking-normal text-white">{greeting.title}</h1>
             </div>
-            <p className="text-white/60">{greeting.message}</p>
+            <p className="max-w-3xl text-sm leading-5 text-white/56">{greeting.message}</p>
         </motion.div>
     )
 }

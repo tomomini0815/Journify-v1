@@ -8,6 +8,7 @@ import { Home, BookOpen, Target, User, LogOut, Menu, CheckSquare, Sparkles, Brie
 import { cn } from "@/lib/utils"
 import NotificationBell from "@/components/NotificationBell"
 import { WeatherWidget } from "@/components/WeatherWidget"
+import { DashboardGreeting } from "@/components/DashboardGreeting"
 
 interface DashboardLayoutProps {
     children: ReactNode
@@ -176,19 +177,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     href={item.href}
                                     prefetch={true}
                                     className={cn(
-                                        "group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all relative",
+                                        "group relative flex items-center overflow-hidden px-3 py-3 text-sm font-medium rounded-xl transition-all",
                                         isActive
-                                            ? "text-white bg-white/10"
+                                            ? "text-white bg-emerald-400/12 border border-emerald-300/12 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]"
                                             : "text-white/60 hover:text-white hover:bg-white/5"
                                     )}
                                 >
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="activeNav"
-                                            className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-xl border border-white/10"
-                                            transition={{ type: "spring", bounce: 0.2, duration: 0.2 }}
-                                        />
-                                    )}
                                     <Icon className="mr-3 flex-shrink-0 h-5 w-5 relative z-10" />
                                     <span className="relative z-10">{item.name}</span>
                                 </Link>
@@ -412,12 +406,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <main className="md:pl-64 pt-16 md:pt-0 flex-1">
                 {/* Main Content Header with Notification - Desktop Only */}
                 <div className="hidden md:block sticky top-0 z-20 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/10">
-                    <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-end gap-4">
-                        <WeatherWidget />
-                        <NotificationBell />
+                    <div className="px-4 sm:px-5 lg:px-6 py-3 flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                            {pathname === "/dashboard" ? <DashboardGreeting variant="header" /> : null}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-3">
+                            <WeatherWidget />
+                            <NotificationBell />
+                        </div>
                     </div>
                 </div>
-                <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-8">
+                <div className="relative z-10 px-4 sm:px-5 lg:px-6 py-5">
                     {children}
                 </div>
             </main>

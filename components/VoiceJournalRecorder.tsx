@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
+import { DashboardMoodCheckIn } from "@/components/DashboardMoodCheckIn";
 
 interface VoiceJournalRecorderProps {
     onComplete?: (journalId: string) => void;
@@ -538,7 +539,7 @@ export default function VoiceJournalRecorder({
 
     if (compact) {
         return (
-            <div className="rounded-3xl bg-[#0F172A] border border-white/5 p-6 shadow-2xl overflow-hidden relative">
+            <div className="dashboard-panel-subtle p-3 overflow-hidden relative">
                 {/* Background ambient glow */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
@@ -546,19 +547,24 @@ export default function VoiceJournalRecorder({
                 {!audioBlob && !isRecording ? (
                     // Initial State
                     <>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-3">
                             <div>
-                                <h3 className="text-xl font-bold text-white mb-1">音声ジャーナル</h3>
+                                <h3 className="text-base font-semibold text-white mb-0.5">音声ジャーナル</h3>
                                 <p className="text-white/40 text-sm">小さな記録が、見える景色を変えていく</p>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleMicButtonClick()}
-                                    className="w-14 h-14 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
+                                    className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
+                                    aria-label="録音を開始"
                                 >
-                                    <Mic className="w-6 h-6" />
+                                    <Mic className="w-5 h-5" />
                                 </button>
                             </div>
+                        </div>
+
+                        <div className="mt-3">
+                            <DashboardMoodCheckIn />
                         </div>
 
                         {/* Inline Mic Error */}
@@ -618,7 +624,7 @@ export default function VoiceJournalRecorder({
                         </p>
 
                         {/* Visualizer & Transcript Area */}
-                        <div className={`bg-white/5 rounded-2xl pt-2 px-4 pb-4 min-h-[120px] max-h-[220px] overflow-y-auto border relative transition-all ${!isRecording && audioBlob ? "border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]" : "border-white/5"
+                        <div className={`bg-white/[0.045] rounded-lg pt-2 px-4 pb-3 min-h-[96px] max-h-[180px] overflow-y-auto border relative transition-all ${!isRecording && audioBlob ? "border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]" : "border-white/5"
                             }`}>
                             {isRecording && (
                                 <div className="absolute top-0 left-0 w-full h-6 overflow-hidden px-4 pt-1">

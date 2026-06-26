@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Calendar, ChevronRight, CheckCircle2, AlertCircle, Plus, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, CheckCircle2, Loader2, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 type Task = {
@@ -163,29 +163,31 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
     };
 
     return (
-        <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col h-full">
+        <div className="dashboard-panel p-4 flex flex-col h-full min-h-[380px]">
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h3 className="text-xl font-bold mb-1">タスク一覧</h3>
-                    <p className="text-white/60 text-sm">予定を確認</p>
+                    <p className="dashboard-section-label mb-1">Tasks</p>
+                    <h3 className="text-lg font-semibold leading-tight">タスク一覧</h3>
                 </div>
                 <Link
                     href="/tasks"
                     prefetch={true}
-                    className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1"
+                    aria-label="タスクをすべて表示"
+                    title="すべて表示"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-emerald-300 transition-colors hover:border-emerald-300/25 hover:bg-emerald-400/10 hover:text-emerald-200"
                 >
-                    すべて表示 <ChevronRight className="w-3 h-3" />
+                    <ArrowUpRight className="h-4 w-4" />
                 </Link>
             </div>
 
             {/* Tabs */}
-            <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 mb-4">
+            <div className="flex p-1 dashboard-panel-subtle mb-4">
                 {(['today', 'week', 'month'] as const).map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
-                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/15"
                             : "text-white/40 hover:text-white hover:bg-white/5"
                             }`}
                     >
@@ -202,7 +204,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
                     disabled={isAdding}
-                    className="pr-12 bg-white/5 border-white/10 focus:border-emerald-500/50"
+                    className="pr-12 rounded-lg bg-white/[0.055] border-white/10 focus:border-emerald-500/50"
                 />
                 <button
                     type="submit"
@@ -242,7 +244,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                         <div
                             key={task.id}
                             onClick={() => handleTaskClick(task)}
-                            className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 hover:bg-white/10 transition-colors cursor-pointer group"
+                            className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.045] border border-white/[0.06] hover:border-emerald-500/30 hover:bg-white/[0.075] transition-colors cursor-pointer group"
                         >
                             <div className={`w-3 h-3 rounded-full flex-shrink-0 ${task.priority === 'urgent' ? 'bg-red-500 shadow-red-500/50 animate-pulse' :
                                 task.priority === 'high' ? 'bg-orange-500 shadow-orange-500/50' :

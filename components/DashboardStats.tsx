@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { LucideIcon } from "lucide-react"
+import { BookOpen, Calendar, LucideIcon, Target, TrendingUp } from "lucide-react"
 
 interface StatCardProps {
     icon: LucideIcon
@@ -17,24 +17,21 @@ export function StatCard({ icon: Icon, label, value, trend, delay }: StatCardPro
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay }}
-            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all"
+            className="dashboard-panel-subtle p-3 transition-colors hover:bg-white/[0.07]"
         >
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                {/* Left column: Icon and Value and Trend (Mobile) */}
-                <div className="flex items-center gap-3 flex-1">
-                    <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-xl flex-shrink-0">
-                        <Icon className="w-5 h-5 text-emerald-400" />
+            <div className="flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-400/10">
+                            <Icon className="w-4 h-4 text-emerald-400" />
+                        </div>
+                        <p className="min-w-0 text-[11px] font-semibold leading-tight text-white/62">{label}</p>
                     </div>
-                    <div className="flex items-baseline gap-2">
-                        <p className="text-2xl font-bold">{value}</p>
-                        <span className="sm:hidden text-xs text-emerald-400 font-medium">{trend}</span>
-                    </div>
+                    <span className="shrink-0 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-xs font-semibold text-emerald-300">{trend}</span>
                 </div>
 
-                {/* Right column: Trend (Desktop) and Label */}
-                <div className="text-left sm:text-right w-full sm:w-auto pl-[3.25rem] sm:pl-0">
-                    <span className="hidden sm:block text-xs text-emerald-400 font-medium mb-1">{trend}</span>
-                    <p className="text-xs text-white/60 whitespace-nowrap">{label}</p>
+                <div>
+                    <p className="text-2xl font-semibold leading-none tracking-normal text-white">{value}</p>
                 </div>
             </div>
         </motion.div>
@@ -55,10 +52,8 @@ interface DashboardStatsProps {
 }
 
 export function DashboardStats({ stats }: DashboardStatsProps) {
-    const { BookOpen, Target, TrendingUp, Calendar } = require("lucide-react")
-
     return (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-3 lg:gap-4">
             <StatCard
                 icon={BookOpen}
                 label="統計記録数"

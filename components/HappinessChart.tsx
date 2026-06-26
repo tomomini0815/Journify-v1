@@ -194,12 +194,13 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-lg"
+            className="dashboard-panel p-4 sm:p-5"
         >
             <div className="flex flex-col gap-4 mb-6">
                 <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                     <div>
-                        <h3 className="text-xl font-bold mb-1 text-white">幸福度の推移</h3>
+                        <p className="dashboard-section-label mb-1">Trend</p>
+                        <h3 className="text-lg font-semibold leading-tight text-white">幸福度の推移</h3>
                         <p className="text-white/60 text-sm">時間とともに心の状態を追跡</p>
                     </div>
 

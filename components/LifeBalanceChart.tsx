@@ -207,11 +207,12 @@ export function LifeBalanceChart({ data: initialData }: { data?: { category: str
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-lg"
+            className="dashboard-panel p-4 sm:p-5"
         >
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h3 className="text-xl font-bold mb-1 text-white">
+                    <p className="dashboard-section-label mb-1">Balance</p>
+                    <h3 className="text-lg font-semibold leading-tight text-white">
                         ライフバランス
                     </h3>
                     <p className="text-white/60 text-sm">9つの項目で人生の充実度を可視化</p>
