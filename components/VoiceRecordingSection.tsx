@@ -416,9 +416,9 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                         <div className="relative z-10 p-4 sm:p-5">
 
                             {/* Header */}
-                            <div className="flex items-center justify-between gap-3 mb-2">
+                            <div className="flex items-center justify-between gap-3 mb-1">
                                 <div className="flex items-center gap-3">
-                                    <h3 className="text-lg font-bold text-white/90 tracking-tight">
+                                    <h3 className="text-lg font-bold leading-tight text-white/90 tracking-tight">
                                         議事録を録音
                                     </h3>
                                 </div>
@@ -456,7 +456,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                     )}
                                 </div>
                             </div>
-                            <p className="text-white/40 text-xs mb-3">
+                            <p className="text-white/40 text-xs leading-tight mb-2">
                                 {isRecording ? (isAndroid ? "音声を録音中... 停止後にAIが文字起こしします" : "会議の音声を聴いています...") : isTranscribing ? "AIが文字起こし中..." : "マイクボタンをタップして開始してください"}
                             </p>
 

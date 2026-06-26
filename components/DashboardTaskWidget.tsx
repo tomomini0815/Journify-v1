@@ -159,14 +159,14 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
             </div>
 
             {/* Tabs */}
-            <div className="flex p-1 dashboard-panel-subtle mb-4">
+            <div className="flex gap-1 p-1 dashboard-panel-subtle mb-4">
                 {(['today', 'week', 'month'] as const).map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
-                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/15"
-                            : "text-white/40 hover:text-white hover:bg-white/5"
+                        className={`flex-1 flex items-center justify-center px-4 py-1.5 rounded-md font-medium text-sm transition-all whitespace-nowrap ${activeTab === tab
+                            ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/15"
+                            : "text-white/50 hover:text-white/80 hover:bg-white/5"
                             }`}
                     >
                         {tab === 'today' ? '今日' : tab === 'week' ? '今週' : '今月'}
@@ -187,12 +187,12 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                 <button
                     type="submit"
                     disabled={!newTaskTitle.trim() || isAdding}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-emerald-400 hover:text-emerald-300 disabled:opacity-30 transition-all z-20"
+                    className="absolute right-1.5 top-1/2 z-20 flex h-[calc(100%-12px)] min-h-8 w-12 -translate-y-1/2 items-center justify-center rounded-md bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-black shadow-lg shadow-emerald-500/25 ring-1 ring-emerald-200/40 transition-all hover:shadow-emerald-400/40 disabled:opacity-40 disabled:shadow-none"
                 >
                     {isAdding ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-5 h-5" />
                     )}
                 </button>
             </form>

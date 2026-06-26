@@ -308,21 +308,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Mobile header */}
             <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white/5 backdrop-blur-xl border-b border-white/10">
-                <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center justify-between px-3 py-2">
                     <div className="flex min-w-0 items-center gap-3">
                         <Link href="/" className="shrink-0">
-                            <img src="/journify-logo.png" alt="Journify" className="h-10 w-auto" />
+                            <img src="/journify-logo.png" alt="Journify" className="h-9 w-auto" />
                         </Link>
-                        {pathname !== "/dashboard" && currentMeta && (
-                            <h1 className="truncate text-base font-semibold leading-tight text-white">{currentMeta.title}</h1>
-                        )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         <WeatherWidget />
                         <NotificationBell />
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
                         >
                             <Menu className="w-6 h-6" />
                         </button>
@@ -446,7 +443,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
 
             {/* Main content */}
-            <main className="md:pl-64 pt-16 md:pt-0 flex-1">
+            <main className="md:pl-64 pt-[52px] md:pt-0 flex-1">
                 {/* Main Content Header with Notification - Desktop Only */}
                 <div className="hidden md:block sticky top-0 z-20 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/10">
                     <div className="px-4 sm:px-5 lg:px-6 py-3 flex items-center justify-between gap-4">
@@ -468,7 +465,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </div>
                     </div>
                 </div>
-                <div className="relative z-10 px-4 sm:px-5 lg:px-6 py-5">
+                <div className="relative z-10 px-3 py-3 sm:px-5 sm:py-5 lg:px-6">
                     {children}
                 </div>
             </main>

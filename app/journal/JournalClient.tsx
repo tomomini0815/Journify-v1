@@ -183,10 +183,10 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="flex flex-col gap-4 mb-6"
+                className="flex flex-col gap-3 mb-4 md:gap-4 md:mb-6"
             >
                 {/* Tabs */}
-                <div className="border-b border-white/10 mb-4">
+                <div className="border-b border-white/10 mb-2 md:mb-4">
                     <UnifiedTabs
                         tabs={[
                             {
@@ -228,17 +228,17 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                 {activeTab !== "mindmap" && (
                     <>
                         {/* Filter Buttons and New Entry Button */}
-                        <div className="flex flex-col gap-2 relative z-20 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="flex items-center gap-2 relative z-20 overflow-x-auto pb-1 no-scrollbar lg:overflow-visible lg:justify-between lg:pb-0">
+                            <div className="flex min-w-0 flex-1 items-center gap-2">
                                 {/* Search */}
-                                <div className="relative sm:w-72 lg:w-80">
+                                <div className="relative min-w-[150px] flex-1 sm:min-w-0 sm:w-72 lg:w-80">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                                     <Input
                                         type="text"
                                         placeholder={activeTab === "written" ? "ジャーナルを検索..." : "音声ジャーナルを検索..."}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="h-10 rounded-xl border-white/10 bg-white/5 pl-9 text-sm focus:border-emerald-400"
+                                        className="h-9 rounded-xl border-white/10 bg-white/5 pl-9 pr-3 text-sm focus:border-emerald-400 md:h-10"
                                     />
                                 </div>
                                 {/* Date Filter */}
@@ -249,13 +249,13 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                             setShowDateFilter(!showDateFilter)
                                             setShowContentFilter(false)
                                         }}
-                                        className={`h-10 bg-white/5 border-white/10 hover:bg-white/10 rounded-xl ${showDateFilter || dateRange.start || dateRange.end ? 'border-emerald-500/50 text-emerald-400' : ''}`}
+                                        className={`h-9 w-9 shrink-0 rounded-xl border-white/10 bg-white/5 px-0 [font-size:0] hover:bg-white/10 sm:w-auto sm:px-4 sm:text-sm md:h-10 ${showDateFilter || dateRange.start || dateRange.end ? 'border-emerald-500/50 text-emerald-400' : ''}`}
                                     >
-                                        <Calendar className="w-4 h-4 mr-2" />
+                                        <Calendar className="w-4 h-4 sm:mr-2" />
                                         日付
                                     </Button>
                                     {showDateFilter && (
-                                        <div className="absolute top-full left-0 mt-2 p-4 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl w-72 z-30">
+                                        <div className="absolute top-full left-0 mt-2 w-[calc(100vw-1.5rem)] max-w-72 p-3 md:p-4 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-30">
                                             <div className="space-y-4">
                                                 <div>
                                                     <label className="text-xs text-white/60 mb-1 block">開始日</label>
@@ -299,13 +299,13 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                             setShowContentFilter(!showContentFilter)
                                             setShowDateFilter(false)
                                         }}
-                                        className={`h-10 bg-white/5 border-white/10 hover:bg-white/10 rounded-xl ${showContentFilter || selectedMoods.length > 0 || selectedTags.length > 0 ? 'border-emerald-500/50 text-emerald-400' : ''}`}
+                                        className={`h-9 w-9 shrink-0 rounded-xl border-white/10 bg-white/5 px-0 [font-size:0] hover:bg-white/10 sm:w-auto sm:px-4 sm:text-sm md:h-10 ${showContentFilter || selectedMoods.length > 0 || selectedTags.length > 0 ? 'border-emerald-500/50 text-emerald-400' : ''}`}
                                     >
-                                        <Filter className="w-4 h-4 mr-2" />
+                                        <Filter className="w-4 h-4 sm:mr-2" />
                                         フィルター
                                     </Button>
                                     {showContentFilter && (
-                                        <div className="absolute top-full left-0 mt-2 p-4 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl w-72 z-30">
+                                        <div className="absolute top-full right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-72 p-3 md:p-4 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-30">
                                             <div className="space-y-4">
                                                 {/* Mood Filter */}
                                                 <div>
@@ -367,15 +367,15 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                             </div>
 
                             {/* New Entry Button */}
-                            <Link href={activeTab === "written" ? "/journal/new" : "/journal/new?mode=voice"}>
+                            <Link href={activeTab === "written" ? "/journal/new" : "/journal/new?mode=voice&open=post"} className="shrink-0">
                                 {activeTab === "written" ? (
-                                    <Button className="h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600">
-                                        <Plus className="w-5 h-5 mr-2" />
+                                    <Button className="h-9 w-9 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-0 [font-size:0] hover:from-emerald-600 hover:to-cyan-600 sm:w-auto sm:px-4 sm:text-sm md:h-10">
+                                        <Plus className="w-5 h-5 sm:mr-2" />
                                         新規記録
                                     </Button>
                                 ) : (
-                                    <Button className="h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 shadow-lg shadow-cyan-500/20">
-                                        <Mic className="w-5 h-5 mr-2" />
+                                    <Button className="h-9 w-9 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-0 [font-size:0] hover:from-cyan-600 hover:to-emerald-600 shadow-lg shadow-cyan-500/20 sm:w-auto sm:px-4 sm:text-sm md:h-10">
+                                        <Mic className="w-5 h-5 sm:mr-2" />
                                         音声記録
                                     </Button>
                                 )}
@@ -399,7 +399,7 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                     <MindMapViewer initialData={selectedMindMap} />
                 </motion.div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                     {activeTab === "written" ? (
                         // Written Journals Display
                         sortedMonths.map((month, monthIndex) => {
@@ -414,12 +414,12 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: monthIndex * 0.1 }}
-                                    className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden"
+                                    className="bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden"
                                 >
                                     {/* Month Header */}
                                     <div
                                         onClick={() => toggleMonth(month)}
-                                        className="flex items-center justify-between p-6 cursor-pointer hover:bg-white/5 transition-colors"
+                                        className="flex items-center justify-between p-3 md:p-6 cursor-pointer hover:bg-white/5 transition-colors"
                                     >
                                         <div className="flex items-center gap-2 md:gap-4 whitespace-nowrap">
                                             <h2 className="text-base md:text-xl font-bold">{formatMonthHeader(month)}</h2>
@@ -444,14 +444,14 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                                 exit={{ height: 0, opacity: 0 }}
                                                 transition={{ duration: 0.3 }}
                                             >
-                                                <div className="p-6 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                <div className="p-3 pt-0 md:p-6 md:pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                                                     {monthJournals.map((entry) => (
                                                         <Link href={`/journal/${entry.id}`} key={entry.id}>
-                                                            <div className="bg-black/20 backdrop-blur-sm border border-white/5 rounded-2xl p-5 hover:bg-white/5 transition-all cursor-pointer group h-full flex flex-col">
+                                                            <div className="bg-black/20 backdrop-blur-sm border border-white/5 rounded-xl md:rounded-2xl p-3 md:p-5 hover:bg-white/5 transition-all cursor-pointer group h-full flex flex-col">
                                                                 {/* Header */}
-                                                                <div className="flex items-start justify-between mb-3">
+                                                                <div className="flex items-start justify-between mb-2 md:mb-3">
                                                                     <div className="flex-1">
-                                                                        <h3 className="font-semibold text-lg mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">
+                                                                        <h3 className="font-semibold text-base md:text-lg mb-0.5 md:mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">
                                                                             {entry.title}
                                                                         </h3>
                                                                         <p className="text-sm text-white/60">
@@ -469,12 +469,12 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                                                 </div>
 
                                                                 {/* Preview */}
-                                                                <p className="text-white/70 text-sm mb-4 line-clamp-3 flex-1">
+                                                                <p className="text-white/70 text-sm mb-3 md:mb-4 line-clamp-2 md:line-clamp-3 flex-1">
                                                                     {stripHtml(entry.content).substring(0, 100)}...
                                                                 </p>
 
                                                                 {/* Tags */}
-                                                                <div className="flex flex-wrap gap-2 mt-auto">
+                                                                <div className="flex flex-wrap gap-1.5 md:gap-2 mt-auto">
                                                                     {entry.tags.map((tag) => (
                                                                         <span
                                                                             key={tag}
@@ -508,12 +508,12 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: monthIndex * 0.1 }}
-                                    className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden"
+                                    className="bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden"
                                 >
                                     {/* Month Header */}
                                     <div
                                         onClick={() => toggleMonth(month)}
-                                        className="flex items-center justify-between p-6 cursor-pointer hover:bg-white/5 transition-colors"
+                                        className="flex items-center justify-between p-3 md:p-6 cursor-pointer hover:bg-white/5 transition-colors"
                                     >
                                         <div className="flex items-center gap-2 md:gap-4 whitespace-nowrap">
                                             <h2 className="text-base md:text-xl font-bold">{formatMonthHeader(month)}</h2>
@@ -540,12 +540,12 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                                 exit={{ height: 0, opacity: 0 }}
                                                 transition={{ duration: 0.3 }}
                                             >
-                                                <div className="p-6 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                <div className="p-3 pt-0 md:p-6 md:pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                                                     {monthVoiceJournals.map((vj) => (
                                                         <Link href={`/voice-journal/${vj.id}`} key={vj.id}>
-                                                            <div className="bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 rounded-2xl p-5 hover:border-cyan-600/40 transition-all cursor-pointer group h-full flex flex-col">
+                                                            <div className="bg-gradient-to-br from-cyan-600/10 to-emerald-500/10 border border-cyan-600/20 rounded-xl md:rounded-2xl p-3 md:p-5 hover:border-cyan-600/40 transition-all cursor-pointer group h-full flex flex-col">
                                                                 {/* Header */}
-                                                                <div className="flex items-start justify-between mb-3">
+                                                                <div className="flex items-start justify-between mb-2 md:mb-3">
                                                                     <div className="flex items-center gap-2 flex-1">
                                                                         <div className="flex items-center justify-center flex-shrink-0">
                                                                             <Mic className="w-4 h-4 text-emerald-400" />
@@ -568,14 +568,14 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                                                 </div>
 
                                                                 {/* Preview */}
-                                                                <p className="text-white/70 text-sm mb-4 line-clamp-3 flex-1">
+                                                                <p className="text-white/70 text-sm mb-3 md:mb-4 line-clamp-2 md:line-clamp-3 flex-1">
                                                                     {vj.transcript}
                                                                 </p>
 
                                                                 {/* Tags */}
                                                                 <div className="mt-auto">
                                                                     {vj.tags && vj.tags.length > 0 && (
-                                                                        <div className="flex flex-wrap gap-2 mb-2">
+                                                                        <div className="flex flex-wrap gap-1.5 md:gap-2 mb-2">
                                                                             {vj.tags.map((tag, i) => (
                                                                                 <span
                                                                                     key={i}

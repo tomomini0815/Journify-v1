@@ -13,6 +13,8 @@ interface VoiceJournalRecorderProps {
     compact?: boolean;
     mood?: number;
     tags?: string[];
+    showTags?: boolean;
+    initialPostRecording?: boolean;
 }
 
 const DEFAULT_TAGS: string[] = [];
@@ -33,7 +35,9 @@ export default function VoiceJournalRecorder({
     onComplete,
     compact = false,
     mood = 10,
-    tags = DEFAULT_TAGS
+    tags = DEFAULT_TAGS,
+    showTags = true,
+    initialPostRecording = false
 }: VoiceJournalRecorderProps) {
     const router = useRouter();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -65,6 +69,8 @@ export default function VoiceJournalRecorder({
 
     // Combine both states
     const isRecording = listening || isManualRecording;
+    const hasPostRecordingContent = initialPostRecording || Boolean(audioBlob || transcript || editableTranscript);
+    const shouldShowInitialMic = initialPostRecording && !audioBlob && !transcript && !editableTranscript;
 
     useEffect(() => {
         if (listening) {
@@ -510,10 +516,16 @@ export default function VoiceJournalRecorder({
     };
 
     const cancelRecording = () => {
+        if (isRecording) {
+            stopRecording();
+        }
         setAudioBlob(null);
         resetTranscript();
+        setEditableTranscript("");
+        setIsTranscribing(false);
         setLocalTags(tags);
         setLocalMood(mood);
+        router.push("/journal?tab=voice");
     };
 
     const formatTime = (seconds: number) => {
@@ -555,7 +567,7 @@ export default function VoiceJournalRecorder({
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
 
-                {!audioBlob && !isRecording ? (
+                {!hasPostRecordingContent && !isRecording ? (
                     // Initial State
                     <>
                         <div className="flex items-center justify-between gap-3">
@@ -566,7 +578,7 @@ export default function VoiceJournalRecorder({
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleMicButtonClick()}
-                                    className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
+                                    className="w-12 h-12 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white"
                                     aria-label="録音を開始"
                                 >
                                     <Mic className="w-5 h-5" />
@@ -626,13 +638,13 @@ export default function VoiceJournalRecorder({
                                 <h3 className="text-xl font-bold text-white">音声ジャーナル</h3>
                             </div>
                             <div className="flex items-center gap-3">
-                                {!isRecording && (audioBlob || transcript || editableTranscript) && (
+                                {!isRecording && hasPostRecordingContent && (
                                     <button
-                                        onClick={resumeRecording}
+                                        onClick={shouldShowInitialMic ? () => handleMicButtonClick() : resumeRecording}
                                         disabled={isProcessing}
-                                        className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-emerald-400 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/40 rounded-full transition-all disabled:opacity-40 whitespace-nowrap border border-emerald-500/30"
+                                        className={shouldShowInitialMic ? "w-12 h-12 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg hover:shadow-emerald-500/20 hover:scale-105 transition-all text-white disabled:opacity-40 [&>span]:hidden" : "flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-emerald-400 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/40 rounded-full transition-all disabled:opacity-40 whitespace-nowrap border border-emerald-500/30"}
                                     >
-                                        <RotateCcw className="w-3 h-3" />
+                                        {shouldShowInitialMic ? <Mic className="w-5 h-5" /> : <RotateCcw className="w-3 h-3" />}
                                         <span>録音を再開</span>
                                     </button>
                                 )}
@@ -702,7 +714,7 @@ export default function VoiceJournalRecorder({
                         </div>
 
                         {/* Post-Recording Options */}
-                        {!isRecording && (audioBlob || transcript || editableTranscript) && (
+                        {!isRecording && hasPostRecordingContent && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -734,6 +746,7 @@ export default function VoiceJournalRecorder({
                                 </div>
 
                                 {/* Tags */}
+                                {showTags && (
                                 <div>
                                     <label className="text-sm font-bold text-white mb-3 block">タグを追加</label>
 
@@ -809,6 +822,7 @@ export default function VoiceJournalRecorder({
                                         </button>
                                     </div>
                                 </div>
+                                )}
 
                                 {/* Actions */}
                                 <div className="flex flex-wrap gap-4 pt-2">

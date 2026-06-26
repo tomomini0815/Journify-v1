@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X, ChevronDown, AlertCircle } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
 import { AddTaskForm } from "@/components/AddTaskForm"
-import { UnifiedTabs } from "@/components/ui/unified-tabs"
 import { useSearchParams } from "next/navigation"
 
 type Task = {
@@ -597,35 +596,26 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 </div>
 
                 {/* Tabs & View Toggle Row */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-0 gap-4 md:gap-0">
-                    <UnifiedTabs
-                        tabs={[
-                            {
-                                id: 'today', label: '今日', count: tasks.filter(t => {
-                                    if (!t.scheduledDate) return false
-                                    const d = t.scheduledDate instanceof Date ? t.scheduledDate : new Date(t.scheduledDate)
-                                    return isToday(d) || (d < new Date() && t.status !== 'done')
-                                }).length
-                            },
-                            {
-                                id: 'week', label: '1週間', count: tasks.filter(t => {
-                                    if (!t.scheduledDate) return false
-                                    const d = t.scheduledDate instanceof Date ? t.scheduledDate : new Date(t.scheduledDate)
-                                    return isThisWeek(d) || (d < new Date() && t.status !== 'done')
-                                }).length
-                            },
-                            {
-                                id: 'month', label: '今月', count: tasks.filter(t => {
-                                    if (!t.scheduledDate) return false
-                                    const d = t.scheduledDate instanceof Date ? t.scheduledDate : new Date(t.scheduledDate)
-                                    return isThisMonth(d) || (d < new Date() && t.status !== 'done')
-                                }).length
-                            },
-                            { id: 'all', label: '全て', count: tasks.length }
-                        ]}
-                        activeTab={activeScope}
-                        onChange={(id) => setActiveScope(id as 'today' | 'week' | 'month' | 'all')}
-                    />
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-3 gap-4">
+                    <div className="flex gap-1 p-1 dashboard-panel-subtle w-full md:w-fit">
+                        {[
+                            { id: 'today' as const, label: '今日' },
+                            { id: 'week' as const, label: '今週' },
+                            { id: 'month' as const, label: '今月' },
+                            { id: 'all' as const, label: '全て' },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveScope(tab.id)}
+                                className={`flex-1 md:flex-none flex items-center justify-center px-4 py-1.5 rounded-md font-medium text-sm transition-all whitespace-nowrap ${activeScope === tab.id
+                                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/15"
+                                    : "text-white/50 hover:text-white/80 hover:bg-white/5"
+                                    }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
 
                     <div className="flex gap-2 pb-2 w-full md:w-auto items-center justify-end hidden md:flex">
                         <button
@@ -696,13 +686,11 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
 
                             {/* Mini Progress - Takes 1 col */}
                             <div className="lg:col-span-1 bg-black/20 rounded-2xl p-3 border border-white/5 flex flex-col justify-center relative overflow-hidden group">
-                                <div className="flex items-center justify-between mb-2 relative z-10">
-                                    <div className="min-w-0">
-                                        <p className="text-white/40 text-[10px] font-medium mb-1">達成率</p>
-                                        <div className="flex flex-col items-start gap-0.5">
-                                            <span className="text-xl font-bold leading-none text-white">{Math.round(progress)}<span className="text-xs text-emerald-500">%</span></span>
-                                            <span className="text-white/40 text-[10px] leading-none">{completedCount}/{filteredTasks.length} 完了</span>
-                                        </div>
+                                <div className="flex items-center justify-between gap-3 mb-2 relative z-10">
+                                    <div className="flex min-w-0 items-baseline gap-2 whitespace-nowrap">
+                                        <p className="shrink-0 text-white/40 text-[10px] font-medium">達成率</p>
+                                        <span className="shrink-0 text-xl font-bold leading-none text-white">{Math.round(progress)}<span className="text-xs text-emerald-500">%</span></span>
+                                        <span className="min-w-0 truncate text-white/40 text-[10px] leading-none">{completedCount}/{filteredTasks.length} 完了</span>
                                     </div>
                                     <div className="h-6 w-6 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

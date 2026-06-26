@@ -196,29 +196,27 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
             transition={{ duration: 0.5 }}
             className="dashboard-panel p-4 sm:p-5"
         >
-            <div className="flex flex-col gap-4 mb-6">
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                    <div>
-                        <p className="dashboard-section-label mb-1">Trend</p>
-                        <h3 className="text-lg font-semibold leading-tight text-white">幸福度の推移</h3>
-                        <p className="text-white/60 text-sm">時間とともに心の状態を追跡</p>
-                    </div>
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <p className="dashboard-section-label mb-1">Trend</p>
+                    <h3 className="text-lg font-semibold leading-tight text-white">幸福度の推移</h3>
+                    <p className="text-white/60 text-sm">時間とともに心の状態を追跡</p>
+                </div>
 
-                    {/* 期間セレクター (上部に配置) */}
-                    <div className="flex bg-black/40 p-1 rounded-xl overflow-x-auto no-scrollbar">
-                        {(Object.keys(colorThemes) as TimeRange[]).map((t) => (
-                            <button
-                                key={t}
-                                onClick={() => setRange(t)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${range === t
-                                    ? 'bg-white/10 text-white shadow-sm'
-                                    : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                                    }`}
-                            >
-                                {colorThemes[t].label}
-                            </button>
-                        ))}
-                    </div>
+                {/* 期間セレクター */}
+                <div className="flex bg-black/40 p-1 rounded-xl gap-0.5 overflow-x-auto no-scrollbar">
+                    {(Object.keys(colorThemes) as TimeRange[]).map((t) => (
+                        <button
+                            key={t}
+                            onClick={() => setRange(t)}
+                            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${range === t
+                                ? 'bg-white/10 text-white shadow-sm'
+                                : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                                }`}
+                        >
+                            {colorThemes[t].label}
+                        </button>
+                    ))}
                 </div>
             </div>
 

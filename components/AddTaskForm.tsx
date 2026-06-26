@@ -98,8 +98,9 @@ export function AddTaskForm({
                     </div>
                 </div>
 
-                {/* Priority Selector */}
-                <div className="flex items-center bg-white/5 border border-white/20 rounded-2xl h-11 px-3 gap-2">
+                <div className="flex w-full items-stretch gap-2 md:w-auto">
+                    {/* Priority Selector */}
+                    <div className="flex h-12 flex-1 items-center justify-around gap-2 rounded-2xl border border-white/20 bg-white/5 px-3 md:h-11 md:flex-none md:justify-start">
                     {(['low', 'medium', 'high', 'urgent'] as const).map((p) => (
                         <button
                             key={p}
@@ -117,16 +118,17 @@ export function AddTaskForm({
                             <span className="text-[10px] font-bold uppercase">{p[0]}</span>
                         </button>
                     ))}
-                </div>
+                    </div>
 
-                {/* Add Button */}
-                <button
-                    type="submit"
-                    disabled={!newTask.trim()}
-                    className={`${heightClass} aspect-square bg-emerald-500 hover:bg-emerald-400 text-black rounded-2xl flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 flex-shrink-0 self-end md:self-auto`}
-                >
-                    <Plus className={isMobile ? "w-6 h-6" : "w-5 h-5"} />
-                </button>
+                    {/* Add Button */}
+                    <button
+                        type="submit"
+                        disabled={!newTask.trim()}
+                        className={`${heightClass} aspect-square rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 text-black flex items-center justify-center transition-all hover:scale-105 hover:shadow-emerald-400/40 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-emerald-500/20 shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-200/40 flex-shrink-0`}
+                    >
+                        <Plus className={isMobile ? "w-6 h-6" : "w-5 h-5"} />
+                    </button>
+                </div>
             </div>
 
             {/* Description Field - Mobile Only (Modal) - Below the main row */}

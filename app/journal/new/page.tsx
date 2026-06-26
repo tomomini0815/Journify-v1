@@ -20,6 +20,7 @@ function NewJournalContent() {
         searchParams.get('type') === 'voice' ||
         searchParams.get('tab') === 'voice' ||
         searchParams.get('voice') === 'true'
+    const openPostRecording = searchParams.get('open') === 'post'
 
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
@@ -179,8 +180,32 @@ function NewJournalContent() {
         setTags(tags.filter(tag => tag !== tagToRemove))
     }
 
+    if (isVoiceMode) {
+        return (
+            <DashboardLayout>
+                <div className="hidden">
+                    <Link href="/journal">
+                        <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl">
+                            <X className="w-4 h-4 mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">キャンセル</span>
+                            <span className="sm:hidden">中止</span>
+                        </Button>
+                    </Link>
+                </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                    <VoiceJournalRecorder compact={true} initialPostRecording={openPostRecording} />
+                </motion.div>
+            </DashboardLayout>
+        )
+    }
+
     return (
         <DashboardLayout>
+            {!isVoiceMode && (
             <div className="mb-6 flex justify-end">
                 <div className="flex gap-2 shrink-0 self-end md:self-auto">
                     <Link href="/journal">
@@ -202,6 +227,7 @@ function NewJournalContent() {
                     )}
                 </div>
             </div>
+            )}
 
             {error && (
                 <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-200">
@@ -219,9 +245,8 @@ function NewJournalContent() {
                             transition={{ duration: 0.5, delay: 0.1 }}
                         >
                             <VoiceJournalRecorder
-                                mood={10}
-                                tags={tags}
-                                onComplete={() => router.push('/journal?tab=voice')}
+                                compact={true}
+                                showTags={false}
                             />
                         </motion.div>
                     ) : (
@@ -247,7 +272,7 @@ function NewJournalContent() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
-                        className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"
+                        className={`${isVoiceMode ? "hidden" : "bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6"}`}
                     >
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                             <Tag className="w-5 h-5" />
