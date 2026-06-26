@@ -111,7 +111,7 @@ export function PetGacha({ isOpen, onClose, crystals, onSummonComplete }: PetGac
                                 <button
                                     onClick={handleSummon}
                                     disabled={crystals < SUMMON_COST}
-                                    className={`px-8 py-3 rounded-xl font-bold text-lg transition-all transform hover:scale-105 ${crystals >= SUMMON_COST
+                                    className={`h-10 rounded-xl px-4 text-sm font-bold transition-all transform hover:scale-105 ${crystals >= SUMMON_COST
                                         ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg shadow-cyan-500/30'
                                         : 'bg-slate-700 text-slate-400 cursor-not-allowed'
                                         }`}
@@ -182,14 +182,14 @@ export function PetGacha({ isOpen, onClose, crystals, onSummonComplete }: PetGac
                                 <div className="flex gap-4 justify-center">
                                     <button
                                         onClick={onClose}
-                                        className="px-6 py-2 rounded-lg bg-indigo-800 text-indigo-100 hover:bg-indigo-700 font-bold"
+                                        className="h-10 rounded-lg bg-indigo-800 px-4 font-bold text-indigo-100 hover:bg-indigo-700"
                                     >
                                         閉じる
                                     </button>
                                     <button
                                         onClick={reset}
                                         disabled={crystals < SUMMON_COST}
-                                        className={`px-6 py-2 rounded-lg font-bold border ${crystals >= SUMMON_COST
+                                        className={`h-10 rounded-lg border px-4 font-bold ${crystals >= SUMMON_COST
                                             ? 'border-cyan-500 text-cyan-300 hover:bg-cyan-900/30'
                                             : 'border-slate-600 text-slate-500 cursor-not-allowed'
                                             }`}

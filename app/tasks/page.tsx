@@ -9,13 +9,18 @@ export const revalidate = 30
 
 const getCachedTasks = unstable_cache(
     async (userId: string) => {
-        return await prisma.task.findMany({
-            where: {
-                userId,
-                projectId: null  // Only show daily tasks
-            },
-            orderBy: { createdAt: "desc" },
-        })
+        try {
+            return await prisma.task.findMany({
+                where: {
+                    userId,
+                    projectId: null  // Only show daily tasks
+                },
+                orderBy: { createdAt: "desc" },
+            })
+        } catch (error) {
+            console.warn("DB Error in getCachedTasks, returning empty list")
+            return []
+        }
     },
     ['tasks-list'],
     { revalidate: 30, tags: ['tasks'] }
@@ -23,11 +28,13 @@ const getCachedTasks = unstable_cache(
 
 export default async function TasksPage() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    let { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-        return null // Middleware will redirect
+    if (!user && process.env.NODE_ENV === 'development') {
+        user = { id: 'mock-user-123' } as any
     }
+
+    if (!user) return null // Middleware will redirect
 
     const tasks = await getCachedTasks(user.id)
 

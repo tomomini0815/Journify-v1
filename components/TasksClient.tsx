@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Pencil, X, ChevronDown, AlertCircle } from "lucide-react"
 import { TaskCalendar } from "@/components/TaskCalendar"
 import { AddTaskForm } from "@/components/AddTaskForm"
 import { UnifiedTabs } from "@/components/ui/unified-tabs"
+import { useSearchParams } from "next/navigation"
 
 type Task = {
     id: string
@@ -39,13 +40,12 @@ interface TasksClientProps {
     initialTasks: SerializedTask[]
 }
 
-import { useSearchParams } from "next/navigation"
-
 // ...
 
 export function TasksClient({ initialTasks }: TasksClientProps) {
     const searchParams = useSearchParams()
     const scopeParam = searchParams.get('scope')
+    const taskIdParam = searchParams.get('taskId')
 
     const [tasks, setTasks] = useState<Task[]>(initialTasks
         .filter(t => !t.projectId) // Filter out project tasks
@@ -83,6 +83,21 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [showAddModal, setShowAddModal] = useState(false)
     const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
+    const openedTaskIdRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        if (!taskIdParam) return
+        if (openedTaskIdRef.current === taskIdParam) return
+
+        const targetTask = tasks.find(task => task.id === taskIdParam)
+        if (!targetTask) return
+
+        openedTaskIdRef.current = taskIdParam
+        setActiveScope('all')
+        setMobileKanbanTab(targetTask.status)
+        setEditingTask(targetTask)
+        setShowEditModal(true)
+    }, [taskIdParam, tasks])
 
     // Date helpers
     const isToday = (date: Date) => {
@@ -545,14 +560,6 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         <div className="h-full flex flex-col overflow-hidden" >
             {/* Header & Controls Section */}
             < div className="flex-shrink-0 mb-6 space-y-6" >
-                {/* ... (Header) */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-[28px] font-bold text-white mb-2">日々のタスク</h1>
-                        <p className="text-white/60">小さな達成の積み重ねが、大きな成長につながります。</p>
-                    </div>
-                </div>
-
                 {/* Mobile Actions Row (View Toggles & Add Task) */}
                 <div className="md:hidden flex items-center justify-between mb-4">
                     {/* Left: View Toggles */}
@@ -689,12 +696,12 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
 
                             {/* Mini Progress - Takes 1 col */}
                             <div className="lg:col-span-1 bg-black/20 rounded-2xl p-3 border border-white/5 flex flex-col justify-center relative overflow-hidden group">
-                                <div className="flex items-end justify-between mb-1 relative z-10">
-                                    <div>
-                                        <p className="text-white/40 text-[10px] font-medium mb-0.5">達成率</p>
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-xl font-bold text-white">{Math.round(progress)}<span className="text-xs text-emerald-500">%</span></span>
-                                            <span className="text-white/40 text-[10px]">{completedCount}/{filteredTasks.length} 完了</span>
+                                <div className="flex items-center justify-between mb-2 relative z-10">
+                                    <div className="min-w-0">
+                                        <p className="text-white/40 text-[10px] font-medium mb-1">達成率</p>
+                                        <div className="flex flex-col items-start gap-0.5">
+                                            <span className="text-xl font-bold leading-none text-white">{Math.round(progress)}<span className="text-xs text-emerald-500">%</span></span>
+                                            <span className="text-white/40 text-[10px] leading-none">{completedCount}/{filteredTasks.length} 完了</span>
                                         </div>
                                     </div>
                                     <div className="h-6 w-6 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">

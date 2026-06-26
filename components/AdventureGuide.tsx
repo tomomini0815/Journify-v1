@@ -106,7 +106,7 @@ export function AdventureGuide() {
                             <div className="p-4 bg-white/5 border-t border-white/10 text-center">
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg font-bold transition-colors"
+                                    className="h-10 rounded-lg bg-white/10 px-4 font-bold transition-colors hover:bg-white/20"
                                 >
                                     わかった！
                                 </button>

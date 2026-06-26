@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useEffect, useState, useRef } from "react"
+import { ReactNode, useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -12,6 +12,45 @@ import { DashboardGreeting } from "@/components/DashboardGreeting"
 
 interface DashboardLayoutProps {
     children: ReactNode
+}
+
+const pageMeta: Record<string, { title: string; description?: string }> = {
+    "/journal": {
+        title: "ジャーナル",
+        description: "あなたの思考を記録し、成長の軌跡を追う",
+    },
+    "/tasks": {
+        title: "日々のタスク",
+        description: "小さな達成の積み重ねが、大きな成長につながります。",
+    },
+    "/goals": {
+        title: "目標",
+        description: "進みたい方向と達成までの道のりを整える",
+    },
+    "/projects": {
+        title: "プロジェクト",
+        description: "仕事や制作の流れをまとめて管理する",
+    },
+    "/vision-board": {
+        title: "ビジョンボード",
+        description: "叶えたい未来を視覚化する",
+    },
+    "/adventure": {
+        title: "ペットハウス",
+        description: "日々の行動を小さな冒険につなげる",
+    },
+    "/year-in-review": {
+        title: "統計詳細",
+        description: "記録から見える変化を振り返る",
+    },
+    "/profile": {
+        title: "アカウント設定",
+        description: "プロフィールと利用設定を管理する",
+    },
+    "/feedback": {
+        title: "お問い合わせ",
+        description: "改善要望や不具合を送る",
+    },
 }
 
 const defaultNavigation = [
@@ -52,20 +91,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     useEffect(() => {
         const updateNavigationFromStorage = () => {
             if (typeof window !== 'undefined') {
-                const enableProjects = localStorage.getItem('enableProjects') === 'true'
                 const enableAdventure = localStorage.getItem('enableAdventure') === 'false' ? false : true // Default to true if not set
 
                 console.log('[DashboardLayout] Updating navigation...')
-                console.log('[DashboardLayout] enableProjects from localStorage:', enableProjects)
                 console.log('[DashboardLayout] enableAdventure from localStorage:', enableAdventure)
                 console.log('[DashboardLayout] localStorage value (projects):', localStorage.getItem('enableProjects'))
                 console.log('[DashboardLayout] localStorage value (adventure):', localStorage.getItem('enableAdventure'))
 
-                // Filter navigation based on enableProjects setting
+                // Filter navigation based on settings
                 const filteredNavigation = defaultNavigation.filter(item => {
-                    if (item.href === '/projects') {
-                        return enableProjects
-                    }
                     if (item.href === '/adventure') {
                         return enableAdventure
                     }
@@ -148,6 +182,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         router.push("/login")
         router.refresh()
     }
+
+    const currentMeta = pathname
+        ? pageMeta[pathname] ?? pageMeta[`/${pathname.split("/")[1]}`]
+        : undefined
 
     return (
         <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-white">
@@ -271,9 +309,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Mobile header */}
             <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white/5 backdrop-blur-xl border-b border-white/10">
                 <div className="flex items-center justify-between px-4 py-3">
-                    <Link href="/">
-                        <img src="/journify-logo.png" alt="Journify" className="h-10 w-auto" />
-                    </Link>
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Link href="/" className="shrink-0">
+                            <img src="/journify-logo.png" alt="Journify" className="h-10 w-auto" />
+                        </Link>
+                        {pathname !== "/dashboard" && currentMeta && (
+                            <h1 className="truncate text-base font-semibold leading-tight text-white">{currentMeta.title}</h1>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
                         <WeatherWidget />
                         <NotificationBell />
@@ -408,7 +451,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="hidden md:block sticky top-0 z-20 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/10">
                     <div className="px-4 sm:px-5 lg:px-6 py-3 flex items-center justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                            {pathname === "/dashboard" ? <DashboardGreeting variant="header" /> : null}
+                            {pathname === "/dashboard" ? (
+                                <DashboardGreeting variant="header" />
+                            ) : currentMeta ? (
+                                <div className="min-w-0">
+                                    <h1 className="truncate text-xl font-semibold leading-tight text-white">{currentMeta.title}</h1>
+                                    {currentMeta.description && (
+                                        <p className="mt-0.5 truncate text-sm text-white/50">{currentMeta.description}</p>
+                                    )}
+                                </div>
+                            ) : null}
                         </div>
                         <div className="flex shrink-0 items-center gap-3">
                             <WeatherWidget />

@@ -178,7 +178,7 @@ export default function Jojo({ userId }: JojoProps) {
                                 className="absolute bottom-full mb-2 right-0 whitespace-nowrap"
                             >
                                 <div className="bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg shadow-lg">
-                                    Jojoに話しかける / クリック
+                                    Jojoが今日の名言をお届け
                                 </div>
                             </motion.div>
                         )}

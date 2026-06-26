@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import ProjectsClient from "./ProjectsClient"
 
@@ -7,21 +6,28 @@ export const dynamic = 'force-dynamic'
 
 export default async function ProjectsPage() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    let { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-        redirect('/auth/login')
+    if (!user && process.env.NODE_ENV === 'development') {
+        user = { id: 'mock-user-123' } as any
     }
 
-    const projects = await prisma.project.findMany({
-        where: { userId: user.id },
-        include: {
-            _count: {
-                select: { tasks: true }
-            }
-        },
-        orderBy: { createdAt: "desc" }
-    })
+    if (!user) return null
+
+    let projects: any[] = []
+    try {
+        projects = await prisma.project.findMany({
+            where: { userId: user.id },
+            include: {
+                _count: {
+                    select: { tasks: true }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        })
+    } catch (error) {
+        console.warn("ProjectsPage: DB Error, returning empty list")
+    }
 
     // Serialize dates to strings
     const serializedProjects = projects.map(project => ({

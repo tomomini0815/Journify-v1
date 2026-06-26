@@ -173,7 +173,7 @@ export function HomeEditor() {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-bold disabled:opacity-50"
+                        className="flex h-10 items-center gap-2 rounded-lg bg-emerald-500 px-4 font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
                     >
                         <Save size={20} />
                         {saving ? '保存中...' : '保存'}

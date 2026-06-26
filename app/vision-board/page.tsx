@@ -69,7 +69,7 @@ export default function VisionBoardPage() {
         { id: "collage" as Tab, name: "イメージコラージュ", icon: ImageIcon },
         { id: "dreams" as Tab, name: "夢リスト", icon: List },
         { id: "affirmations" as Tab, name: "アファメーション", icon: MessageSquare },
-        { id: "letter" as Tab, name: "未来の自分への手紙", icon: Mail },
+        { id: "letter" as Tab, name: "未来の手紙", icon: Mail },
     ]
 
     const letterPeriods = [
@@ -234,16 +234,6 @@ export default function VisionBoardPage() {
 
     return (
         <DashboardLayout>
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-8"
-            >
-                <h1 className="text-[28px] font-bold mb-2 whitespace-nowrap">ビジョンボード ✨</h1>
-                <p className="text-white/60">あなたの夢と目標を視覚化しましょう</p>
-            </motion.div>
-
             {/* Tabs */}
             <div className="mb-8 border-b border-white/10">
                 <UnifiedTabs
@@ -526,7 +516,7 @@ export default function VisionBoardPage() {
                             </div>
                             <Button
                                 onClick={saveLetter}
-                                className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl"
+                                className="ml-auto flex rounded-xl"
                             >
                                 手紙を保存
                             </Button>

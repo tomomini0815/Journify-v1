@@ -1,8 +1,22 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Sparkles, X, Target, Clock, ArrowRight, BrainCircuit, Check, AlertTriangle, ChevronDown, ChevronUp, MessageSquare, Send, User, Bot } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { motion } from "framer-motion"
+import {
+    AlertTriangle,
+    Bot,
+    BrainCircuit,
+    Check,
+    ChevronDown,
+    ChevronUp,
+    Clock,
+    MessageSquare,
+    Send,
+    Sparkles,
+    Target,
+    User,
+    X,
+} from "lucide-react"
 
 interface Task {
     text: string
@@ -23,7 +37,7 @@ interface StrategyPlan {
 }
 
 interface ChatMessage {
-    role: 'user' | 'assistant'
+    role: "user" | "assistant"
     content: string
 }
 
@@ -33,6 +47,19 @@ interface AIStrategyModalProps {
     onCreateProject: (plan: StrategyPlan) => void
 }
 
+const durationOptions = [
+    { value: "1 month", label: "1ヶ月" },
+    { value: "3 months", label: "3ヶ月" },
+    { value: "6 months", label: "半年" },
+    { value: "1 year", label: "1年" },
+]
+
+const priorityLabel: Record<Task["priority"], string> = {
+    high: "高",
+    medium: "中",
+    low: "低",
+}
+
 export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategyModalProps) {
     const [step, setStep] = useState<"input" | "chat" | "generating" | "review">("input")
     const [goal, setGoal] = useState("")
@@ -40,34 +67,45 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
     const [plan, setPlan] = useState<StrategyPlan | null>(null)
     const [expandedMilestone, setExpandedMilestone] = useState<number | null>(0)
     const [refinementText, setRefinementText] = useState("")
-    const [isRefining, setIsRefining] = useState(false)
-
-    // Chat State
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
     const [chatInput, setChatInput] = useState("")
     const [isChatLoading, setIsChatLoading] = useState(false)
+    const [isRefining, setIsRefining] = useState(false)
     const chatEndRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        if (chatEndRef.current) {
-            chatEndRef.current.scrollIntoView({ behavior: "smooth" })
-        }
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [chatHistory])
 
+    const resetModal = () => {
+        setStep("input")
+        setGoal("")
+        setPlan(null)
+        setRefinementText("")
+        setChatHistory([])
+        setChatInput("")
+        setExpandedMilestone(0)
+    }
+
+    const handleClose = () => {
+        onClose()
+        window.setTimeout(resetModal, 250)
+    }
+
     const handleGenerate = async (e?: React.FormEvent, fromChat = false) => {
-        if (e) e.preventDefault()
+        e?.preventDefault()
+        if (!goal.trim() && !fromChat) return
+
         setStep("generating")
 
         try {
-            const body: any = { goal, duration }
-            if (fromChat) {
-                body.chatHistory = chatHistory
-            }
+            const body: Record<string, unknown> = { goal, duration }
+            if (fromChat) body.chatHistory = chatHistory
 
             const res = await fetch("/api/projects/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
             })
 
             if (res.ok) {
@@ -75,7 +113,7 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
                 setPlan(data)
                 setStep("review")
             } else {
-                setStep(fromChat ? "chat" : "input") // Return to previous step on error
+                setStep(fromChat ? "chat" : "input")
             }
         } catch (error) {
             console.error(error)
@@ -87,13 +125,12 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
         e.preventDefault()
         if (!chatInput.trim()) return
 
-        const userMsg = chatInput
-        const newHistory = [...chatHistory, { role: 'user' as const, content: userMsg }]
+        const userMsg = chatInput.trim()
+        const newHistory = [...chatHistory, { role: "user" as const, content: userMsg }]
+
         setChatHistory(newHistory)
         setChatInput("")
         setIsChatLoading(true)
-
-        // Add user goal if it's the first message effectively
         if (!goal) setGoal(userMsg)
 
         try {
@@ -101,15 +138,15 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    goal: userMsg, // Send current input as 'goal' parameter for simple consultations
-                    action: 'consult',
-                    chatHistory: chatHistory // Send previous history
-                })
+                    goal: userMsg,
+                    action: "consult",
+                    chatHistory,
+                }),
             })
 
             if (res.ok) {
                 const data = await res.json()
-                setChatHistory([...newHistory, { role: 'assistant', content: data.response }])
+                setChatHistory([...newHistory, { role: "assistant", content: data.response }])
             }
         } catch (error) {
             console.error("Chat failed:", error)
@@ -131,8 +168,8 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
                     goal,
                     duration,
                     currentPlan: plan,
-                    feedback: refinementText
-                })
+                    feedback: refinementText,
+                }),
             })
 
             if (res.ok) {
@@ -148,370 +185,363 @@ export function AIStrategyModal({ isOpen, onClose, onCreateProject }: AIStrategy
     }
 
     const handleCreate = () => {
-        if (plan) {
-            onCreateProject(plan)
-            onClose()
-            // Reset state after a delay to allow close animation
-            setTimeout(() => {
-                setStep("input")
-                setGoal("")
-                setPlan(null)
-                setRefinementText("")
-                setChatHistory([])
-            }, 500)
-        }
+        if (!plan) return
+        onCreateProject(plan)
+        onClose()
+        window.setTimeout(resetModal, 250)
     }
 
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-[#1a1a1a] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl relative"
-            >
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-white/40 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-colors z-20"
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
+            <div className="flex min-h-full items-start justify-center p-3 py-6 sm:items-center sm:p-6">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                    className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111418] shadow-2xl"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="ai-strategy-title"
                 >
-                    <X className="w-5 h-5" />
-                </button>
+                    <button
+                        onClick={handleClose}
+                        className="absolute right-4 top-4 z-20 rounded-full border border-white/[0.08] bg-white/[0.04] p-2 text-white/45 transition-colors hover:bg-white/[0.08] hover:text-white"
+                        aria-label="閉じる"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
 
-                {/* Header Image/Gradient */}
-                <div className="h-32 bg-[#1a1a1a] flex items-center justify-center relative overflow-hidden flex-shrink-0">
-                    <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-amber-500/20 blur-3xl" />
-                    <div className="absolute -right-16 -bottom-16 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
-                    <div className="relative z-10 flex flex-col items-center">
-                        <div className="flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-2">
-                            <Sparkles className="w-4 h-4 text-amber-300" />
-                            <span className="text-xs font-bold text-amber-100 uppercase tracking-widest">AI Strategy Partner</span>
-                        </div>
-                        <h2 className="text-2xl font-bold text-white">AI戦略参謀</h2>
-                    </div>
-                </div>
-
-                {/* Content Body - Scrollable */}
-                <div className="flex-1 overflow-y-auto overscroll-contain p-6 md:p-8" style={{ WebkitOverflowScrolling: 'touch' }}>
-                    {step === "input" && (
-                        <div className="space-y-6">
-                            <div className="text-center mb-8">
-                                <h3 className="text-lg font-medium text-white mb-2">どうやって進めますか？</h3>
-                                <p className="text-white/60 text-sm">
-                                    目標が決まっていればすぐ作成。迷っているならAIに相談してみましょう。
+                    <div className="relative shrink-0 border-b border-white/[0.08] bg-white/[0.025] px-6 py-5">
+                        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
+                        <div className="flex min-w-0 items-start gap-3 pr-12">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
+                                <Sparkles className="h-5 w-5 text-emerald-300" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="mb-1 text-xs font-semibold uppercase text-emerald-100/85">AI Strategy Partner</p>
+                                <h2 id="ai-strategy-title" className="break-words text-xl font-semibold leading-tight text-white">
+                                    AIでプロジェクトを作成
+                                </h2>
+                                <p className="mt-1 text-sm leading-relaxed text-white/55">
+                                    目標からマイルストーンとタスクを整理します。
                                 </p>
                             </div>
+                        </div>
+                    </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+                        {step === "input" && (
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <h3 className="text-base font-medium text-white">どう進めますか？</h3>
+                                    <p className="text-sm leading-relaxed text-white/60">
+                                        目標が決まっている場合は下のフォームから作成できます。迷っている場合はAIに相談しながら整理できます。
+                                    </p>
+                                </div>
+
                                 <button
+                                    type="button"
                                     onClick={() => setStep("chat")}
-                                    className="p-6 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 rounded-2xl transition-all group text-left"
+                                    className="group flex w-full items-start gap-4 rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 text-left transition-colors hover:border-emerald-400/30 hover:bg-white/[0.07]"
                                 >
-                                    <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                        <MessageSquare className="w-6 h-6 text-indigo-400" />
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 transition-transform group-hover:scale-105">
+                                        <MessageSquare className="h-5 w-5 text-emerald-300" />
                                     </div>
-                                    <h4 className="font-bold text-white mb-1">AIに相談する</h4>
-                                    <p className="text-sm text-white/60">漠然としたアイデアを壁打ちして明確化する</p>
+                                    <div className="min-w-0">
+                                        <h4 className="font-medium text-white">AIに相談してから作る</h4>
+                                        <p className="mt-1 break-words text-sm leading-relaxed text-white/60">
+                                            まだ曖昧なアイデアや悩みを会話しながら、実行できる計画に整えます。
+                                        </p>
+                                    </div>
                                 </button>
 
-                                <button
-                                    onClick={() => {
-                                        // Auto-focus goal input if we had a discrete separate view, but here we just render the form below
-                                        // Actually let's just make this current view switch to the 'form' view
-                                        // For simplicity, let's keep the form in this 'input' step but hide it partially or just show it below
-                                    }}
-                                    className="hidden sm:block p-6 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/50 rounded-2xl transition-all group text-left cursor-default opacity-50"
-                                >
-                                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
-                                        <Target className="w-6 h-6 text-purple-400" />
-                                    </div>
-                                    <h4 className="font-bold text-white mb-1">すぐに作成</h4>
-                                    <p className="text-sm text-white/60">下のフォームから直接ゴールを入力</p>
-                                </button>
-                            </div>
-
-                            <div className="border-t border-white/10 pt-6 mt-6">
-                                <form onSubmit={(e) => handleGenerate(e)} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2 flex items-center gap-2">
-                                            <Target className="w-4 h-4" />
+                                <form onSubmit={(e) => handleGenerate(e)} className="space-y-4 border-t border-white/[0.08] pt-5">
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-sm font-medium text-white/70">
+                                            <Target className="h-4 w-4" />
                                             達成したいゴール
                                         </label>
                                         <textarea
                                             value={goal}
                                             onChange={(e) => setGoal(e.target.value)}
                                             required
-                                            placeholder="例：3ヶ月以内に、Reactを使ったポートフォリオサイトを完成させて公開する"
-                                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-indigo-500/50 transition-colors resize-none text-lg"
+                                            placeholder="例: 3ヶ月以内にポートフォリオサイトを完成させて公開する"
+                                            className="min-h-28 w-full resize-y rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm leading-relaxed text-white placeholder:text-white/28 transition-colors focus:border-emerald-400/45 focus:outline-none"
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/60 mb-2 flex items-center gap-2">
-                                            <Clock className="w-4 h-4" />
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-sm font-medium text-white/70">
+                                            <Clock className="h-4 w-4" />
                                             想定期間
                                         </label>
-                                        <select
-                                            value={duration}
-                                            onChange={(e) => setDuration(e.target.value)}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                        >
-                                            <option value="1 month">1ヶ月</option>
-                                            <option value="3 months">3ヶ月</option>
-                                            <option value="6 months">半年</option>
-                                            <option value="1 year">1年</option>
-                                        </select>
+                                        <div className="relative">
+                                            <select
+                                                value={duration}
+                                                onChange={(e) => setDuration(e.target.value)}
+                                                className="h-11 w-full appearance-none rounded-xl border border-white/[0.08] bg-[#15191f] px-4 pr-10 text-sm text-white transition-colors focus:border-emerald-400/45 focus:outline-none"
+                                            >
+                                                {durationOptions.map((option) => (
+                                                    <option key={option.value} value={option.value} className="bg-[#15191f] text-white">
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
+                                        </div>
                                     </div>
 
                                     <button
                                         type="submit"
                                         disabled={!goal.trim()}
-                                        className="w-full py-4 bg-gradient-to-r from-amber-500 via-purple-500 to-indigo-600 hover:from-amber-400 hover:via-purple-400 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2 mt-4"
+                                        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 font-semibold text-white transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
-                                        <BrainCircuit className="w-5 h-5" />
-                                        戦略プランを生成する
+                                        <BrainCircuit className="h-5 w-5" />
+                                        戦略プランを生成
                                     </button>
                                 </form>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {step === "chat" && (
-                        <div className="flex flex-col h-full h-[500px]">
-                            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                                {chatHistory.length === 0 && (
-                                    <div className="text-center py-12">
-                                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Bot className="w-8 h-8 text-white/40" />
-                                        </div>
-                                        <p className="text-white/60">
-                                            こんにちは。<br />
-                                            あなたのやりたいこと、悩み、なんでも話してください。<br />
-                                            一緒にゴールを探しましょう。
-                                        </p>
-                                    </div>
-                                )}
-                                {chatHistory.map((msg, i) => (
-                                    <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        {msg.role === 'assistant' && (
-                                            <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex-shrink-0 flex items-center justify-center">
-                                                <Bot className="w-4 h-4 text-indigo-400" />
+                        {step === "chat" && (
+                            <div className="flex min-h-[420px] flex-col">
+                                <div className="mb-4 flex-1 space-y-4 overflow-y-auto pr-1">
+                                    {chatHistory.length === 0 && (
+                                        <div className="py-8 text-center">
+                                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04]">
+                                                <Bot className="h-7 w-7 text-white/40" />
                                             </div>
-                                        )}
-                                        <div className={`max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed ${msg.role === 'user'
-                                            ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-sm'
-                                            : 'bg-white/10 text-white/90 rounded-tl-sm'
-                                            }`}>
-                                            {msg.content}
+                                            <p className="text-sm leading-relaxed text-white/60">
+                                                やりたいこと、迷っていること、今の状況をそのまま話してください。
+                                            </p>
                                         </div>
-                                        {msg.role === 'user' && (
-                                            <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 flex items-center justify-center">
-                                                <User className="w-4 h-4 text-white/60" />
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                                {isChatLoading && (
-                                    <div className="flex gap-3 justify-start">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex-shrink-0 flex items-center justify-center">
-                                            <Bot className="w-4 h-4 text-indigo-400" />
-                                        </div>
-                                        <div className="bg-white/10 rounded-2xl p-4 rounded-tl-sm flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                            <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                            <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce"></span>
-                                        </div>
-                                    </div>
-                                )}
-                                <div ref={chatEndRef} />
-                            </div>
+                                    )}
 
-                            <div className="mt-auto">
-                                <form onSubmit={handleSendMessage} className="relative mb-4">
+                                    {chatHistory.map((msg, i) => (
+                                        <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                                            {msg.role === "assistant" && (
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-400/15 bg-emerald-400/10">
+                                                    <Bot className="h-4 w-4 text-emerald-300" />
+                                                </div>
+                                            )}
+                                            <div
+                                                className={`max-w-[82%] whitespace-pre-wrap break-words rounded-2xl p-3 text-sm leading-relaxed ${msg.role === "user"
+                                                    ? "rounded-tr-sm bg-emerald-500 text-white"
+                                                    : "rounded-tl-sm bg-white/[0.07] text-white/90"
+                                                    }`}
+                                            >
+                                                {msg.content}
+                                            </div>
+                                            {msg.role === "user" && (
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.08]">
+                                                    <User className="h-4 w-4 text-white/60" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    {isChatLoading && (
+                                        <div className="flex justify-start gap-3">
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-400/15 bg-emerald-400/10">
+                                                <Bot className="h-4 w-4 text-emerald-300" />
+                                            </div>
+                                            <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-white/[0.07] p-4">
+                                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/40 [animation-delay:-0.3s]" />
+                                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/40 [animation-delay:-0.15s]" />
+                                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/40" />
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div ref={chatEndRef} />
+                                </div>
+
+                                <form onSubmit={handleSendMessage} className="relative mb-3">
                                     <textarea
                                         value={chatInput}
-                                        onChange={(e) => {
-                                            setChatInput(e.target.value)
-                                            e.target.style.height = 'auto'
-                                            e.target.style.height = e.target.scrollHeight + 'px'
-                                        }}
+                                        onChange={(e) => setChatInput(e.target.value)}
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                            if (e.key === "Enter" && !e.shiftKey) {
                                                 e.preventDefault()
                                                 handleSendMessage(e)
                                             }
                                         }}
-                                        placeholder="メッセージを入力..."
-                                        rows={1}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors resize-none overflow-hidden min-h-[44px] max-h-[200px]"
-                                        style={{ fieldSizing: 'content' }}
+                                        placeholder="メッセージを入力"
+                                        rows={2}
+                                        className="max-h-40 min-h-[48px] w-full resize-y rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 pl-4 pr-12 text-sm leading-relaxed text-white placeholder:text-white/28 transition-colors focus:border-emerald-400/45 focus:outline-none"
                                     />
                                     <button
                                         type="submit"
                                         disabled={!chatInput.trim() || isChatLoading}
-                                        className="absolute right-2 top-2 p-1.5 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-lg transition-colors disabled:opacity-0"
+                                        className="absolute right-2 top-2 rounded-lg bg-emerald-400/10 p-2 text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-white disabled:opacity-0"
+                                        aria-label="送信"
                                     >
-                                        <Send className="w-4 h-4" />
+                                        <Send className="h-4 w-4" />
                                     </button>
                                 </form>
 
                                 {chatHistory.length > 1 && (
                                     <button
+                                        type="button"
                                         onClick={() => handleGenerate(undefined, true)}
-                                        className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-medium text-white transition-colors flex items-center justify-center gap-2"
+                                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.06] font-medium text-white transition-colors hover:bg-white/[0.1]"
                                     >
-                                        <BrainCircuit className="w-4 h-4" />
+                                        <BrainCircuit className="h-4 w-4" />
                                         この内容で戦略プランを生成
                                     </button>
                                 )}
                                 <button
+                                    type="button"
                                     onClick={() => setStep("input")}
-                                    className="w-full mt-2 py-2 text-white/40 hover:text-white text-xs"
+                                    className="mt-2 w-full py-2 text-xs text-white/45 transition-colors hover:text-white"
                                 >
                                     入力画面に戻る
                                 </button>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {step === "generating" && (
-                        <div className="flex flex-col items-center justify-center h-64 text-center">
-                            <div className="relative w-24 h-24 mb-8">
-                                <div className="absolute inset-0 border-4 border-indigo-500/30 rounded-full" />
-                                <div className="absolute inset-0 border-4 border-t-indigo-400 border-r-purple-400 border-b-transparent border-l-transparent rounded-full animate-spin" />
-                                <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-white animate-pulse" />
+                        {step === "generating" && (
+                            <div className="flex min-h-72 flex-col items-center justify-center text-center">
+                                <div className="relative mb-8 h-24 w-24">
+                                    <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20" />
+                                    <div className="absolute inset-0 animate-spin rounded-full border-4 border-b-transparent border-l-transparent border-r-cyan-300 border-t-emerald-300" />
+                                    <Sparkles className="absolute inset-0 m-auto h-8 w-8 animate-pulse text-white" />
+                                </div>
+                                <h3 className="mb-2 text-xl font-semibold text-white">戦略を組み立てています</h3>
+                                <p className="text-sm leading-relaxed text-white/55">
+                                    ゴールに合うマイルストーンとタスクを整理しています。
+                                </p>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">戦略を構築中...</h3>
-                            <p className="text-white/50 animate-pulse">
-                                コンテキストを解析中...<br />
-                                目標への最適ルートを計算中...
-                            </p>
-                        </div>
-                    )}
+                        )}
 
-                    {step === "review" && plan && (
-                        <div className="space-y-6 relative">
-                            {/* Loading Overlay for Refinement */}
-                            {isRefining && (
-                                <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-2xl">
-                                    <div className="text-center">
-                                        <Sparkles className="w-8 h-8 text-amber-300 animate-spin mx-auto mb-2" />
-                                        <p className="text-white font-medium">プランを修正中...</p>
+                        {step === "review" && plan && (
+                            <div className="relative space-y-5">
+                                {isRefining && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/60 backdrop-blur-sm">
+                                        <div className="text-center">
+                                            <Sparkles className="mx-auto mb-2 h-8 w-8 animate-spin text-emerald-300" />
+                                            <p className="font-medium text-white">プランを修正しています</p>
+                                        </div>
                                     </div>
+                                )}
+
+                                <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+                                    <h3 className="break-words text-xl font-semibold leading-tight text-white">{plan.title}</h3>
+                                    <p className="mt-2 break-words text-sm leading-relaxed text-white/70">{plan.description}</p>
                                 </div>
-                            )}
 
-                            <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl p-6">
-                                <h3 className="text-xl font-bold text-white mb-2">{plan.title}</h3>
-                                <p className="text-white/70">{plan.description}</p>
-                            </div>
+                                {plan.risks?.length > 0 && (
+                                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+                                        <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-300">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            想定されるリスクと対策
+                                        </h4>
+                                        <ul className="space-y-1 text-sm leading-relaxed text-amber-100/80">
+                                            {plan.risks.map((risk, i) => (
+                                                <li key={i} className="break-words">
+                                                    {risk}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
 
-                            {/* Risk Alert */}
-                            {plan.risks.length > 0 && (
-                                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                                    <h4 className="text-amber-400 font-bold text-sm flex items-center gap-2 mb-2">
-                                        <AlertTriangle className="w-4 h-4" />
-                                        想定されるリスクと対策
-                                    </h4>
-                                    <ul className="list-disc list-inside text-amber-200/80 text-sm space-y-1">
-                                        {plan.risks.map((risk, i) => (
-                                            <li key={i}>{risk}</li>
-                                        ))}
-                                    </ul>
+                                <div className="space-y-3">
+                                    <h4 className="text-sm font-medium text-white/80">生成されたロードマップ</h4>
+                                    {plan.milestones?.map((milestone, i) => (
+                                        <div key={i} className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04]">
+                                            <button
+                                                type="button"
+                                                onClick={() => setExpandedMilestone(expandedMilestone === i ? null : i)}
+                                                className="flex w-full items-start justify-between gap-3 p-4 text-left transition-colors hover:bg-white/[0.04]"
+                                            >
+                                                <div className="flex min-w-0 items-start gap-3">
+                                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-400/10 text-xs font-bold text-emerald-300">
+                                                        {i + 1}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h5 className="break-words font-medium text-white">{milestone.title}</h5>
+                                                        <p className="mt-1 break-words text-xs leading-relaxed text-white/50">
+                                                            {milestone.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {expandedMilestone === i ? (
+                                                    <ChevronUp className="mt-1 h-4 w-4 shrink-0 text-white/40" />
+                                                ) : (
+                                                    <ChevronDown className="mt-1 h-4 w-4 shrink-0 text-white/40" />
+                                                )}
+                                            </button>
+
+                                            {expandedMilestone === i && (
+                                                <div className="border-t border-white/[0.06] bg-black/20 p-4">
+                                                    <ul className="space-y-2">
+                                                        {milestone.tasks.map((task, j) => (
+                                                            <li key={j} className="flex min-w-0 items-start gap-2 text-sm leading-relaxed text-white/70">
+                                                                <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                                                                <span className="min-w-0 flex-1 break-words">{task.text}</span>
+                                                                <span
+                                                                    className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] ${task.priority === "high"
+                                                                        ? "border-red-500/30 bg-red-500/20 text-red-300"
+                                                                        : task.priority === "medium"
+                                                                            ? "border-amber-500/30 bg-amber-500/20 text-amber-300"
+                                                                            : "border-blue-500/30 bg-blue-500/20 text-blue-300"
+                                                                        }`}
+                                                                >
+                                                                    {priorityLabel[task.priority]}
+                                                                </span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
 
-                            {/* Milestones Preview */}
-                            <div className="space-y-3">
-                                <h4 className="text-white/80 font-medium text-sm">生成されたロードマップ</h4>
-                                {plan.milestones.map((milestone, i) => (
-                                    <div key={i} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                                <form onSubmit={handleRefine} className="border-t border-white/[0.08] pt-4">
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-white/70">
+                                        <Sparkles className="h-4 w-4" />
+                                        AIと一緒にプランを練り直す
+                                    </label>
+                                    <div className="flex flex-col gap-2 sm:flex-row">
+                                        <textarea
+                                            value={refinementText}
+                                            onChange={(e) => setRefinementText(e.target.value)}
+                                            placeholder="例: もっと短期間で進めたい、予算を抑えたい、など"
+                                            rows={2}
+                                            className="min-h-[48px] flex-1 resize-y rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm leading-relaxed text-white placeholder:text-white/28 transition-colors focus:border-emerald-400/45 focus:outline-none"
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" && !e.shiftKey) {
+                                                    e.preventDefault()
+                                                    handleRefine(e)
+                                                }
+                                            }}
+                                        />
                                         <button
-                                            onClick={() => setExpandedMilestone(expandedMilestone === i ? null : i)}
-                                            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors text-left"
+                                            type="submit"
+                                            disabled={!refinementText.trim() || isRefining}
+                                            className="h-10 rounded-xl bg-white/[0.08] px-4 font-medium text-white transition-colors hover:bg-white/[0.12] disabled:cursor-not-allowed disabled:opacity-50"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-bold border border-indigo-500/30">
-                                                    {i + 1}
-                                                </div>
-                                                <div>
-                                                    <h5 className="font-medium text-white">{milestone.title}</h5>
-                                                    <p className="text-xs text-white/50">{milestone.description}</p>
-                                                </div>
-                                            </div>
-                                            {expandedMilestone === i ? <ChevronUp className="w-4 h-4 text-white/40" /> : <ChevronDown className="w-4 h-4 text-white/40" />}
+                                            送信
                                         </button>
-
-                                        {expandedMilestone === i && (
-                                            <div className="bg-black/20 p-4 border-t border-white/5">
-                                                <ul className="space-y-2">
-                                                    {milestone.tasks.map((task, j) => (
-                                                        <li key={j} className="flex items-start gap-2 text-sm text-white/70">
-                                                            <Check className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
-                                                            <span>{task.text}</span>
-                                                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${task.priority === 'high' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
-                                                                task.priority === 'medium' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                                                                    'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                                                                }`}>
-                                                                {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
                                     </div>
-                                ))}
-                            </div>
+                                </form>
 
-                            {/* Refinement Section */}
-                            <div className="pt-4 border-t border-white/10">
-                                <label className="block text-sm font-medium text-white/60 mb-2 flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4" />
-                                    AIと一緒にプランを練り直す
-                                </label>
-                                <div className="flex gap-2">
-                                    <textarea
-                                        value={refinementText}
-                                        onChange={(e) => {
-                                            setRefinementText(e.target.value)
-                                            e.target.style.height = 'auto'
-                                            e.target.style.height = e.target.scrollHeight + 'px'
-                                        }}
-                                        placeholder="例：もっと短期間で達成したい、予算を抑えたい、など..."
-                                        rows={1}
-                                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors resize-none overflow-hidden min-h-[44px] max-h-[200px]"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault()
-                                                handleRefine(e)
-                                            }
-                                        }}
-                                        style={{ fieldSizing: 'content' }}
-                                    />
-                                    <button
-                                        onClick={handleRefine}
-                                        disabled={!refinementText.trim() || isRefining}
-                                        className="px-4 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors text-white"
-                                    >
-                                        送信
-                                    </button>
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleCreate}
+                                    className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 font-semibold text-white transition-colors hover:bg-emerald-400"
+                                >
+                                    <Target className="h-5 w-5" />
+                                    このプランでプロジェクトを開始
+                                </button>
                             </div>
-
-                            <button
-                                onClick={handleCreate}
-                                className="w-full py-4 bg-gradient-to-r from-amber-500 via-purple-500 to-indigo-600 hover:from-amber-400 hover:via-purple-400 hover:to-indigo-500 rounded-xl font-bold text-white shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
-                            >
-                                <Target className="w-5 h-5" />
-                                このプランでプロジェクトを開始
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </motion.div>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
         </div>
     )
 }

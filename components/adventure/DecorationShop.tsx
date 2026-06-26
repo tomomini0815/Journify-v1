@@ -137,7 +137,7 @@ export function DecorationShop() {
                             <button
                                 key={cat.id}
                                 onClick={() => setFilterCategory(cat.id)}
-                                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${filterCategory === cat.id
+                                className={`h-10 rounded-xl px-4 text-sm font-bold whitespace-nowrap transition-colors ${filterCategory === cat.id
                                     ? 'bg-amber-500 text-black'
                                     : 'bg-white/5 hover:bg-white/10 text-white/60'
                                     }`}

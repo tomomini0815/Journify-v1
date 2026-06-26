@@ -105,9 +105,9 @@ export default function DailyChallenges() {
                 </div>
             </div>
 
-            <p className="text-white/40 text-xs mt-1 mb-4 flex items-center gap-1.5">
-                <span className="flex items-center justify-center w-5 h-5 bg-cyan-500/20 rounded text-[10px]">💡</span>
-                クリスタルがたまるとペット飼育ができるようになります
+            <p className="text-white/45 text-xs mt-1 mb-4 flex items-start gap-2 leading-relaxed">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-cyan-500/20 text-[10px]">💡</span>
+                <span>クリスタルがたまるとペット飼育ができるようになります</span>
             </p>
 
             {/* Progress Bar (Moved Here) */}
@@ -136,44 +136,50 @@ export default function DailyChallenges() {
                 </div>
             </div>
 
-            <div className="relative z-10 space-y-3 mb-4">
+            <div className="relative z-10 space-y-2.5 mb-4">
                 {challenges.map((item, index) => (
                     <motion.div
                         key={item.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className={`p-3 rounded-lg transition-all ${item.completed
+                        className={`p-2.5 rounded-lg transition-all ${item.completed
                             ? "bg-emerald-500/20 border border-emerald-500/30"
                             : "bg-white/[0.045] border border-white/[0.08]"
                             }`}
                     >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5">
+                            <div className="shrink-0">
                                 {item.completed ? (
-                                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                                 ) : (
-                                    <Circle className="w-5 h-5 text-white/40" />
+                                    <Circle className="w-4 h-4 text-white/40" />
                                 )}
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg">{item.icon}</span>
-                                        <span className={`font-medium ${item.completed ? "text-white" : "text-white/80"}`}>
-                                            {item.title}
-                                        </span>
-                                    </div>
-                                    {item.progress !== undefined && (
-                                        <p className="text-white/60 text-sm mt-1">
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                                <div className="flex min-w-0 items-center gap-2">
+                                    <span className="shrink-0 text-lg leading-none">{item.icon}</span>
+                                    <span className={`min-w-0 truncate whitespace-nowrap text-xs font-medium leading-none sm:text-sm ${item.completed ? "text-white" : "text-white/82"}`}>
+                                        {item.title}
+                                    </span>
+                                </div>
+
+                                <div className="mt-1 flex items-center justify-between gap-2">
+                                    {item.progress !== undefined ? (
+                                        <p className="text-xs leading-none text-white/55">
                                             {item.progress}/{item.total} 完了
                                         </p>
+                                    ) : (
+                                        <span />
                                     )}
+                                    <div className="flex shrink-0 items-center gap-1">
+                                        <Gem className="w-3.5 h-3.5 text-cyan-400" />
+                                        <span className={`text-xs font-semibold sm:text-sm ${item.completed ? "text-emerald-400" : "text-white/60"}`}>
+                                            +{item.crystals}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <Gem className="w-4 h-4 text-cyan-400" />
-                                <span className={`font-bold ${item.completed ? "text-emerald-400" : "text-white/60"}`}>
-                                    +{item.crystals}
-                                </span>
                             </div>
                         </div>
                     </motion.div>

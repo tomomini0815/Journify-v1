@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
-import { DashboardMoodCheckIn } from "@/components/DashboardMoodCheckIn";
 
 interface VoiceJournalRecorderProps {
     onComplete?: (journalId: string) => void;
@@ -17,11 +16,23 @@ interface VoiceJournalRecorderProps {
 }
 
 const DEFAULT_TAGS: string[] = [];
+const MOOD_OPTIONS = [
+    { value: 10, emoji: '🥰', label: '感謝' },
+    { value: 9, emoji: '🤩', label: 'ワクワク' },
+    { value: 8, emoji: '😄', label: 'とても幸せ' },
+    { value: 7, emoji: '😊', label: '幸せ' },
+    { value: 6, emoji: '🙂', label: 'まあまあ' },
+    { value: 5, emoji: '😐', label: '普通' },
+    { value: 4, emoji: '😢', label: '悲しい' },
+    { value: 3, emoji: '😫', label: 'イライラ' },
+    { value: 2, emoji: '😞', label: '憂鬱' },
+    { value: 1, emoji: '🤬', label: '激怒' }
+];
 
 export default function VoiceJournalRecorder({
     onComplete,
     compact = false,
-    mood = 3,
+    mood = 10,
     tags = DEFAULT_TAGS
 }: VoiceJournalRecorderProps) {
     const router = useRouter();
@@ -563,8 +574,29 @@ export default function VoiceJournalRecorder({
                             </div>
                         </div>
 
-                        <div className="mt-3">
-                            <DashboardMoodCheckIn />
+                        <div className="mt-3 dashboard-panel-subtle p-2.5">
+                            <label className="text-sm font-bold text-white mb-3 block">今の気分は？</label>
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                                {MOOD_OPTIONS.map((item) => (
+                                    <button
+                                        key={item.value}
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setLocalMood(item.value);
+                                        }}
+                                        className={`flex h-8 items-center justify-center gap-1.5 rounded-md border px-2 text-xs font-semibold transition-colors ${localMood === item.value
+                                            ? "border-emerald-500 bg-emerald-500/20 text-white"
+                                            : "border-white/[0.07] bg-white/[0.035] text-white/56 hover:bg-white/[0.065] hover:text-white"
+                                            }`}
+                                        aria-pressed={localMood === item.value}
+                                    >
+                                        <span aria-hidden>{item.emoji}</span>
+                                        <span>{item.label}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Inline Mic Error */}
@@ -680,18 +712,7 @@ export default function VoiceJournalRecorder({
                                 <div>
                                     <label className="text-sm font-bold text-white mb-3 block">今の気分は？</label>
                                     <div className="grid grid-cols-5 gap-2">
-                                        {[
-                                            { value: 1, emoji: '🤬', label: '激怒' },
-                                            { value: 2, emoji: '😞', label: '憂鬱' },
-                                            { value: 3, emoji: '😫', label: 'イライラ' },
-                                            { value: 4, emoji: '😢', label: '悲しい' },
-                                            { value: 5, emoji: '😐', label: '普通' },
-                                            { value: 6, emoji: '🙂', label: 'まあまあ' },
-                                            { value: 7, emoji: '😊', label: '幸せ' },
-                                            { value: 8, emoji: '😄', label: 'とても幸せ' },
-                                            { value: 9, emoji: '🤩', label: 'ワクワク' },
-                                            { value: 10, emoji: '🥰', label: '感謝' }
-                                        ].map((item) => (
+                                        {MOOD_OPTIONS.map((item) => (
                                             <button
                                                 key={item.value}
                                                 type="button"
@@ -936,18 +957,7 @@ export default function VoiceJournalRecorder({
                             <div>
                                 <label className="text-lg font-bold text-white mb-4 block">今の気分は？</label>
                                 <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                                    {[
-                                        { value: 1, emoji: '🤬', label: '激怒' },
-                                        { value: 2, emoji: '😞', label: '憂鬱' },
-                                        { value: 3, emoji: '😫', label: 'イライラ' },
-                                        { value: 4, emoji: '😢', label: '悲しい' },
-                                        { value: 5, emoji: '😐', label: '普通' },
-                                        { value: 6, emoji: '🙂', label: 'まあまあ' },
-                                        { value: 7, emoji: '😊', label: '幸せ' },
-                                        { value: 8, emoji: '😄', label: 'とても幸せ' },
-                                        { value: 9, emoji: '🤩', label: 'ワクワク' },
-                                        { value: 10, emoji: '🥰', label: '感謝' }
-                                    ].map((item) => (
+                                    {MOOD_OPTIONS.map((item) => (
                                         <button
                                             key={item.value}
                                             onClick={() => setLocalMood(item.value)}

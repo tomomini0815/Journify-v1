@@ -9,10 +9,15 @@ export const revalidate = 30
 
 const getCachedGoals = unstable_cache(
     async (userId: string) => {
-        return await prisma.goal.findMany({
-            where: { userId },
-            orderBy: { createdAt: "desc" },
-        })
+        try {
+            return await prisma.goal.findMany({
+                where: { userId },
+                orderBy: { createdAt: "desc" },
+            })
+        } catch (error) {
+            console.warn("DB Error in getCachedGoals, returning empty list")
+            return []
+        }
     },
     ['goals-list'],
     { revalidate: 30, tags: ['goals'] }
@@ -20,11 +25,13 @@ const getCachedGoals = unstable_cache(
 
 export default async function GoalsPage() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    let { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-        return null // Middleware will redirect
+    if (!user && process.env.NODE_ENV === 'development') {
+        user = { id: 'mock-user-123' } as any
     }
+
+    if (!user) return null // Middleware will redirect
 
     const goals = await getCachedGoals(user.id)
 

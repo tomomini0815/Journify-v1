@@ -155,7 +155,7 @@ export function PetOutfitShop({ isOpen, onClose, gold, petLevel, onPurchase }: P
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveCategory(tab.id)}
-                                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${activeCategory === tab.id
+                                    className={`flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-all ${activeCategory === tab.id
                                             ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300'
                                             : 'bg-white/5 border border-transparent text-white/50 hover:bg-white/10'
                                         }`}
@@ -247,7 +247,7 @@ export function PetOutfitShop({ isOpen, onClose, gold, petLevel, onPurchase }: P
                                                         whileTap={{ scale: 0.95 }}
                                                         onClick={() => handleBuy(outfit)}
                                                         disabled={!canAfford || buyingId !== null}
-                                                        className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${canAfford
+                                                        className={`flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-all ${canAfford
                                                                 ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
                                                                 : 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'
                                                             } disabled:opacity-50`}

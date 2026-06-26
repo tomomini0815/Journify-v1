@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
 import { unstable_cache } from "next/cache"
+import { Suspense } from "react"
 import { ArrowUpRight, FileText, Mic, PawPrint } from "lucide-react"
 import { mockDb } from "@/lib/mock-db"
 
@@ -11,6 +12,9 @@ import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 import Jojo from "@/components/Jojo"
 import DailyChallenges from "@/components/DailyChallenges"
 import { ActiveCompanionDisplay } from "@/components/ActiveCompanionDisplay"
+import DashboardTaskWidget from "@/components/DashboardTaskWidget"
+import VoiceRecordingSection from "@/components/VoiceRecordingSection"
+import { StatsSkeleton, ChartsSkeleton, RecentJournalsSkeleton, GoalProgressSkeleton } from "./loading"
 
 // Revalidate every 60 seconds
 export const revalidate = 60
@@ -78,6 +82,7 @@ const getCachedJournalData = unstable_cache(
                     select: {
                         id: true,
                         title: true,
+                        content: true,
                         mood: true,
                         createdAt: true,
                     },
@@ -145,6 +150,7 @@ const getCachedJournalData = unstable_cache(
                     select: {
                         id: true,
                         aiSummary: true,
+                        transcript: true,
                         mood: true,
                         sentiment: true, // Add sentiment
                         createdAt: true,
@@ -259,9 +265,6 @@ const getCachedLifeBalanceData = unstable_cache(
     ['dashboard-life-balance'],
     { revalidate: 60, tags: ['dashboard', 'life-balance'] }
 )
-
-import { Suspense } from "react"
-import { StatsSkeleton, ChartsSkeleton, RecentJournalsSkeleton, GoalProgressSkeleton } from "./loading"
 
 // ... (keep cached data fetching functions)
 
@@ -446,19 +449,35 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
     // Index 2 is recent text journals, Index 12 is recent voice journals
     const recentTextJournals = data[2]
     // @ts-ignore - Index 12 might not be inferred correctly by TS in this context without full type def update
-    const recentVoiceJournals = data[12] as Array<{ id: string, aiSummary: string, mood: number | null, sentiment: string | null, createdAt: Date }>
+    const recentVoiceJournals = data[12] as Array<{ id: string, aiSummary: string, transcript: string, mood: number | null, sentiment: string | null, createdAt: Date }>
+
+    const toPlainText = (value?: string | null) =>
+        (value || "")
+            .replace(/<[^>]*>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+
+    const toExcerpt = (value?: string | null) => {
+        const text = toPlainText(value)
+        if (!text) return "内容はまだありません"
+        return text.length > 80 ? `${text.slice(0, 80)}...` : text
+    }
 
     // Combine and sort
-    // Combine and sort
     const combinedJournals = [
-        ...recentTextJournals.map((j: any) => ({ ...j, type: 'text', displayTitle: j.title })),
+        ...recentTextJournals.map((j: any) => ({
+            ...j,
+            type: 'text',
+            displayTitle: j.title || "無題のジャーナル",
+            displayBody: toExcerpt(j.content),
+        })),
         ...recentVoiceJournals.map((j: any) => {
-            // Remove "ユーザーは" prefix if present
-            let title = j.aiSummary || "音声ジャーナル";
-            if (title.startsWith("ユーザーは")) {
-                title = title.replace(/^ユーザーは/, "");
-            }
-            return { ...j, type: 'voice', displayTitle: title };
+            return {
+                ...j,
+                type: 'voice',
+                displayTitle: "音声ジャーナル",
+                displayBody: toExcerpt(j.transcript),
+            };
         })
     ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 3)
@@ -503,7 +522,8 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
                                 </div>
                                 <span className="text-2xl shrink-0 ml-2">{getMoodEmoji(journal.mood, (journal as any).sentiment)}</span>
                             </div>
-                            <p className="text-white/60 text-sm pl-6">{new Date(journal.createdAt).toISOString().split('T')[0]}</p>
+                            <p className="pl-6 text-sm leading-relaxed text-white/65 line-clamp-2">{journal.displayBody}</p>
+                            <p className="mt-1 text-white/40 text-xs pl-6">{new Date(journal.createdAt).toISOString().split('T')[0]}</p>
                         </div>
                     </Link>
                 ))}
@@ -594,8 +614,6 @@ const getCachedDashboardTasks = unstable_cache(
     { revalidate: 60, tags: ['dashboard', 'tasks'] }
 )
 
-import DashboardTaskWidget from "@/components/DashboardTaskWidget"
-
 async function TasksSection({ userId }: { userId: string }) {
     const tasks = await getCachedDashboardTasks(userId);
 
@@ -660,8 +678,6 @@ const getCachedUserSettings = unstable_cache(
     { revalidate: 60, tags: ['dashboard', 'settings', 'profile'] }
 )
 
-import VoiceRecordingSection from "@/components/VoiceRecordingSection"
-
 async function VoiceRecordingSectionWrapper({ userId }: { userId: string }) {
     const projects = await getCachedUserProjects(userId)
 
@@ -703,15 +719,15 @@ export default async function DashboardPage() {
     return (
         <DashboardLayout>
             <div className="dashboard-shell space-y-4">
-            <section className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.55fr)]">
-                <div className="dashboard-panel p-4 sm:p-5">
+            <section className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.55fr)]">
+                <div className="dashboard-panel h-full p-4 sm:p-5">
                     <Suspense fallback={null}>
                         <VoiceRecordingSectionWrapper userId={user.id} />
                     </Suspense>
                 </div>
 
-                <div className="dashboard-panel p-4 sm:p-5">
-                    <div className="mb-3">
+                <div className="dashboard-panel flex h-full flex-col p-4 sm:p-5">
+                    <div className="mb-3 flex flex-col items-start">
                         <p className="dashboard-section-label mb-1">Summary</p>
                         <h2 className="text-lg font-semibold leading-tight text-white">活動サマリー</h2>
                     </div>

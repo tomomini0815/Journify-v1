@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Send, AlertCircle, CheckCircle2, Loader2, MessageSquarePlus } from "lucide-react"
+import { Send, AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 
 export default function FeedbackPage() {
@@ -95,20 +95,10 @@ export default function FeedbackPage() {
     return (
         <DashboardLayout>
             <div className="max-w-2xl mx-auto space-y-8">
-                <header>
-                    <h1 className="text-3xl font-bold text-white">
-                        お問い合わせ・フィードバック
-                    </h1>
-                    <p className="mt-2 text-white/60">
-                        アプリに関するご質問、ご意見、不具合のご報告などをお寄せください。<br />
-                        いただいた内容は、サービスの改善に活用させていただきます。
-                    </p>
-                </header>
-
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl shadow-cyan-900/10"
+                    className="rounded-2xl border border-white/[0.08] bg-[#111418] p-6 shadow-2xl sm:p-8"
                 >
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Feedback Type */}
@@ -125,8 +115,8 @@ export default function FeedbackPage() {
                                         className={`
                                             flex items-center justify-center px-4 py-3 rounded-xl border text-sm font-medium transition-all
                                             ${type === t.value
-                                                ? "bg-cyan-500/10 border-cyan-500/50 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
-                                                : "bg-slate-900/40 border-white/5 text-slate-400 hover:bg-white/5 hover:text-slate-200 hover:border-white/10"
+                                                ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-300"
+                                                : "border-white/[0.08] bg-white/[0.04] text-white/55 hover:border-emerald-400/20 hover:bg-white/[0.07] hover:text-white/80"
                                             }
                                         `}
                                     >
@@ -145,11 +135,11 @@ export default function FeedbackPage() {
                                 <select
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
-                                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all"
+                                    className="w-full rounded-xl border border-white/[0.08] bg-[#15191f] px-4 py-3 text-white placeholder-white/25 transition-colors focus:border-emerald-400/45 focus:outline-none"
                                 >
-                                    <option value="" className="bg-slate-900 text-slate-500">選択してください</option>
+                                    <option value="" className="bg-[#15191f] text-white/50">選択してください</option>
                                     {categories[type].map((c) => (
-                                        <option key={c.value} value={c.value} className="bg-slate-900">
+                                        <option key={c.value} value={c.value} className="bg-[#15191f] text-white">
                                             {c.label}
                                         </option>
                                     ))}
@@ -166,11 +156,11 @@ export default function FeedbackPage() {
                                 <select
                                     value={affectedPage}
                                     onChange={(e) => setAffectedPage(e.target.value)}
-                                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all"
+                                    className="w-full rounded-xl border border-white/[0.08] bg-[#15191f] px-4 py-3 text-white placeholder-white/25 transition-colors focus:border-emerald-400/45 focus:outline-none"
                                 >
-                                    <option value="" className="bg-slate-900 text-slate-500">選択してください</option>
+                                    <option value="" className="bg-[#15191f] text-white/50">選択してください</option>
                                     {pages.map((p) => (
-                                        <option key={p.value} value={p.value} className="bg-slate-900">
+                                        <option key={p.value} value={p.value} className="bg-[#15191f] text-white">
                                             {p.label}
                                         </option>
                                     ))}
@@ -190,7 +180,7 @@ export default function FeedbackPage() {
                                 required
                                 rows={6}
                                 placeholder="具体的な内容をご記入ください..."
-                                className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all resize-none"
+                                className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-white placeholder-white/25 transition-colors focus:border-emerald-400/45 focus:outline-none"
                             />
                         </div>
 
@@ -199,10 +189,10 @@ export default function FeedbackPage() {
                             type="submit"
                             disabled={isSubmitting || !content.trim()}
                             className={`
-                                group w-full flex items-center justify-center px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all
+                                group flex h-10 w-full items-center justify-center px-4 rounded-xl font-bold text-white shadow-lg transition-all
                                 ${isSubmitting || !content.trim()
                                     ? "bg-white/5 cursor-not-allowed opacity-50"
-                                    : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 hover:shadow-lg hover:shadow-cyan-500/25 active:scale-[0.98]"
+                                    : "bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98]"
                                 }
                             `}
                         >

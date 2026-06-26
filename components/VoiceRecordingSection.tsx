@@ -376,7 +376,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
     return (
         <div>
             {/* Tab Switcher */}
-            <div className="mb-2">
+            <div className="mb-3">
                 <div className="flex gap-1 p-1 dashboard-panel-subtle w-full sm:w-fit">
                     <button
                         onClick={() => setActiveTab("journal")}
@@ -413,10 +413,10 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                         <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-blue-500/[0.04] rounded-full blur-[80px]" />
 
                         {/* Main Content */}
-                        <div className="relative z-10 p-5 sm:p-6">
+                        <div className="relative z-10 p-4 sm:p-5">
 
                             {/* Header */}
-                            <div className="flex items-center justify-between gap-4 mb-2">
+                            <div className="flex items-center justify-between gap-3 mb-2">
                                 <div className="flex items-center gap-3">
                                     <h3 className="text-lg font-bold text-white/90 tracking-tight">
                                         議事録を録音
@@ -456,7 +456,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                     )}
                                 </div>
                             </div>
-                            <p className="text-white/40 text-xs mb-4">
+                            <p className="text-white/40 text-xs mb-3">
                                 {isRecording ? (isAndroid ? "音声を録音中... 停止後にAIが文字起こしします" : "会議の音声を聴いています...") : isTranscribing ? "AIが文字起こし中..." : "マイクボタンをタップして開始してください"}
                             </p>
 
@@ -467,7 +467,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         initial={{ opacity: 0, y: -8 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -8 }}
-                                        className="mb-4"
+                                        className="mb-3"
                                     >
                                         <div className="flex items-center gap-3">
                                             <motion.div
@@ -485,7 +485,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                             </AnimatePresence>
 
                             {/* Project Selection */}
-                            <div className="mb-4">
+                            <div className="mb-3.5">
                                 <label className="block text-white/40 text-[11px] font-medium uppercase tracking-wider mb-1.5">
                                     保存先プロジェクト
                                 </label>
@@ -519,7 +519,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                                 placeholder="プロジェクト名（未入力で自動設定）"
                                                 value={newProjectTitle}
                                                 onChange={(e) => setNewProjectTitle(e.target.value)}
-                                                className="w-full mt-2 px-3.5 py-2.5 rounded-xl bg-cyan-500/[0.06] border border-cyan-500/20 text-white text-sm placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                                                    className="w-full mt-2 px-3.5 py-2 rounded-xl bg-cyan-500/[0.06] border border-cyan-500/20 text-white text-sm placeholder-white/25 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
                                                 disabled={isRecording || isProcessing}
                                                 autoFocus
                                             />
@@ -535,7 +535,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: "auto" }}
                                         exit={{ opacity: 0, height: 0 }}
-                                        className="mb-4"
+                                        className="mb-3.5"
                                     >
                                         <div className="flex items-center gap-2 mb-2">
                                             <FileText className="w-3 h-3 text-white/30" />
@@ -580,8 +580,8 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                                     value={transcript}
                                                     onChange={(e) => setTranscript(e.target.value)}
                                                     placeholder="テキストを入力または録音してください"
-                                                    className="w-full p-3.5 bg-transparent text-white/70 text-sm leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-cyan-500/30 rounded-xl placeholder:text-white/20 placeholder:italic min-h-[100px] max-h-[200px]"
-                                                    rows={5}
+                                                className="w-full p-3 bg-transparent text-white/70 text-sm leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-cyan-500/30 rounded-xl placeholder:text-white/20 placeholder:italic min-h-[88px] max-h-[180px]"
+                                                    rows={4}
                                                 />
                                             )}
                                             {!isRecording && transcript && (
@@ -601,7 +601,7 @@ export default function VoiceRecordingSection({ projects: initialProjects }: Voi
                                         initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: 8 }}
-                                        className="grid grid-cols-2 gap-3"
+                                        className="grid grid-cols-2 gap-2.5"
                                     >
                                         <button
                                             onClick={cancelRecording}

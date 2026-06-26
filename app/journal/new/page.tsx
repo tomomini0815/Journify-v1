@@ -15,6 +15,11 @@ function NewJournalContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const mode = searchParams.get('mode')
+    const isVoiceMode =
+        mode === 'voice' ||
+        searchParams.get('type') === 'voice' ||
+        searchParams.get('tab') === 'voice' ||
+        searchParams.get('voice') === 'true'
 
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
@@ -176,22 +181,7 @@ function NewJournalContent() {
 
     return (
         <DashboardLayout>
-            {/* Header */}
-            <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-4 overflow-hidden">
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="max-w-full"
-                >
-                    <h1 className="text-[24px] sm:text-[28px] font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                        {mode === 'voice' ? '音声ジャーナル' : '新しいジャーナル'}
-                    </h1>
-                    <p className="text-white/60 mt-1 text-sm md:text-base">
-                        {mode === 'voice' ? '声を録音して、思いを記録する' : 'あなたの思考と感情を記録する'}
-                    </p>
-                </motion.div>
-
+            <div className="mb-6 flex justify-end">
                 <div className="flex gap-2 shrink-0 self-end md:self-auto">
                     <Link href="/journal">
                         <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl">
@@ -200,7 +190,7 @@ function NewJournalContent() {
                             <span className="sm:hidden">中止</span>
                         </Button>
                     </Link>
-                    {mode !== 'voice' && (
+                    {!isVoiceMode && (
                         <Button
                             onClick={handleSave}
                             disabled={isSaving}
@@ -219,17 +209,17 @@ function NewJournalContent() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={`grid grid-cols-1 gap-6 ${isVoiceMode ? '' : 'lg:grid-cols-3'}`}>
                 {/* 左側: ジャーナル入力 or 音声録音 */}
-                <div className="lg:col-span-2 space-y-6">
-                    {mode === 'voice' ? (
+                <div className={isVoiceMode ? "space-y-6" : "lg:col-span-2 space-y-6"}>
+                    {isVoiceMode ? (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.1 }}
                         >
                             <VoiceJournalRecorder
-                                mood={mood}
+                                mood={10}
                                 tags={tags}
                                 onComplete={() => router.push('/journal?tab=voice')}
                             />
@@ -357,6 +347,7 @@ function NewJournalContent() {
                 </div>
 
                 {/* 右側: 気分・活動追跡 */}
+                {!isVoiceMode && (
                 <div className="space-y-6">
                     {/* 気分評価 */}
                     <motion.div
@@ -512,6 +503,7 @@ function NewJournalContent() {
                         </div>
                     </motion.div>
                 </div>
+                )}
             </div>
         </DashboardLayout>
     )

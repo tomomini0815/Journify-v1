@@ -259,7 +259,7 @@ export default function AdventurePage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-left"
                     >
-                        <h1 className="text-4xl md:text-5xl font-black mb-2 whitespace-nowrap">
+                        <h1 className="mb-2 whitespace-nowrap text-2xl font-black md:text-3xl">
                             <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 bg-clip-text text-transparent">
                                 🐾 ペットハウス
                             </span>
@@ -286,7 +286,7 @@ export default function AdventurePage() {
                         {/* Gacha Button */}
                         <motion.button
                             onClick={() => setIsGachaOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-full font-bold shadow-lg shadow-cyan-500/20 transition-all transform hover:scale-105"
+                            className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-4 font-bold shadow-lg shadow-cyan-500/20 transition-all transform hover:scale-105 hover:from-cyan-500 hover:to-blue-500"
                         >
                             <Gem size={16} className="text-cyan-300" />
                             <span>召喚</span>
@@ -298,7 +298,7 @@ export default function AdventurePage() {
                         {/* Outfit Shop Button */}
                         <motion.button
                             onClick={() => setIsOutfitShopOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-full font-bold shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-105"
+                            className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 font-bold shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-105 hover:from-emerald-500 hover:to-teal-500"
                         >
                             <Store size={16} className="text-emerald-200" />
                             <span>衣装</span>
@@ -326,7 +326,7 @@ export default function AdventurePage() {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setIsGachaOpen(true)}
-                            className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl font-bold text-white shadow-lg shadow-cyan-500/30 flex items-center gap-2 mx-auto"
+                            className="mx-auto flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 font-bold text-white shadow-lg shadow-cyan-500/30"
                         >
                             <Gem className="w-5 h-5" />
                             ガチャを回す (100💎)
@@ -573,44 +573,44 @@ export default function AdventurePage() {
                                             whileTap={{ scale: 0.9 }}
                                             onClick={() => handleFeed('treat')}
                                             disabled={actionLoading}
-                                            className="p-3 bg-white/5 hover:bg-amber-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-amber-500/30 group whitespace-nowrap"
+                                            className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-transparent bg-white/5 px-2 text-center transition-colors hover:border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-50 group whitespace-nowrap"
                                         >
-                                            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🍪</div>
-                                            <div className="text-xs font-bold">おやつ</div>
-                                            <div className="text-[10px] text-white/40 group-hover:text-amber-200">+5❤️ +3⚡</div>
+                                            <div className="text-lg group-hover:scale-110 transition-transform">🍪</div>
+                                            <div className="text-[11px] font-bold">おやつ</div>
+                                            <div className="text-[9px] text-white/40 group-hover:text-amber-200">+5❤️ +3⚡</div>
                                         </motion.button>
                                         <motion.button
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.9 }}
                                             onClick={() => handleFeed('meal')}
                                             disabled={actionLoading}
-                                            className="p-3 bg-white/5 hover:bg-orange-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-orange-500/30 group whitespace-nowrap"
+                                            className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-transparent bg-white/5 px-2 text-center transition-colors hover:border-orange-500/30 hover:bg-orange-500/20 disabled:opacity-50 group whitespace-nowrap"
                                         >
-                                            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🍖</div>
-                                            <div className="text-xs font-bold">ごはん</div>
-                                            <div className="text-[10px] text-white/40 group-hover:text-orange-200">+10❤️ +10⚡</div>
+                                            <div className="text-lg group-hover:scale-110 transition-transform">🍖</div>
+                                            <div className="text-[11px] font-bold">ごはん</div>
+                                            <div className="text-[9px] text-white/40 group-hover:text-orange-200">+10❤️ +10⚡</div>
                                         </motion.button>
                                         <motion.button
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.9 }}
                                             onClick={() => handleFeed('deluxe')}
                                             disabled={actionLoading}
-                                            className="p-3 bg-white/5 hover:bg-sky-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-sky-500/30 group whitespace-nowrap"
+                                            className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-transparent bg-white/5 px-2 text-center transition-colors hover:border-sky-500/30 hover:bg-sky-500/20 disabled:opacity-50 group whitespace-nowrap"
                                         >
-                                            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🧁</div>
-                                            <div className="text-xs font-bold">ごちそう</div>
-                                            <div className="text-[10px] text-white/40 group-hover:text-sky-200">+25❤️ +25⚡</div>
+                                            <div className="text-lg group-hover:scale-110 transition-transform">🧁</div>
+                                            <div className="text-[11px] font-bold">ごちそう</div>
+                                            <div className="text-[9px] text-white/40 group-hover:text-sky-200">+25❤️ +25⚡</div>
                                         </motion.button>
                                         <motion.button
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.9 }}
                                             onClick={handlePlay}
                                             disabled={actionLoading}
-                                            className="p-3 bg-white/5 hover:bg-emerald-500/20 rounded-xl transition-colors disabled:opacity-50 text-center border border-transparent hover:border-emerald-500/30 group whitespace-nowrap"
+                                            className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-transparent bg-white/5 px-2 text-center transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/20 disabled:opacity-50 group whitespace-nowrap"
                                         >
-                                            <div className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎾</div>
-                                            <div className="text-xs font-bold">あそぶ</div>
-                                            <div className="text-[10px] text-white/40 group-hover:text-emerald-200">+15 EXP</div>
+                                            <div className="text-lg group-hover:scale-110 transition-transform">🎾</div>
+                                            <div className="text-[11px] font-bold">あそぶ</div>
+                                            <div className="text-[9px] text-white/40 group-hover:text-emerald-200">+15 EXP</div>
                                         </motion.button>
                                     </div>
 
@@ -619,7 +619,7 @@ export default function AdventurePage() {
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={handlePet}
-                                        className="w-full mt-2 p-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border border-cyan-500/20 rounded-xl transition-all flex items-center justify-center gap-2 group whitespace-nowrap"
+                                        className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-4 transition-all hover:from-cyan-500/20 hover:to-blue-500/20 group whitespace-nowrap"
                                     >
                                         <span className="text-xl group-hover:scale-125 transition-transform">🤗</span>
                                         <span className="text-xs font-bold">なでなで</span>
@@ -630,7 +630,7 @@ export default function AdventurePage() {
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={() => setIsDressUpOpen(true)}
-                                        className="w-full mt-2 p-3 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-cyan-500/20 border border-emerald-500/20 rounded-xl transition-all flex items-center justify-center gap-2 group whitespace-nowrap"
+                                        className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 px-4 transition-all hover:from-emerald-500/20 hover:to-cyan-500/20 group whitespace-nowrap"
                                     >
                                         <Shirt size={16} className="text-emerald-400 group-hover:scale-110 transition-transform" />
                                         <span className="text-xs font-bold">きせかえ</span>
@@ -643,7 +643,7 @@ export default function AdventurePage() {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={handleActivate}
                                             disabled={actionLoading}
-                                            className="w-full mt-2 p-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
+                                            className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold transition-all hover:bg-white/20 disabled:opacity-50 whitespace-nowrap"
                                         >
                                             <Sparkles size={16} className="text-yellow-400" />
                                             パートナーにする

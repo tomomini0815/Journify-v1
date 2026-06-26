@@ -188,7 +188,7 @@ export function PetDressUp({
                             <button
                                 key={key}
                                 onClick={() => setActiveCategory(key)}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeCategory === key
+                                className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition-all ${activeCategory === key
                                     ? 'bg-pink-500/20 border border-pink-500/40 text-pink-300'
                                     : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10'
                                     }`}
@@ -221,7 +221,7 @@ export function PetDressUp({
                                         whileTap={{ scale: 0.98 }}
                                         onClick={() => handleUnequip(activeCategory)}
                                         disabled={actionLoading !== null}
-                                        className="w-full p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/20 transition-all text-sm text-white/60 flex items-center justify-center gap-2 disabled:opacity-50"
+                                        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white/60 transition-all hover:border-red-500/20 hover:bg-red-500/10 disabled:opacity-50"
                                     >
                                         <X className="w-4 h-4" />
                                         装備を外す
@@ -240,7 +240,7 @@ export function PetDressUp({
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => !isEquipped && handleEquip(outfit.id, outfit.category)}
                                             disabled={actionLoading !== null || isEquipped}
-                                            className={`w-full p-4 rounded-xl border transition-all flex items-center gap-4 text-left disabled:opacity-70 ${isEquipped
+                                            className={`flex w-full items-center gap-4 rounded-xl border px-4 py-3 text-left transition-all disabled:opacity-70 ${isEquipped
                                                 ? 'bg-pink-500/15 border-pink-500/40 ring-1 ring-pink-500/30'
                                                 : `${style.bg} ${style.border} hover:bg-white/10`
                                                 }`}

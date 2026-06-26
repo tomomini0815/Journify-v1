@@ -118,22 +118,18 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
     return (
         <DashboardLayout>
             <div className="max-w-6xl mx-auto">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-[28px] font-bold text-white mb-2">プロジェクト</h1>
-                        <p className="text-white/60">大きな目標を管理可能なプロジェクトに分割しましょう。</p>
-                    </div>
+                <div className="flex justify-end gap-4 mb-8">
                     <div className="flex gap-3 self-end md:self-auto">
                         <button
                             onClick={() => setIsAIModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-medium transition-all text-indigo-300 whitespace-nowrap"
+                            className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-4 font-medium text-emerald-300 transition-all hover:bg-white/20 whitespace-nowrap"
                         >
                             <span className="text-lg">✨</span>
                             AIで作成
                         </button>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl font-medium transition-all whitespace-nowrap"
+                            className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 font-medium transition-all hover:from-emerald-600 hover:to-cyan-600 whitespace-nowrap"
                         >
                             <Plus className="w-5 h-5" />
                             新規作成
@@ -150,8 +146,8 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                 className="group bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all cursor-pointer h-full flex flex-col relative"
                             >
                                 <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-indigo-500/20 rounded-xl group-hover:bg-indigo-500/30 transition-colors">
-                                        <Briefcase className="w-6 h-6 text-indigo-400" />
+                                    <div className="p-3 bg-emerald-400/10 border border-emerald-400/15 rounded-xl group-hover:bg-emerald-400/15 transition-colors">
+                                        <Briefcase className="w-6 h-6 text-emerald-300" />
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${project.status === 'active' ? 'bg-emerald-500/20 text-emerald-300' :
@@ -171,7 +167,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                     </div>
                                 </div>
 
-                                <h3 className="text-xl font-bold mb-2 group-hover:text-indigo-300 transition-colors">{project.title}</h3>
+                                <h3 className="text-xl font-bold mb-2 group-hover:text-emerald-300 transition-colors">{project.title}</h3>
                                 <p className="text-white/60 text-sm mb-6 line-clamp-2 flex-grow">{project.description}</p>
 
                                 <div className="flex items-center justify-between text-sm text-white/40 pt-4 border-t border-white/5">
@@ -198,20 +194,6 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                             <Briefcase className="w-12 h-12 text-white/20 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-white mb-2">プロジェクトがありません</h3>
                             <p className="text-white/60 mb-6">新しいプロジェクトを作成して始めましょう</p>
-                            <div className="flex justify-center gap-4">
-                                <button
-                                    onClick={() => setIsAIModalOpen(true)}
-                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors border border-white/10 text-indigo-300 flex items-center gap-2"
-                                >
-                                    <span>✨</span> AIで作成
-                                </button>
-                                <button
-                                    onClick={() => setIsModalOpen(true)}
-                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
-                                >
-                                    手動で作成
-                                </button>
-                            </div>
                         </div>
                     )}
                 </div>
@@ -233,7 +215,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                         required
                                         value={newProject.title}
                                         onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-400/45 transition-colors"
                                     />
                                 </div>
                                 <div>
@@ -241,7 +223,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                     <textarea
                                         value={newProject.description}
                                         onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors resize-none"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-400/45 transition-colors resize-none"
                                         rows={3}
                                     />
                                 </div>
@@ -252,7 +234,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                             type="date"
                                             value={newProject.startDate}
                                             onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-400/45 transition-colors [color-scheme:dark]"
                                         />
                                     </div>
                                     <div>
@@ -261,7 +243,7 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                             type="date"
                                             value={newProject.endDate}
                                             onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-colors [color-scheme:dark]"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-400/45 transition-colors [color-scheme:dark]"
                                         />
                                     </div>
                                 </div>
@@ -269,13 +251,13 @@ export default function ProjectsClient({ initialProjects }: ProjectsClientProps)
                                     <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}
-                                        className="px-4 py-2 text-white/60 hover:text-white transition-colors"
+                                        className="h-10 px-4 text-white/60 transition-colors hover:text-white"
                                     >
                                         キャンセル
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl font-medium transition-colors"
+                                        className="h-10 rounded-xl bg-emerald-500 px-4 font-medium transition-colors hover:bg-emerald-400"
                                     >
                                         作成
                                     </button>

@@ -104,29 +104,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
     const displayTasks = sortedTasks.slice(0, 5);
 
     const handleTaskClick = (task: Task) => {
-        const dateToCheck = task.scheduledDate || task.endDate || task.startDate;
-        if (!dateToCheck) {
-            router.push('/tasks?scope=all');
-            return;
-        }
-
-        const date = new Date(dateToCheck);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const nextWeek = new Date(today);
-        nextWeek.setDate(nextWeek.getDate() + 7);
-        const nextMonth = new Date(today);
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-        if (date < new Date(today.getTime() + 24 * 60 * 60 * 1000)) {
-            router.push('/tasks?scope=today');
-        } else if (date < nextWeek) {
-            router.push('/tasks?scope=week');
-        } else if (date < nextMonth) {
-            router.push('/tasks?scope=month');
-        } else {
-            router.push('/tasks?scope=all');
-        }
+        router.push(`/tasks?taskId=${encodeURIComponent(task.id)}`);
     };
 
     const handleAddTask = async (e: React.FormEvent) => {

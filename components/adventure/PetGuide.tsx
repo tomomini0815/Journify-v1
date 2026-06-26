@@ -107,7 +107,7 @@ export function PetGuide({ isOpen, onClose }: PetGuideProps) {
                     <div className="p-4 border-t border-white/10 bg-white/5 text-center">
                         <button
                             onClick={onClose}
-                            className="px-8 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-500/20 transition-all"
+                            className="h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 font-bold transition-all hover:shadow-lg hover:shadow-cyan-500/20"
                         >
                             わかった！
                         </button>

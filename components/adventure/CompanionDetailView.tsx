@@ -136,7 +136,7 @@ export function CompanionDetailView({ companionId, onBack }: CompanionDetailView
                 <p className="text-2xl text-white/60 mb-4">仲間が見つかりません</p>
                 <button
                     onClick={onBack}
-                    className="px-6 py-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
+                    className="h-10 rounded-xl bg-white/10 px-4 transition-colors hover:bg-white/20"
                 >
                     一覧に戻る
                 </button>
@@ -285,7 +285,7 @@ export function CompanionDetailView({ companionId, onBack }: CompanionDetailView
                             <button
                                 onClick={() => handleFeed('treat')}
                                 disabled={actionLoading}
-                                className="p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 text-center"
+                                className="rounded-xl bg-white/5 p-3 text-center transition-colors hover:bg-white/10 disabled:opacity-50"
                             >
                                 <div className="text-2xl mb-2">🍪</div>
                                 <div className="text-xs">スナック</div>
@@ -294,7 +294,7 @@ export function CompanionDetailView({ companionId, onBack }: CompanionDetailView
                             <button
                                 onClick={() => handleFeed('meal')}
                                 disabled={actionLoading}
-                                className="p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 text-center"
+                                className="rounded-xl bg-white/5 p-3 text-center transition-colors hover:bg-white/10 disabled:opacity-50"
                             >
                                 <div className="text-2xl mb-2">🍖</div>
                                 <div className="text-xs">ごはん</div>
@@ -303,7 +303,7 @@ export function CompanionDetailView({ companionId, onBack }: CompanionDetailView
                             <button
                                 onClick={() => handleFeed('deluxe')}
                                 disabled={actionLoading}
-                                className="p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 text-center"
+                                className="rounded-xl bg-white/5 p-3 text-center transition-colors hover:bg-white/10 disabled:opacity-50"
                             >
                                 <div className="text-2xl mb-2">🧁</div>
                                 <div className="text-xs">豪華</div>
@@ -321,11 +321,11 @@ export function CompanionDetailView({ companionId, onBack }: CompanionDetailView
                         <button
                             onClick={handlePlay}
                             disabled={actionLoading}
-                            className="w-full p-4 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 border border-white/10 rounded-xl transition-all disabled:opacity-50"
+                            className="flex h-10 w-full items-center justify-center rounded-xl border border-white/10 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 px-4 transition-all hover:from-emerald-500/30 hover:to-cyan-500/30 disabled:opacity-50"
                         >
-                            <div className="text-center">
-                                <span className="font-bold block mb-1">ボールで遊ぶ</span>
-                                <span className="text-xs text-white/60 text-center">+15 クリスタル -10 ⚡</span>
+                            <div className="flex items-center justify-center gap-2">
+                                <span className="font-bold">ボールで遊ぶ</span>
+                                <span className="text-xs text-white/60">+15 クリスタル -10 ⚡</span>
                             </div>
                         </button>
                     </div>
@@ -334,7 +334,7 @@ export function CompanionDetailView({ companionId, onBack }: CompanionDetailView
                     <button
                         onClick={handleActivate}
                         disabled={companion.isActive || actionLoading}
-                        className={`w-full p-4 rounded-xl font-bold transition-all ${companion.isActive
+                        className={`h-10 w-full rounded-xl px-4 font-bold transition-all ${companion.isActive
                             ? 'bg-emerald-500/20 text-emerald-400 cursor-default'
                             : 'bg-white/10 hover:bg-white/20'
                             }`}

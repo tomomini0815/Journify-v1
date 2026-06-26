@@ -178,24 +178,12 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
 
     return (
         <DashboardLayout>
-            {/* Header */}
-            <div className="mb-8">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <h1 className="text-[28px] font-bold mb-2">ジャーナル</h1>
-                    <p className="text-white/60">あなたの思考を記録し、成長の軌跡を追う</p>
-                </motion.div>
-            </div>
-
             {/* Action Bar */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="flex flex-col gap-4 mb-8"
+                className="flex flex-col gap-4 mb-6"
             >
                 {/* Tabs */}
                 <div className="border-b border-white/10 mb-4">
@@ -239,21 +227,20 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
 
                 {activeTab !== "mindmap" && (
                     <>
-                        {/* Search */}
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-                            <Input
-                                type="text"
-                                placeholder={activeTab === "written" ? "ジャーナルを検索..." : "音声ジャーナルを検索..."}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-11 bg-white/5 border-white/10 focus:border-emerald-400 h-12 rounded-xl"
-                            />
-                        </div>
-
                         {/* Filter Buttons and New Entry Button */}
-                        <div className="flex gap-2 justify-between relative z-20">
-                            <div className="flex gap-2">
+                        <div className="flex flex-col gap-2 relative z-20 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                {/* Search */}
+                                <div className="relative sm:w-72 lg:w-80">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                                    <Input
+                                        type="text"
+                                        placeholder={activeTab === "written" ? "ジャーナルを検索..." : "音声ジャーナルを検索..."}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="h-10 rounded-xl border-white/10 bg-white/5 pl-9 text-sm focus:border-emerald-400"
+                                    />
+                                </div>
                                 {/* Date Filter */}
                                 <div className="relative">
                                     <Button
@@ -262,7 +249,7 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                             setShowDateFilter(!showDateFilter)
                                             setShowContentFilter(false)
                                         }}
-                                        className={`bg-white/5 border-white/10 hover:bg-white/10 rounded-xl ${showDateFilter || dateRange.start || dateRange.end ? 'border-emerald-500/50 text-emerald-400' : ''}`}
+                                        className={`h-10 bg-white/5 border-white/10 hover:bg-white/10 rounded-xl ${showDateFilter || dateRange.start || dateRange.end ? 'border-emerald-500/50 text-emerald-400' : ''}`}
                                     >
                                         <Calendar className="w-4 h-4 mr-2" />
                                         日付
@@ -312,7 +299,7 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                                             setShowContentFilter(!showContentFilter)
                                             setShowDateFilter(false)
                                         }}
-                                        className={`bg-white/5 border-white/10 hover:bg-white/10 rounded-xl ${showContentFilter || selectedMoods.length > 0 || selectedTags.length > 0 ? 'border-emerald-500/50 text-emerald-400' : ''}`}
+                                        className={`h-10 bg-white/5 border-white/10 hover:bg-white/10 rounded-xl ${showContentFilter || selectedMoods.length > 0 || selectedTags.length > 0 ? 'border-emerald-500/50 text-emerald-400' : ''}`}
                                     >
                                         <Filter className="w-4 h-4 mr-2" />
                                         フィルター
@@ -382,12 +369,12 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
                             {/* New Entry Button */}
                             <Link href={activeTab === "written" ? "/journal/new" : "/journal/new?mode=voice"}>
                                 {activeTab === "written" ? (
-                                    <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 h-12 rounded-xl">
+                                    <Button className="h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600">
                                         <Plus className="w-5 h-5 mr-2" />
                                         新規記録
                                     </Button>
                                 ) : (
-                                    <Button className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 h-12 rounded-xl shadow-lg shadow-cyan-500/20">
+                                    <Button className="h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 shadow-lg shadow-cyan-500/20">
                                         <Mic className="w-5 h-5 mr-2" />
                                         音声記録
                                     </Button>
