@@ -6,6 +6,7 @@ import { Plus, Trash2, Calendar, List, CalendarDays, ArrowRight, ArrowLeft, Penc
 import { TaskCalendar } from "@/components/TaskCalendar"
 import { AddTaskForm } from "@/components/AddTaskForm"
 import { useSearchParams } from "next/navigation"
+import { UnifiedTabs } from "@/components/ui/unified-tabs"
 
 type Task = {
     id: string
@@ -596,27 +597,18 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
                 </div>
 
                 {/* Tabs & View Toggle Row */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-3 gap-4">
-                    <div className="flex gap-1 p-1 dashboard-panel-subtle w-full md:w-fit">
-                        {[
-                            { id: 'today' as const, label: '今日' },
-                            { id: 'week' as const, label: '今週' },
-                            { id: 'month' as const, label: '今月' },
-                            { id: 'all' as const, label: '全て' },
-                        ].map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveScope(tab.id)}
-                                className={`flex-1 md:flex-none flex items-center justify-center px-4 py-1.5 rounded-md font-medium text-sm transition-all whitespace-nowrap ${activeScope === tab.id
-                                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/15"
-                                    : "text-white/50 hover:text-white/80 hover:bg-white/5"
-                                    }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 gap-4">
+                    <UnifiedTabs
+                        tabs={[
+                            { id: 'today', label: '\u4eca\u65e5' },
+                            { id: 'week', label: '\u4eca\u9031' },
+                            { id: 'month', label: '\u4eca\u6708' },
+                            { id: 'all', label: '\u3059\u3079\u3066' },
+                        ]}
+                        activeTab={activeScope}
+                        onChange={(id) => setActiveScope(id as 'today' | 'week' | 'month' | 'all')}
+                        layoutId="taskScopeTabIndicator"
+                    />
                     <div className="flex gap-2 pb-2 w-full md:w-auto items-center justify-end hidden md:flex">
                         <button
                             onClick={() => setActiveTab('kanban')}

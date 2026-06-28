@@ -143,7 +143,7 @@ export default function NotificationBell() {
             const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
             if (!vapidKey) {
-                console.error("VAPID Public Key is missing!");
+                console.warn("VAPID Public Key is missing! Push notifications cannot be enabled.");
                 return;
             }
 
@@ -180,18 +180,23 @@ export default function NotificationBell() {
 
     // Helper to convert VAPID key
     function urlBase64ToUint8Array(base64String: string) {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding)
-            .replace(/\-/g, '+')
-            .replace(/_/g, '/');
+        try {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
 
-        const rawData = window.atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
 
-        for (let i = 0; i < rawData.length; ++i) {
-            outputArray[i] = rawData.charCodeAt(i);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        } catch (error) {
+            console.error("Failed to decode VAPID public key. Please check if NEXT_PUBLIC_VAPID_PUBLIC_KEY is a valid base64url encoded VAPID public key.", error);
+            throw new Error("Invalid VAPID public key encoding");
         }
-        return outputArray;
     }
 
     const markAsRead = async (notificationId: string) => {
@@ -306,8 +311,13 @@ export default function NotificationBell() {
                                         <Switch
                                             checked={isPushEnabled}
                                             onCheckedChange={handlePushToggle}
+                                            disabled={!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+                                            title={!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? "環境変数 NEXT_PUBLIC_VAPID_PUBLIC_KEY が設定されていません" : undefined}
                                             className="scale-75"
                                         />
+                                        {!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && (
+                                            <span className="text-[10px] text-rose-400 font-medium">未構成</span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">

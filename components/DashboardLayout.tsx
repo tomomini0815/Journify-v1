@@ -460,6 +460,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             ) : null}
                         </div>
                         <div className="flex shrink-0 items-center gap-3">
+                            {pathname === "/dashboard" && <div id="dashboard-layout-actions" className="flex items-center" />}
                             <WeatherWidget />
                             <NotificationBell />
                         </div>

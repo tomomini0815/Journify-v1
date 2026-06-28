@@ -384,13 +384,7 @@ button,
   container: dashboard-stats / inline-size;
 }
 
-@media (min-width: 1024px) and (max-width: 1279px) {
-  .dashboard-stats-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@container dashboard-stats (min-width: 900px) {
+@container dashboard-stats (min-width: 640px) {
   .dashboard-stats-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

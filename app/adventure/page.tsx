@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DashboardLayout } from "@/components/DashboardLayout"
-import { Heart, Zap, Star, Cookie, Sparkles, Loader2, PawPrint, ArrowLeft, Gem, BookOpen, HelpCircle, Shirt, Store, Coins, Trophy, Gift } from 'lucide-react'
+import { Heart, Zap, Star, Cookie, Sparkles, Loader2, PawPrint, ArrowLeft, Gem, BookOpen, HelpCircle, Shirt, Store, Coins, Trophy, Gift, CheckCircle2, Home, ScrollText } from 'lucide-react'
 import { useGameStats } from '@/lib/hooks/useGame'
 import { PetGacha } from '@/components/adventure/PetGacha'
 import { PetGuide } from '@/components/adventure/PetGuide'
@@ -80,6 +80,110 @@ const getSpeech = (companion: UserCompanion) => {
     return pool[Math.floor(Math.random() * pool.length)]
 }
 
+type WishAction = 'pet' | 'play' | 'feed'
+
+interface DailyWish {
+    id: string
+    action: WishAction
+    title: string
+    description: string
+    buttonLabel: string
+    rewardText: string
+    reaction: string
+}
+
+const dailyWishes: DailyWish[] = [
+    {
+        id: 'warmup-pet',
+        action: 'pet',
+        title: '朝のあいさつ',
+        description: 'なでなでして、今日の冒険を始めよう。',
+        buttonLabel: 'なでなでする',
+        rewardText: '+10 EXP / +20 gold',
+        reaction: '💕',
+    },
+    {
+        id: 'snack-time',
+        action: 'feed',
+        title: 'ごほうびタイム',
+        description: '好きなごはんをあげると、ハウスに活気が戻ります。',
+        buttonLabel: 'ごはんをあげる',
+        rewardText: '+10 EXP / +20 gold',
+        reaction: '🍪',
+    },
+    {
+        id: 'bond-play',
+        action: 'play',
+        title: 'いっしょに遊ぶ',
+        description: '少し遊んで、絆ゲージを進めよう。',
+        buttonLabel: 'あそぶ',
+        rewardText: '+10 EXP / +20 gold',
+        reaction: '🎾',
+    },
+]
+
+const getTodayKey = () => new Date().toISOString().slice(0, 10)
+
+const pickDailyWish = (companionId: string) => {
+    const seed = `${getTodayKey()}-${companionId}`.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+    return dailyWishes[seed % dailyWishes.length]
+}
+
+const getHouseStage = (companion: UserCompanion | null, companionCount: number) => {
+    const score = (companion?.level || 1) * 8 + (companion?.loyalty || 0) + companionCount * 6
+
+    if (score >= 130) {
+        return {
+            name: '星の温室',
+            level: 4,
+            progress: 100,
+            description: '部屋いっぱいに思い出がきらめいています。',
+            scene: 'from-cyan-400/20 via-fuchsia-400/10 to-amber-300/20',
+            next: '最高ランク',
+        }
+    }
+
+    if (score >= 85) {
+        return {
+            name: '空中庭園',
+            level: 3,
+            progress: Math.min(100, ((score - 85) / 45) * 100),
+            description: 'お気に入りの場所が増えて、毎日少しずつにぎやかに。',
+            scene: 'from-emerald-400/20 via-sky-400/10 to-cyan-300/20',
+            next: '星の温室',
+        }
+    }
+
+    if (score >= 45) {
+        return {
+            name: '森の小屋',
+            level: 2,
+            progress: Math.min(100, ((score - 45) / 40) * 100),
+            description: '安心できる居場所になってきました。',
+            scene: 'from-lime-400/20 via-emerald-400/10 to-teal-300/20',
+            next: '空中庭園',
+        }
+    }
+
+    return {
+        name: '小さな部屋',
+        level: 1,
+        progress: Math.min(100, (score / 45) * 100),
+        description: 'ここからペットとの暮らしが育っていきます。',
+        scene: 'from-slate-400/20 via-cyan-400/10 to-blue-300/20',
+        next: '森の小屋',
+    }
+}
+
+const getBondRank = (companion: UserCompanion | null) => {
+    const loyalty = companion?.loyalty || 0
+    if (loyalty >= 90) return { level: 5, title: '運命の相棒', nextAt: 100, progress: 100 }
+    if (loyalty >= 70) return { level: 4, title: '心が通じる仲', nextAt: 90, progress: ((loyalty - 70) / 20) * 100 }
+    if (loyalty >= 45) return { level: 3, title: '頼れる仲間', nextAt: 70, progress: ((loyalty - 45) / 25) * 100 }
+    if (loyalty >= 20) return { level: 2, title: 'なかよし', nextAt: 45, progress: ((loyalty - 20) / 25) * 100 }
+    return { level: 1, title: '出会ったばかり', nextAt: 20, progress: (loyalty / 20) * 100 }
+}
+
 export default function AdventurePage() {
     const { data: stats, mutate: mutateStats } = useGameStats()
     const [companions, setCompanions] = useState<UserCompanion[]>([])
@@ -90,6 +194,7 @@ export default function AdventurePage() {
     const [speechBubble, setSpeechBubble] = useState('')
     const [showReaction, setShowReaction] = useState('')
     const [bounceKey, setBounceKey] = useState(0)
+    const [completedWishKey, setCompletedWishKey] = useState<string | null>(null)
 
     // Modals
     const [isGachaOpen, setIsGachaOpen] = useState(false)
@@ -132,6 +237,16 @@ export default function AdventurePage() {
     }, [])
 
     const selected = companions.find(c => c.id === selectedId) || null
+    const dailyWish = useMemo(() => selected ? pickDailyWish(selected.id) : null, [selected?.id])
+    const dailyWishKey = selected && dailyWish ? `pet-house-wish:${getTodayKey()}:${selected.id}:${dailyWish.id}` : null
+    const isDailyWishComplete = Boolean(dailyWishKey && completedWishKey === dailyWishKey)
+    const houseStage = useMemo(() => getHouseStage(selected, companions.length), [selected, companions.length])
+    const bondRank = useMemo(() => getBondRank(selected), [selected])
+
+    useEffect(() => {
+        if (!dailyWishKey || typeof window === 'undefined') return
+        setCompletedWishKey(window.localStorage.getItem(dailyWishKey) === 'done' ? dailyWishKey : null)
+    }, [dailyWishKey])
 
     // Random speech bubble
     useEffect(() => {
@@ -150,6 +265,36 @@ export default function AdventurePage() {
         setBounceKey(prev => prev + 1)
         scrollToPet()
         setTimeout(() => setShowReaction(''), 1500)
+    }
+
+    const completeDailyWish = async (action: WishAction) => {
+        if (!dailyWish || !dailyWishKey || isDailyWishComplete || dailyWish.action !== action) return
+
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(dailyWishKey, 'done')
+        }
+        setCompletedWishKey(dailyWishKey)
+        setMessage(`お願い達成！ ${dailyWish.rewardText}`)
+        setSpeechBubble('今日のお願い、ありがとう！')
+        triggerReaction(dailyWish.reaction)
+
+        try {
+            const res = await fetch('/api/game/stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ xp: 10, gold: 20 })
+            })
+            if (res.ok) {
+                await mutateStats()
+            }
+        } catch (error) {
+            console.error('Failed to grant daily wish reward:', error)
+        }
+
+        setTimeout(() => {
+            setMessage('')
+            setSpeechBubble('')
+        }, 3000)
     }
 
     const scrollToPet = () => {
@@ -173,6 +318,7 @@ export default function AdventurePage() {
                 setCompanions(prev => prev.map(c => c.id === selectedId ? data.companion : c))
                 setMessage(data.message)
                 triggerReaction(foodType === 'treat' ? '🍪' : foodType === 'meal' ? '🍖' : '🧁')
+                await completeDailyWish('feed')
                 setTimeout(() => setMessage(''), 3000)
             }
         } catch (error) {
@@ -192,6 +338,7 @@ export default function AdventurePage() {
                 setCompanions(prev => prev.map(c => c.id === selectedId ? data.companion : c))
                 setMessage(data.message)
                 triggerReaction('🎾')
+                await completeDailyWish('play')
                 setTimeout(() => setMessage(''), 3000)
             } else {
                 const error = await res.json()
@@ -209,6 +356,7 @@ export default function AdventurePage() {
         if (!selected) return
         triggerReaction('💕')
         setSpeechBubble('きもちいい～💕')
+        await completeDailyWish('pet')
         setTimeout(() => setSpeechBubble(''), 2500)
     }
 
@@ -350,6 +498,104 @@ export default function AdventurePage() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-8 grid gap-4 md:grid-cols-3"
+                        >
+                            <div className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5">
+                                <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-cyan-300/10 blur-2xl" />
+                                <div className="relative">
+                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-cyan-200/80">
+                                            <ScrollText size={14} />
+                                            今日のお願い
+                                        </div>
+                                        {isDailyWishComplete && (
+                                            <span className="flex items-center gap-1 rounded-full bg-emerald-400/15 px-2 py-1 text-[10px] font-bold text-emerald-200">
+                                                <CheckCircle2 size={12} />
+                                                達成
+                                            </span>
+                                        )}
+                                    </div>
+                                    <h3 className="mb-1 text-lg font-black text-white">{dailyWish?.title}</h3>
+                                    <p className="min-h-[40px] text-sm leading-relaxed text-white/60">{dailyWish?.description}</p>
+                                    <div className="mt-4 flex items-center justify-between gap-3">
+                                        <span className="text-xs font-bold text-cyan-200">{dailyWish?.rewardText}</span>
+                                        <button
+                                            onClick={() => {
+                                                if (!dailyWish || isDailyWishComplete) return
+                                                if (dailyWish.action === 'pet') handlePet()
+                                                if (dailyWish.action === 'play') handlePlay()
+                                                if (dailyWish.action === 'feed') handleFeed('treat')
+                                            }}
+                                            disabled={actionLoading || isDailyWishComplete}
+                                            className="rounded-xl bg-cyan-400 px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-default disabled:bg-white/10 disabled:text-white/35"
+                                        >
+                                            {isDailyWishComplete ? '完了済み' : dailyWish?.buttonLabel}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-5">
+                                <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-200/80">
+                                    <Star size={14} />
+                                    絆レベル
+                                </div>
+                                <div className="flex items-end justify-between gap-3">
+                                    <div>
+                                        <div className="text-3xl font-black text-white">Lv.{bondRank.level}</div>
+                                        <div className="text-sm font-bold text-amber-100">{bondRank.title}</div>
+                                    </div>
+                                    <div className="text-right text-xs text-white/45">
+                                        なかよし度<br />
+                                        <span className="font-mono text-white/70">{selected.loyalty}/100</span>
+                                    </div>
+                                </div>
+                                <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+                                    <motion.div
+                                        className="h-full rounded-full bg-gradient-to-r from-amber-300 to-orange-400"
+                                        animate={{ width: `${Math.min(100, bondRank.progress)}%` }}
+                                        transition={{ duration: 0.6 }}
+                                    />
+                                </div>
+                                <p className="mt-3 text-xs text-white/50">
+                                    お世話やお願い達成で、反応や解放要素が増えていきます。
+                                </p>
+                            </div>
+
+                            <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${houseStage.scene} p-5`}>
+                                <div className="absolute inset-x-6 bottom-0 h-16 rounded-t-full bg-black/15 blur-xl" />
+                                <div className="relative">
+                                    <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/60">
+                                        <Home size={14} />
+                                        ハウス成長
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div className="text-lg font-black text-white">{houseStage.name}</div>
+                                            <div className="text-xs text-white/50">Stage {houseStage.level}</div>
+                                        </div>
+                                        <div className="text-4xl">
+                                            {houseStage.level === 1 ? '🛋️' : houseStage.level === 2 ? '🏡' : houseStage.level === 3 ? '🌿' : '✨'}
+                                        </div>
+                                    </div>
+                                    <p className="mt-3 min-h-[40px] text-sm leading-relaxed text-white/60">{houseStage.description}</p>
+                                    <div className="mt-4 flex items-center gap-3">
+                                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+                                            <motion.div
+                                                className="h-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300"
+                                                animate={{ width: `${houseStage.progress}%` }}
+                                                transition={{ duration: 0.6 }}
+                                            />
+                                        </div>
+                                        <span className="text-[10px] font-bold text-white/50">{houseStage.next}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
 
                         {/* Main Pet Display - Rest of the UI remains largely same but ensuring layout consistency */}
                         <div className="grid md:grid-cols-5 gap-6 mb-8">

@@ -141,7 +141,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
     };
 
     return (
-        <div className="dashboard-panel p-4 flex flex-col h-full min-h-[380px]">
+        <div className="dashboard-panel p-4 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <p className="dashboard-section-label mb-1">Tasks</p>
@@ -197,7 +197,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                 </button>
             </form>
 
-            <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
+            <div className="space-y-3">
                 {displayTasks.map((task) => {
                     const scheduledDate = task.scheduledDate ? new Date(task.scheduledDate) : null;
                     const startDate = task.startDate ? new Date(task.startDate) : null;
@@ -244,7 +244,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
                     )
                 })}
                 {displayTasks.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center text-white/30 py-4">
+                    <div className="flex flex-col items-center justify-center text-white/30 py-6">
                         <CheckCircle2 className="w-8 h-8 mb-2 opacity-50" />
                         <p className="text-sm">タスクはありません</p>
                     </div>

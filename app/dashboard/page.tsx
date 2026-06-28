@@ -10,11 +10,12 @@ import { mockDb } from "@/lib/mock-db"
 
 import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 import Jojo from "@/components/Jojo"
-import DailyChallenges from "@/components/DailyChallenges"
+import AdventureAndChallenges from "@/components/AdventureAndChallenges"
 import { ActiveCompanionDisplay } from "@/components/ActiveCompanionDisplay"
 import DashboardTaskWidget from "@/components/DashboardTaskWidget"
 import VoiceRecordingSection from "@/components/VoiceRecordingSection"
 import { StatsSkeleton, ChartsSkeleton, RecentJournalsSkeleton, GoalProgressSkeleton } from "./loading"
+import { DashboardCard, DashboardCardGrid } from "@/components/DashboardCardGrid"
 
 // Revalidate every 60 seconds
 export const revalidate = 60
@@ -483,8 +484,8 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
         .slice(0, 3)
 
     return (
-        <div className="dashboard-panel p-4 h-full">
-            <div className="flex items-center justify-between mb-6">
+        <div className="dashboard-panel p-4 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
                 <div>
                     <p className="dashboard-section-label mb-1">Journal</p>
                     <h3 className="text-lg font-semibold leading-tight">最近の記録</h3>
@@ -528,7 +529,7 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
                     </Link>
                 ))}
                 {combinedJournals.length === 0 && (
-                    <p className="text-center text-white/40 text-sm py-4">まだ記録がありません</p>
+                    <p className="text-center text-white/40 text-sm py-2">まだ記録がありません</p>
                 )}
             </div>
         </div>
@@ -539,8 +540,8 @@ async function GoalProgressSection({ userId }: { userId: string }) {
     const [, goals] = await getCachedGoalData(userId)
 
     return (
-        <div className="dashboard-panel p-4 h-full">
-            <div className="flex items-center justify-between mb-6">
+        <div className="dashboard-panel p-4 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-3">
                 <div>
                     <p className="dashboard-section-label mb-1">Goals</p>
                     <h3 className="text-lg font-semibold leading-tight">目標の進捗</h3>
@@ -664,14 +665,18 @@ const getCachedUserSettings = unstable_cache(
 
             const preferences = (user?.preferences as any) || {}
             const enableAdventure = preferences.enableAdventure ?? true
+            const dashboardCardOrder = Array.isArray(preferences.dashboardCardOrder)
+                ? preferences.dashboardCardOrder
+                : undefined
 
             return {
                 showJojo: settings?.showJojo ?? true,
-                enableAdventure
+                enableAdventure,
+                dashboardCardOrder
             }
         } catch (error) {
             console.warn("DB Error in getCachedUserSettings, returning mocks");
-            return { showJojo: true, enableAdventure: true };
+            return { showJojo: true, enableAdventure: true, dashboardCardOrder: undefined };
         }
     },
     ['dashboard-user-settings'],
@@ -719,84 +724,57 @@ export default async function DashboardPage() {
     return (
         <DashboardLayout>
             <div className="dashboard-shell space-y-4">
-            <section className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.55fr)]">
-                <div className="dashboard-panel h-full p-4 sm:p-5">
-                    <Suspense fallback={null}>
-                        <VoiceRecordingSectionWrapper userId={user.id} />
-                    </Suspense>
-                </div>
-
-                <div className="dashboard-panel flex h-full flex-col p-4 sm:p-5">
-                    <div className="mb-3 flex flex-col items-start">
-                        <p className="dashboard-section-label mb-1">Summary</p>
-                        <h2 className="text-lg font-semibold leading-tight text-white">活動サマリー</h2>
-                    </div>
-                    {/* Stats Cards */}
-                    <Suspense fallback={<StatsSkeleton />}>
-                        <StatsSection userId={user.id} />
-                    </Suspense>
-                </div>
-            </section>
-
-            {/* Charts Grid */}
-            <Suspense fallback={<ChartsSkeleton />}>
-                <ChartsSection userId={user.id} />
-            </Suspense>
-
-            {/* Tasks, Goals, Recent Journals, and Daily Challenges (Reordered) */}
-            <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-                <div className="xl:col-span-5">
-                    <Suspense fallback={<div className="h-96 dashboard-panel animate-pulse" />}>
-                        <TasksSection userId={user.id} />
-                    </Suspense>
-                </div>
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 xl:col-span-7">
-                    <Suspense fallback={<GoalProgressSkeleton />}>
-                        <GoalProgressSection userId={user.id} />
-                    </Suspense>
-                    <Suspense fallback={<RecentJournalsSkeleton />}>
-                        <RecentJournalsSection userId={user.id} />
-                    </Suspense>
-                    <DailyChallenges />
-                </div>
-            </section>
-
-
-            {/* Pet Adventure Link */}
-            {(settings?.enableAdventure ?? true) && (
-                <div>
-                    <Link
-                        href="/adventure"
-                        className="group dashboard-panel relative block w-full overflow-hidden p-4 transition-colors hover:border-emerald-400/30"
-                    >
-                        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                                <div className="relative w-12 h-12 shrink-0 rounded-lg bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center overflow-hidden">
-                                    <PawPrint className="w-6 h-6 text-emerald-200" />
-                                </div>
-                                <div>
-                                    <h3 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
-                                        PET ADVENTURE
-                                        <span className="text-xs font-semibold bg-emerald-500/15 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">NEW</span>
-                                    </h3>
-                                    <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
-                                        クリスタルを集めて、かわいいペットを育てよう！お世話や冒険で絆が深まります。
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="hidden md:flex w-9 h-9 rounded-lg bg-white/5 border border-white/10 items-center justify-center group-hover:bg-emerald-500/15 group-hover:border-emerald-500/40 group-hover:text-emerald-300 transition-all">
-                                →
-                            </div>
-
-                            {/* Mobile arrow */}
-                            <div className="md:hidden flex items-center justify-end text-emerald-300 font-semibold text-sm">
-                                ペットハウスに行く →
-                            </div>
+                <DashboardCardGrid initialOrder={settings?.dashboardCardOrder}>
+                    <DashboardCard id="voice" title="音声記録">
+                        <div className="dashboard-panel p-4 sm:p-5">
+                            <Suspense fallback={null}>
+                                <VoiceRecordingSectionWrapper userId={user.id} />
+                            </Suspense>
                         </div>
-                    </Link>
-                </div>
-            )}
+                    </DashboardCard>
+
+                    <DashboardCard id="summary" title="活動サマリー">
+                        <div className="dashboard-panel flex flex-col p-4 sm:p-5">
+                            <div className="mb-3 flex flex-col items-start">
+                                <p className="dashboard-section-label mb-1">Summary</p>
+                                <h2 className="text-lg font-semibold leading-tight text-white">活動サマリー</h2>
+                            </div>
+                            <Suspense fallback={<StatsSkeleton />}>
+                                <StatsSection userId={user.id} />
+                            </Suspense>
+                        </div>
+                    </DashboardCard>
+
+                    <DashboardCard id="tasks" title="タスク一覧">
+                        <Suspense fallback={<div className="h-96 dashboard-panel animate-pulse" />}>
+                            <TasksSection userId={user.id} />
+                        </Suspense>
+                    </DashboardCard>
+
+                    <DashboardCard id="journals" title="最近の記録">
+                        <Suspense fallback={<RecentJournalsSkeleton />}>
+                            <RecentJournalsSection userId={user.id} />
+                        </Suspense>
+                    </DashboardCard>
+
+                    <DashboardCard id="goals" title="目標の進捗">
+                        <Suspense fallback={<GoalProgressSkeleton />}>
+                            <GoalProgressSection userId={user.id} />
+                        </Suspense>
+                    </DashboardCard>
+
+                    <DashboardCard id="charts" title="チャート">
+                        <Suspense fallback={<ChartsSkeleton />}>
+                            <ChartsSection userId={user.id} />
+                        </Suspense>
+                    </DashboardCard>
+
+                    <DashboardCard id="adventure" title="ペット & チャレンジ">
+                        <Suspense fallback={<div className="h-48 dashboard-panel animate-pulse" />}>
+                            <AdventureAndChallenges />
+                        </Suspense>
+                    </DashboardCard>
+                </DashboardCardGrid>
 
             {/* Jojo AI Mascot */}
             {(settings?.showJojo ?? true) && <Jojo userId={user.id} />}
