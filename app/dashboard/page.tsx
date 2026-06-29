@@ -13,6 +13,7 @@ import Jojo from "@/components/Jojo"
 import AdventureAndChallenges from "@/components/AdventureAndChallenges"
 import { ActiveCompanionDisplay } from "@/components/ActiveCompanionDisplay"
 import DashboardTaskWidget from "@/components/DashboardTaskWidget"
+import DashboardGoalProgressWidget, { DashboardGoal } from "@/components/DashboardGoalProgressWidget"
 import DashboardRecentJournalsWidget, { DashboardRecentJournal } from "@/components/DashboardRecentJournalsWidget"
 import VoiceRecordingSection from "@/components/VoiceRecordingSection"
 import { StatsSkeleton, ChartsSkeleton, RecentJournalsSkeleton, GoalProgressSkeleton } from "./loading"
@@ -221,9 +222,10 @@ const getCachedGoalData = unstable_cache(
                         title: true,
                         progress: true,
                         priority: true,
+                        timeframe: true,
                     },
                     orderBy: { createdAt: "desc" },
-                    take: 3,
+                    take: 50,
                 })
             ])
         } catch (error) {
@@ -575,6 +577,16 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
 
 async function GoalProgressSection({ userId }: { userId: string }) {
     const [, goals] = await getCachedGoalData(userId)
+    const serializedGoals: DashboardGoal[] = goals.map((goal: any) => ({
+        id: goal.id,
+        title: goal.title,
+        progress: goal.progress,
+        priority: goal.priority ?? "medium",
+        timeframe: goal.timeframe ?? "short",
+    }))
+
+    return <DashboardGoalProgressWidget goals={serializedGoals} />
+
     const priorityDotClass = (priority?: string | null) => {
         switch (priority) {
             case 'urgent':

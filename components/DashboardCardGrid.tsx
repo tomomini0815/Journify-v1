@@ -26,13 +26,13 @@ const storageKey = "journify-dashboard-card-order"
 // ユーザーの指定した初期レイアウト比率に合わせたグリッドスパン設定
 // 12カラムグリッドをベースにします
 const cardSpans: Record<string, string> = {
-    voice: "col-span-12 lg:col-span-7",       // 1段目左: ジャーナル (約6割)
+    voice: "col-span-12 lg:col-span-8",       // 1段目左: ジャーナル (約6割)
     summary: "col-span-12 lg:col-span-5",     // 1段目右: 活動サマリー (約4割)
-    tasks: "col-span-12 lg:col-span-5",       // 2段目左: タスク一覧 (少し広め)
+    tasks: "col-span-12 md:col-span-6 lg:col-span-5",       // 2段目左: タスク一覧 (少し広め)
     journals: "col-span-12 md:col-span-6 lg:col-span-4", // 2段目中: 最近の記録
-    goals: "col-span-12 md:col-span-6 lg:col-span-3", // 2段目右: 目標の進捗
-    charts: "col-span-12",                    // 3段目: チャート (100%幅)
-    adventure: "col-span-12",                 // 4段目: ペット&チャレンジ統合 (100%幅)
+    goals: "col-span-12 md:col-span-6 lg:col-span-4", // 2段目右: 目標の進捗
+    charts: "col-span-full",                    // 3段目: チャート (100%幅)
+    adventure: "col-span-full",                 // 4段目: ペット&チャレンジ統合 (100%幅)
 }
 
 export function DashboardCard({ children }: DashboardCardProps) {
@@ -435,7 +435,7 @@ export function DashboardCardGrid({ initialOrder, children }: DashboardCardGridP
                 onDragCancel={() => { setActiveId(null); setOverId(null) }}
             >
                 {/* 12カラムのレスポンシブ CSS Grid コンテナに変更 */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-[repeat(13,minmax(0,1fr))] gap-4 items-stretch">
                     {order.map((id) => {
                         const child = cardMap.get(id)
                         if (!child) return null

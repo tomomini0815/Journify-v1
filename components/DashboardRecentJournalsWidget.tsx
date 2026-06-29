@@ -52,6 +52,14 @@ function getMoodEmoji(mood: number | null | undefined, sentiment?: string | null
     return "\u2022";
 }
 
+function formatJournalDate(value: string) {
+    return new Intl.DateTimeFormat("ja-JP", {
+        month: "numeric",
+        day: "numeric",
+        weekday: "short",
+    }).format(new Date(value));
+}
+
 export default function DashboardRecentJournalsWidget({ journals }: { journals: DashboardRecentJournal[] }) {
     const [activeTab, setActiveTab] = useState<RecentJournalTab>("all");
 
@@ -124,11 +132,11 @@ export default function DashboardRecentJournalsWidget({ journals }: { journals: 
                                     ) : (
                                         <Mic className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
                                     )}
+                                    <span className="truncate text-xs text-white/45">{formatJournalDate(journal.createdAt)}</span>
                                 </div>
                                 <span className="text-2xl shrink-0 ml-2">{getMoodEmoji(journal.mood, journal.sentiment)}</span>
                             </div>
                             <p className="pl-6 text-sm leading-relaxed text-white/65 line-clamp-2">{journal.displayBody}</p>
-                            <p className="mt-1 text-white/40 text-xs pl-6">{new Date(journal.createdAt).toISOString().split("T")[0]}</p>
                         </div>
                     </Link>
                 ))}
