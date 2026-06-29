@@ -13,6 +13,7 @@ import Jojo from "@/components/Jojo"
 import AdventureAndChallenges from "@/components/AdventureAndChallenges"
 import { ActiveCompanionDisplay } from "@/components/ActiveCompanionDisplay"
 import DashboardTaskWidget from "@/components/DashboardTaskWidget"
+import DashboardRecentJournalsWidget, { DashboardRecentJournal } from "@/components/DashboardRecentJournalsWidget"
 import VoiceRecordingSection from "@/components/VoiceRecordingSection"
 import { StatsSkeleton, ChartsSkeleton, RecentJournalsSkeleton, GoalProgressSkeleton } from "./loading"
 import { DashboardCard, DashboardCardGrid } from "@/components/DashboardCardGrid"
@@ -219,6 +220,7 @@ const getCachedGoalData = unstable_cache(
                         id: true,
                         title: true,
                         progress: true,
+                        priority: true,
                     },
                     orderBy: { createdAt: "desc" },
                     take: 3,
@@ -447,10 +449,24 @@ async function ChartsSection({ userId }: { userId: string }) {
 
 async function RecentJournalsSection({ userId }: { userId: string }) {
     const data = await getCachedJournalData(userId)
+    type RecentTextJournal = {
+        id: string
+        title: string | null
+        content: string | null
+        mood: number | null
+        createdAt: Date | string
+    }
+    type RecentVoiceJournal = {
+        id: string
+        aiSummary: string | null
+        transcript: string | null
+        mood: number | null
+        sentiment: string | null
+        createdAt: Date | string
+    }
     // Index 2 is recent text journals, Index 12 is recent voice journals
-    const recentTextJournals = data[2]
-    // @ts-ignore - Index 12 might not be inferred correctly by TS in this context without full type def update
-    const recentVoiceJournals = data[12] as Array<{ id: string, aiSummary: string, transcript: string, mood: number | null, sentiment: string | null, createdAt: Date }>
+    const recentTextJournals = data[2] as RecentTextJournal[]
+    const recentVoiceJournals = data[12] as RecentVoiceJournal[]
 
     const toPlainText = (value?: string | null) =>
         (value || "")
@@ -463,6 +479,28 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
         if (!text) return "内容はまだありません"
         return text.length > 80 ? `${text.slice(0, 80)}...` : text
     }
+
+    const tabbedJournals: DashboardRecentJournal[] = [
+        ...recentTextJournals.map((j) => ({
+            id: j.id,
+            type: 'text' as const,
+            displayTitle: j.title || "Untitled",
+            displayBody: toExcerpt(j.content),
+            mood: j.mood,
+            createdAt: new Date(j.createdAt).toISOString(),
+        })),
+        ...recentVoiceJournals.map((j) => ({
+            id: j.id,
+            type: 'voice' as const,
+            displayTitle: "Voice",
+            displayBody: toExcerpt(j.aiSummary || j.transcript),
+            mood: j.mood,
+            sentiment: j.sentiment,
+            createdAt: new Date(j.createdAt).toISOString(),
+        }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+    return <DashboardRecentJournalsWidget journals={tabbedJournals} />
 
     // Combine and sort
     const combinedJournals = [
@@ -489,7 +527,6 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
                 <div>
                     <p className="dashboard-section-label mb-1">Journal</p>
                     <h3 className="text-lg font-semibold leading-tight">最近の記録</h3>
-                    <p className="text-white/60 text-sm">最新のエントリー</p>
                 </div>
                 <Link
                     href="/journal"
@@ -538,6 +575,19 @@ async function RecentJournalsSection({ userId }: { userId: string }) {
 
 async function GoalProgressSection({ userId }: { userId: string }) {
     const [, goals] = await getCachedGoalData(userId)
+    const priorityDotClass = (priority?: string | null) => {
+        switch (priority) {
+            case 'urgent':
+                return 'bg-red-500 shadow-red-500/50 animate-pulse'
+            case 'high':
+                return 'bg-orange-500 shadow-orange-500/50'
+            case 'low':
+                return 'bg-emerald-500 shadow-emerald-500/50'
+            case 'medium':
+            default:
+                return 'bg-yellow-500 shadow-yellow-500/50'
+        }
+    }
 
     return (
         <div className="dashboard-panel p-4 h-full flex flex-col">
@@ -545,7 +595,6 @@ async function GoalProgressSection({ userId }: { userId: string }) {
                 <div>
                     <p className="dashboard-section-label mb-1">Goals</p>
                     <h3 className="text-lg font-semibold leading-tight">目標の進捗</h3>
-                    <p className="text-white/60 text-sm">達成への道のり</p>
                 </div>
                 <Link
                     href="/goals"
@@ -561,8 +610,11 @@ async function GoalProgressSection({ userId }: { userId: string }) {
             <div className="space-y-4">
                 {goals.map((goal: any) => (
                     <div key={goal.id} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <h4 className="font-medium">{goal.title}</h4>
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2">
+                                <span className={`h-2.5 w-2.5 shrink-0 rounded-full shadow-sm ${priorityDotClass(goal.priority)}`} />
+                                <h4 className="truncate font-medium">{goal.title}</h4>
+                            </div>
                             <span className="text-sm text-white/60">{goal.progress}%</span>
                         </div>
                         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -590,7 +642,6 @@ const getCachedDashboardTasks = unstable_cache(
                 where: {
                     userId,
                     completed: false,
-                    projectId: null, // Only show daily tasks
                     OR: [
                         {
                             scheduledDate: {
@@ -599,6 +650,11 @@ const getCachedDashboardTasks = unstable_cache(
                         },
                         { scheduledDate: null }
                     ]
+                },
+                include: {
+                    project: {
+                        select: { id: true, title: true }
+                    }
                 },
                 orderBy: { scheduledDate: 'asc' },
                 take: 50 // Limit total fetched tasks
@@ -616,7 +672,10 @@ const getCachedDashboardTasks = unstable_cache(
 )
 
 async function TasksSection({ userId }: { userId: string }) {
-    const tasks = await getCachedDashboardTasks(userId);
+    const [tasks, projects] = await Promise.all([
+        getCachedDashboardTasks(userId),
+        getCachedUserProjects(userId)
+    ]);
 
     // Serialize for client component
     const serializedTasks = tasks.map((t: any) => ({
@@ -625,11 +684,13 @@ async function TasksSection({ userId }: { userId: string }) {
         scheduledDate: t.scheduledDate ? (typeof t.scheduledDate === 'string' ? t.scheduledDate : t.scheduledDate.toISOString()) : null,
         startDate: t.startDate ? (typeof t.startDate === 'string' ? t.startDate : t.startDate.toISOString()) : null,
         endDate: t.endDate ? (typeof t.endDate === 'string' ? t.endDate : t.endDate.toISOString()) : null,
+        projectId: t.projectId ?? null,
+        projectTitle: t.project?.title ?? null,
         createdAt: typeof t.createdAt === 'string' ? t.createdAt : t.createdAt.toISOString(),
         updatedAt: typeof t.updatedAt === 'string' ? t.updatedAt : t.updatedAt.toISOString(),
     }));
 
-    return <DashboardTaskWidget tasks={serializedTasks} />
+    return <DashboardTaskWidget tasks={serializedTasks} projects={projects} />
 }
 
 const getCachedUserProjects = unstable_cache(

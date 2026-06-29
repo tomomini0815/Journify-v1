@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowUpRight, CheckCircle2, Loader2, Plus } from 'lucide-react';
+import { AlertCircle, ArrowDownUp, ArrowUpRight, CheckCircle2, ChevronDown, Loader2, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 type Task = {
@@ -16,11 +16,24 @@ type Task = {
     completed: boolean;
     description?: string;
     status?: string;
+    projectId?: string | null;
+    projectTitle?: string | null;
 };
 
-export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
+type ProjectOption = {
+    id: string;
+    title: string;
+};
+
+type SortOrder = 'asc' | 'desc';
+type PriorityFilter = 'all' | 'urgent' | 'high' | 'medium' | 'low';
+
+export default function DashboardTaskWidget({ tasks, projects = [] }: { tasks: Task[]; projects?: ProjectOption[] }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month'>('today');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+    const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+    const [projectFilter, setProjectFilter] = useState('all');
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [isAdding, setIsAdding] = useState(false);
 
@@ -50,12 +63,10 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
         return { start: monthStart, end: monthEnd };
     };
 
-    const { start: rangeStart, end: rangeEnd } = getDateRange(activeTab);
-
-    // Filter tasks: a task is shown if its effective date range overlaps the selected tab range
-    const filteredTasks = tasks.filter(task => {
+    const isTaskInTab = (task: Task, tab: 'today' | 'week' | 'month') => {
         if (task.completed) return false;
 
+        const { start: rangeStart, end: rangeEnd } = getDateRange(tab);
         const taskStart = task.startDate ? new Date(task.startDate)
             : task.scheduledDate ? new Date(task.scheduledDate)
                 : task.endDate ? new Date(task.endDate)
@@ -71,7 +82,7 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
         const effectiveEnd = taskEnd || taskStart!;
 
         // For "今日" tab, also include overdue tasks (effectiveEnd < today)
-        if (activeTab === 'today') {
+        if (tab === 'today') {
             const isOverdue = effectiveEnd < rangeStart;
             const overlapsToday = effectiveStart < rangeEnd && effectiveEnd >= rangeStart;
             return isOverdue || overlapsToday;
@@ -79,7 +90,29 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
 
         // For week/month: task range overlaps the selected range
         return effectiveStart < rangeEnd && effectiveEnd >= rangeStart;
+    };
+
+    const matchesFilters = (task: Task) => {
+        const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+        const matchesProject = projectFilter === 'all'
+            || (projectFilter === 'daily' ? !task.projectId : task.projectId === projectFilter);
+
+        return matchesPriority && matchesProject;
+    };
+
+    const selectableTasks = tasks.filter(matchesFilters);
+
+    // Filter tasks: a task is shown if its effective date range overlaps the selected tab range
+    const filteredTasks = selectableTasks.filter(task => {
+        return isTaskInTab(task, activeTab);
     });
+
+    const taskTabs = ['today', 'week', 'month'] as const;
+    const taskCounts = {
+        today: selectableTasks.filter(task => isTaskInTab(task, 'today')).length,
+        week: selectableTasks.filter(task => isTaskInTab(task, 'week')).length,
+        month: selectableTasks.filter(task => isTaskInTab(task, 'month')).length,
+    };
 
     // Sort: overdue first, then by date, then by priority
     const sortedTasks = [...filteredTasks].sort((a, b) => {
@@ -89,12 +122,18 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
         const aOverdue = dateA < now;
         const bOverdue = dateB < now;
 
-        // Overdue tasks first
-        if (aOverdue && !bOverdue) return -1;
-        if (!aOverdue && bOverdue) return 1;
+        // Keep overdue tasks visible first when sorting ascending.
+        if (sortOrder === 'asc') {
+            if (aOverdue && !bOverdue) return -1;
+            if (!aOverdue && bOverdue) return 1;
+        }
 
         // Then by date
-        if (dateA.getTime() !== dateB.getTime()) return dateA.getTime() - dateB.getTime();
+        if (dateA.getTime() !== dateB.getTime()) {
+            return sortOrder === 'asc'
+                ? dateA.getTime() - dateB.getTime()
+                : dateB.getTime() - dateA.getTime();
+        }
 
         // Then by priority
         const pMap: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
@@ -142,34 +181,80 @@ export default function DashboardTaskWidget({ tasks }: { tasks: Task[] }) {
 
     return (
         <div className="dashboard-panel p-4 flex flex-col h-full">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <p className="dashboard-section-label mb-1">Tasks</p>
                     <h3 className="text-lg font-semibold leading-tight">タスク一覧</h3>
                 </div>
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+                    <button
+                        type="button"
+                        onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                        aria-label={sortOrder === 'asc' ? '降順に並び替え' : '昇順に並び替え'}
+                        title={sortOrder === 'asc' ? '昇順' : '降順'}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black/35 text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white focus:border-emerald-400/40 focus:outline-none"
+                    >
+                        <ArrowDownUp className="h-3.5 w-3.5" />
+                    </button>
+                    <div className="relative shrink-0">
+                        <select
+                            value={priorityFilter}
+                            onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)}
+                            aria-label="重要度で絞り込み"
+                            className="h-8 w-[84px] appearance-none rounded-lg border border-white/[0.08] bg-[#101816] py-0 pl-2.5 pr-7 text-[11px] font-medium text-white/75 outline-none transition-colors hover:border-white/[0.14] hover:bg-[#14201d] focus:border-emerald-400/40 focus:bg-[#14201d]"
+                        >
+                            <option className="bg-[#101816] text-white" value="all">重要度</option>
+                            <option className="bg-[#101816] text-white" value="urgent">最高</option>
+                            <option className="bg-[#101816] text-white" value="high">高</option>
+                            <option className="bg-[#101816] text-white" value="medium">中</option>
+                            <option className="bg-[#101816] text-white" value="low">低</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/45" />
+                    </div>
+                    <div className="relative min-w-0 shrink-0">
+                        <select
+                            value={projectFilter}
+                            onChange={(e) => setProjectFilter(e.target.value)}
+                            aria-label="プロジェクトで絞り込み"
+                            className="h-8 w-[112px] appearance-none rounded-lg border border-white/[0.08] bg-[#101816] py-0 pl-2.5 pr-7 text-[11px] font-medium text-white/75 outline-none transition-colors hover:border-white/[0.14] hover:bg-[#14201d] focus:border-emerald-400/40 focus:bg-[#14201d]"
+                        >
+                            <option className="bg-[#101816] text-white" value="all">{"\u3059\u3079\u3066"}</option>
+                            <option className="bg-[#101816] text-white" value="daily">日常タスク</option>
+                            {projects.map((project) => (
+                                <option className="bg-[#101816] text-white" key={project.id} value={project.id}>
+                                    {project.title}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/45" />
+                    </div>
                 <Link
                     href="/tasks"
                     prefetch={true}
                     aria-label="タスクをすべて表示"
                     title="すべて表示"
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-emerald-300 transition-colors hover:border-emerald-300/25 hover:bg-emerald-400/10 hover:text-emerald-200"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-emerald-300 transition-colors hover:border-emerald-300/25 hover:bg-emerald-400/10 hover:text-emerald-200"
                 >
                     <ArrowUpRight className="h-4 w-4" />
                 </Link>
+                </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 p-1 dashboard-panel-subtle mb-4">
-                {(['today', 'week', 'month'] as const).map((tab) => (
+            <div className="flex bg-black/40 p-1 rounded-xl gap-0.5 overflow-x-auto no-scrollbar mb-4">
+                {taskTabs.map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`flex-1 flex items-center justify-center px-4 py-1.5 rounded-md font-medium text-sm transition-all whitespace-nowrap ${activeTab === tab
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/15"
-                            : "text-white/50 hover:text-white/80 hover:bg-white/5"
+                        className={`flex-1 flex min-w-fit items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${activeTab === tab
+                            ? "bg-white/10 text-white shadow-sm"
+                            : "text-white/40 hover:text-white/70 hover:bg-white/5"
                             }`}
                     >
                         {tab === 'today' ? '今日' : tab === 'week' ? '今週' : '今月'}
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none ${activeTab === tab ? "bg-white/15 text-white" : "bg-white/10 text-white/50"}`}>
+                            {taskCounts[tab]}
+                        </span>
                     </button>
                 ))}
             </div>

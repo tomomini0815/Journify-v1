@@ -502,26 +502,26 @@ export default function AdventurePage() {
                         <motion.div
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="mb-8 grid gap-4 md:grid-cols-3"
+                            className="mb-5 grid gap-3 md:grid-cols-3"
                         >
-                            <div className="relative overflow-hidden rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5">
-                                <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-cyan-300/10 blur-2xl" />
+                            <div className="relative overflow-hidden rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-3.5">
+                                <div className="absolute -right-8 -top-10 h-24 w-24 rounded-full bg-cyan-300/10 blur-2xl" />
                                 <div className="relative">
-                                    <div className="mb-3 flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-cyan-200/80">
-                                            <ScrollText size={14} />
+                                    <div className="mb-2 flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-200/80">
+                                            <ScrollText size={13} />
                                             今日のお願い
                                         </div>
                                         {isDailyWishComplete && (
-                                            <span className="flex items-center gap-1 rounded-full bg-emerald-400/15 px-2 py-1 text-[10px] font-bold text-emerald-200">
-                                                <CheckCircle2 size={12} />
+                                            <span className="flex items-center gap-1 rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold text-emerald-200">
+                                                <CheckCircle2 size={11} />
                                                 達成
                                             </span>
                                         )}
                                     </div>
-                                    <h3 className="mb-1 text-lg font-black text-white">{dailyWish?.title}</h3>
-                                    <p className="min-h-[40px] text-sm leading-relaxed text-white/60">{dailyWish?.description}</p>
-                                    <div className="mt-4 flex items-center justify-between gap-3">
+                                    <h3 className="mb-1 text-base font-black leading-tight text-white">{dailyWish?.title}</h3>
+                                    <p className="text-xs leading-snug text-white/60">{dailyWish?.description}</p>
+                                    <div className="mt-3 flex items-center justify-between gap-3">
                                         <span className="text-xs font-bold text-cyan-200">{dailyWish?.rewardText}</span>
                                         <button
                                             onClick={() => {
@@ -531,7 +531,7 @@ export default function AdventurePage() {
                                                 if (dailyWish.action === 'feed') handleFeed('treat')
                                             }}
                                             disabled={actionLoading || isDailyWishComplete}
-                                            className="rounded-xl bg-cyan-400 px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-default disabled:bg-white/10 disabled:text-white/35"
+                                            className="rounded-lg bg-cyan-400 px-2.5 py-1.5 text-[11px] font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-default disabled:bg-white/10 disabled:text-white/35"
                                         >
                                             {isDailyWishComplete ? '完了済み' : dailyWish?.buttonLabel}
                                         </button>
@@ -539,52 +539,52 @@ export default function AdventurePage() {
                                 </div>
                             </div>
 
-                            <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-5">
-                                <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-200/80">
-                                    <Star size={14} />
+                            <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3.5">
+                                <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-200/80">
+                                    <Star size={13} />
                                     絆レベル
                                 </div>
                                 <div className="flex items-end justify-between gap-3">
                                     <div>
-                                        <div className="text-3xl font-black text-white">Lv.{bondRank.level}</div>
-                                        <div className="text-sm font-bold text-amber-100">{bondRank.title}</div>
+                                        <div className="text-2xl font-black leading-none text-white">Lv.{bondRank.level}</div>
+                                        <div className="mt-1 text-xs font-bold text-amber-100">{bondRank.title}</div>
                                     </div>
-                                    <div className="text-right text-xs text-white/45">
+                                    <div className="text-right text-[11px] text-white/45">
                                         なかよし度<br />
                                         <span className="font-mono text-white/70">{selected.loyalty}/100</span>
                                     </div>
                                 </div>
-                                <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+                                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
                                     <motion.div
                                         className="h-full rounded-full bg-gradient-to-r from-amber-300 to-orange-400"
                                         animate={{ width: `${Math.min(100, bondRank.progress)}%` }}
                                         transition={{ duration: 0.6 }}
                                     />
                                 </div>
-                                <p className="mt-3 text-xs text-white/50">
+                                <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-white/50">
                                     お世話やお願い達成で、反応や解放要素が増えていきます。
                                 </p>
                             </div>
 
-                            <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${houseStage.scene} p-5`}>
-                                <div className="absolute inset-x-6 bottom-0 h-16 rounded-t-full bg-black/15 blur-xl" />
+                            <div className={`relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br ${houseStage.scene} p-3.5`}>
+                                <div className="absolute inset-x-6 bottom-0 h-12 rounded-t-full bg-black/15 blur-xl" />
                                 <div className="relative">
-                                    <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/60">
-                                        <Home size={14} />
+                                    <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-white/60">
+                                        <Home size={13} />
                                         ハウス成長
                                     </div>
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
-                                            <div className="text-lg font-black text-white">{houseStage.name}</div>
-                                            <div className="text-xs text-white/50">Stage {houseStage.level}</div>
+                                            <div className="text-base font-black leading-tight text-white">{houseStage.name}</div>
+                                            <div className="text-[11px] text-white/50">Stage {houseStage.level}</div>
                                         </div>
-                                        <div className="text-4xl">
+                                        <div className="text-3xl leading-none">
                                             {houseStage.level === 1 ? '🛋️' : houseStage.level === 2 ? '🏡' : houseStage.level === 3 ? '🌿' : '✨'}
                                         </div>
                                     </div>
-                                    <p className="mt-3 min-h-[40px] text-sm leading-relaxed text-white/60">{houseStage.description}</p>
-                                    <div className="mt-4 flex items-center gap-3">
-                                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+                                    <p className="mt-2 line-clamp-2 text-xs leading-snug text-white/60">{houseStage.description}</p>
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
                                             <motion.div
                                                 className="h-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300"
                                                 animate={{ width: `${houseStage.progress}%` }}
