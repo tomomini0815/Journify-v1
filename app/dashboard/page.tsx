@@ -3,10 +3,12 @@ import { DashboardStats } from "@/components/DashboardStats"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { unstable_cache } from "next/cache"
 import { Suspense } from "react"
 import { ArrowUpRight, FileText, Mic, PawPrint } from "lucide-react"
 import { mockDb } from "@/lib/mock-db"
+import { getPreviewUser, isPreviewAuthEnabled } from "@/lib/previewAuth"
 
 import DashboardChartsWrapper from "@/components/DashboardChartsWrapper"
 import Jojo from "@/components/Jojo"
@@ -768,8 +770,15 @@ async function VoiceRecordingSectionWrapper({ userId }: { userId: string }) {
 
 
 export default async function DashboardPage() {
-    const supabase = await createClient()
-    let { data: { user } } = await supabase.auth.getUser()
+    let user = isPreviewAuthEnabled()
+        ? (getPreviewUser() as any)
+        : null
+
+    if (!user) {
+        const supabase = await createClient()
+        const { data } = await supabase.auth.getUser()
+        user = data.user
+    }
 
     // Mock user for preview if missing
     if (!user && process.env.NODE_ENV === 'development') {
@@ -778,7 +787,7 @@ export default async function DashboardPage() {
     }
 
     if (!user) {
-        return null // Middleware will redirect
+        redirect("/login")
     }
 
     const settings = await getCachedUserSettings(user.id)

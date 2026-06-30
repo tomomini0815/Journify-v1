@@ -181,12 +181,12 @@ export default function DashboardTaskWidget({ tasks, projects = [] }: { tasks: T
 
     return (
         <div className="dashboard-panel p-4 flex flex-col h-full">
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
                 <div>
                     <p className="dashboard-section-label mb-1">Tasks</p>
                     <h3 className="text-lg font-semibold leading-tight">タスク一覧</h3>
                 </div>
-                <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-1">
                     <button
                         type="button"
                         onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -201,7 +201,7 @@ export default function DashboardTaskWidget({ tasks, projects = [] }: { tasks: T
                             value={priorityFilter}
                             onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)}
                             aria-label="重要度で絞り込み"
-                            className="h-8 w-[84px] appearance-none rounded-lg border border-white/[0.08] bg-[#101816] py-0 pl-2.5 pr-7 text-[11px] font-medium text-white/75 outline-none transition-colors hover:border-white/[0.14] hover:bg-[#14201d] focus:border-emerald-400/40 focus:bg-[#14201d]"
+                            className="h-8 w-[68px] appearance-none rounded-lg border border-white/[0.08] bg-[#101816] py-0 pl-2 pr-6 text-[11px] font-medium text-white/75 outline-none transition-colors hover:border-white/[0.14] hover:bg-[#14201d] focus:border-emerald-400/40 focus:bg-[#14201d] sm:w-[84px] sm:pl-2.5 sm:pr-7"
                         >
                             <option className="bg-[#101816] text-white" value="all">重要度</option>
                             <option className="bg-[#101816] text-white" value="urgent">最高</option>
@@ -209,14 +209,14 @@ export default function DashboardTaskWidget({ tasks, projects = [] }: { tasks: T
                             <option className="bg-[#101816] text-white" value="medium">中</option>
                             <option className="bg-[#101816] text-white" value="low">低</option>
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/45" />
+                        <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/45 sm:right-2" />
                     </div>
                     <div className="relative min-w-0 shrink-0">
                         <select
                             value={projectFilter}
                             onChange={(e) => setProjectFilter(e.target.value)}
                             aria-label="プロジェクトで絞り込み"
-                            className="h-8 w-[112px] appearance-none rounded-lg border border-white/[0.08] bg-[#101816] py-0 pl-2.5 pr-7 text-[11px] font-medium text-white/75 outline-none transition-colors hover:border-white/[0.14] hover:bg-[#14201d] focus:border-emerald-400/40 focus:bg-[#14201d]"
+                            className="h-8 w-[88px] appearance-none rounded-lg border border-white/[0.08] bg-[#101816] py-0 pl-2 pr-6 text-[11px] font-medium text-white/75 outline-none transition-colors hover:border-white/[0.14] hover:bg-[#14201d] focus:border-emerald-400/40 focus:bg-[#14201d] sm:w-[112px] sm:pl-2.5 sm:pr-7"
                         >
                             <option className="bg-[#101816] text-white" value="all">{"\u3059\u3079\u3066"}</option>
                             <option className="bg-[#101816] text-white" value="daily">日常タスク</option>
@@ -226,7 +226,7 @@ export default function DashboardTaskWidget({ tasks, projects = [] }: { tasks: T
                                 </option>
                             ))}
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/45" />
+                        <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/45 sm:right-2" />
                     </div>
                 <Link
                     href="/tasks"

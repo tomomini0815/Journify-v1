@@ -1,12 +1,17 @@
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import ProjectsClient from "./ProjectsClient"
+import { getPreviewUser, isPreviewAuthEnabled } from "@/lib/previewAuth"
 
 export const dynamic = 'force-dynamic'
 
 export default async function ProjectsPage() {
     const supabase = await createClient()
     let { data: { user } } = await supabase.auth.getUser()
+
+    if (!user && isPreviewAuthEnabled()) {
+        user = getPreviewUser() as any
+    }
 
     if (!user && process.env.NODE_ENV === 'development') {
         user = { id: 'mock-user-123' } as any

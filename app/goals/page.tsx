@@ -3,6 +3,7 @@ import { GoalsClient } from "@/components/GoalsClient"
 import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import { unstable_cache } from "next/cache"
+import { getPreviewUser, isPreviewAuthEnabled } from "@/lib/previewAuth"
 
 // Revalidate every 30 seconds (goals change more frequently)
 export const revalidate = 30
@@ -26,6 +27,10 @@ const getCachedGoals = unstable_cache(
 export default async function GoalsPage() {
     const supabase = await createClient()
     let { data: { user } } = await supabase.auth.getUser()
+
+    if (!user && isPreviewAuthEnabled()) {
+        user = getPreviewUser() as any
+    }
 
     if (!user && process.env.NODE_ENV === 'development') {
         user = { id: 'mock-user-123' } as any

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import { unstable_cache } from "next/cache"
+import { getPreviewUser, isPreviewAuthEnabled } from "@/lib/previewAuth"
 
 export const dynamic = 'force-dynamic'
 
@@ -46,7 +47,8 @@ const getCachedProfileData = unstable_cache(
 export default async function ProfilePage() {
     try {
         const supabase = await createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data } = await supabase.auth.getUser()
+        const user = data.user || (isPreviewAuthEnabled() ? (getPreviewUser() as any) : null)
 
         if (!user) {
             return null // Middleware will redirect

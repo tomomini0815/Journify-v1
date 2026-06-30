@@ -1,7 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isPreviewAuthEnabled } from '@/lib/previewAuth'
 
 export async function middleware(request: NextRequest) {
+    if (isPreviewAuthEnabled()) {
+        return NextResponse.next({ request })
+    }
+
     let supabaseResponse = NextResponse.next({
         request,
     })

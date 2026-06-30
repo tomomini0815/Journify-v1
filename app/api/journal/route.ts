@@ -115,6 +115,7 @@ export async function POST(request: Request) {
         // Revalidate dashboard cache to show new journal immediately
         revalidateTag('dashboard', 'layout')
         revalidateTag('journal', 'layout')
+        revalidatePath('/journal')
         revalidatePath('/dashboard')
 
         return NextResponse.json(journal)

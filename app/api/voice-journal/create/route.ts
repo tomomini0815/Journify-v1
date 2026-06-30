@@ -5,6 +5,7 @@ import path from "path";
 import { PrismaClient } from "@prisma/client";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { mockDb } from "@/lib/mock-db"; // Import mock DB
+import { revalidatePath, revalidateTag } from "next/cache";
 
 const prisma = new PrismaClient();
 
@@ -300,12 +301,20 @@ JSONのみを返し、他の説明は不要です。`;
             }
         });
 
+        revalidateTag('dashboard', 'layout');
+        revalidateTag('journal', 'layout');
+        revalidatePath('/journal');
+        revalidatePath('/dashboard');
+
         return NextResponse.json({
             id: voiceJournal.id,
             transcript: voiceJournal.transcript,
+            aiSummary: voiceJournal.aiSummary,
             summary: voiceJournal.aiSummary,
             sentiment: voiceJournal.sentiment,
-            tags: voiceJournal.tags
+            mood: voiceJournal.mood,
+            tags: voiceJournal.tags,
+            createdAt: voiceJournal.createdAt
         });
 
     } catch (error: any) {
@@ -334,12 +343,20 @@ JSONのみを返し、他の説明は不要です。`;
             // Save to local JSON DB
             const saved = await mockDb.voiceJournals.create({ data: voiceJournalData });
 
+            revalidateTag('dashboard', 'layout');
+            revalidateTag('journal', 'layout');
+            revalidatePath('/journal');
+            revalidatePath('/dashboard');
+
             return NextResponse.json({
                 id: saved.id,
                 transcript: saved.transcript,
+                aiSummary: saved.aiSummary,
                 summary: saved.aiSummary,
                 sentiment: saved.sentiment,
-                tags: saved.tags
+                mood: saved.mood,
+                tags: saved.tags,
+                createdAt: saved.createdAt
             });
         }
 

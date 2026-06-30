@@ -87,10 +87,10 @@ export default function JournalDetailPage() {
                 </Link>
 
                 {/* Header */}
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 mb-6">
-                    <div className="flex items-start justify-between mb-6">
-                        <div>
-                            <h1 className="text-[28px] font-bold mb-4">{journal.title}</h1>
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-8 mb-6">
+                    <div className="flex items-start justify-between gap-3 mb-6">
+                        <div className="min-w-0 flex-1">
+                            <h1 className="mb-4 break-words text-2xl font-bold sm:text-[28px]">{journal.title}</h1>
                             <div className="flex flex-wrap gap-4 text-sm text-white/60">
                                 <div className="flex items-center">
                                     <Calendar className="w-4 h-4 mr-2" />
@@ -107,13 +107,24 @@ export default function JournalDetailPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex shrink-0 gap-1.5 sm:gap-2">
                             <Link href={`/journal/${params.id}/edit`}>
-                                <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10">
+                                <Button
+                                    variant="outline"
+                                    aria-label="編集"
+                                    title="編集"
+                                    className="h-8 w-8 rounded-lg bg-white/5 border-white/10 p-0 hover:bg-white/10 sm:h-10 sm:w-10 sm:rounded-xl"
+                                >
                                     <Edit className="w-4 h-4" />
                                 </Button>
                             </Link>
-                            <Button variant="destructive" className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20" onClick={handleDelete}>
+                            <Button
+                                variant="destructive"
+                                aria-label="削除"
+                                title="削除"
+                                className="h-8 w-8 rounded-lg bg-red-500/10 p-0 text-red-400 border-red-500/20 hover:bg-red-500/20 sm:h-10 sm:w-10 sm:rounded-xl"
+                                onClick={handleDelete}
+                            >
                                 <Trash2 className="w-4 h-4" />
                             </Button>
                         </div>

@@ -220,7 +220,7 @@ export function HappinessChart({ data: initialData }: { data?: any[] }) {
                 </div>
             </div>
 
-            <div className="h-[300px] sm:h-[400px] min-h-[300px] min-w-0 relative outline-none focus:outline-none [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none *:focus:outline-none" style={{ width: '100%', minWidth: '100%' }}>
+            <div className="relative h-[300px] min-h-[300px] w-full min-w-0 overflow-hidden outline-none focus:outline-none sm:h-[400px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none *:focus:outline-none">
                 {/* Background Glow */}
                 <div className={`absolute inset-0 bg-gradient-to-t ${currentTheme.gradient} via-transparent to-transparent rounded-2xl transition-colors duration-500 opacity-60`}></div>
 

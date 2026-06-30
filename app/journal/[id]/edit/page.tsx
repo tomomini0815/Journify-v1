@@ -202,29 +202,32 @@ export default function EditJournalPage() {
     return (
         <DashboardLayout>
             {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex items-start justify-between gap-3">
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
+                    className="min-w-0 flex-1"
                 >
                     <h1 className="text-[28px] font-bold">ジャーナルを編集</h1>
                     <p className="text-white/60 mt-1">過去の記録を更新する</p>
                 </motion.div>
 
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-1.5 sm:gap-2">
                     <Link href={`/journal/${params.id}`}>
-                        <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl">
-                            <X className="w-4 h-4 mr-2" />
+                        <Button variant="outline" aria-label="キャンセル" title="キャンセル" className="h-9 rounded-lg bg-white/5 border-white/10 px-2.5 text-[0px] hover:bg-white/10 sm:h-10 sm:rounded-xl sm:px-4 sm:text-sm">
+                            <X className="h-4 w-4 sm:mr-2" />
                             キャンセル
                         </Button>
                     </Link>
                     <Button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 rounded-xl"
+                        aria-label="保存"
+                        title="保存"
+                        className="h-9 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 px-2.5 text-[0px] hover:from-emerald-600 hover:to-cyan-600 sm:h-10 sm:rounded-xl sm:px-4 sm:text-sm"
                     >
-                        <Save className="w-4 h-4 mr-2" />
+                        <Save className="h-4 w-4 sm:mr-2" />
                         {isSaving ? "保存中..." : "保存"}
                     </Button>
                 </div>

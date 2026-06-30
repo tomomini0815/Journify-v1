@@ -435,7 +435,7 @@ export function DashboardCardGrid({ initialOrder, children }: DashboardCardGridP
                 onDragCancel={() => { setActiveId(null); setOverId(null) }}
             >
                 {/* 12カラムのレスポンシブ CSS Grid コンテナに変更 */}
-                <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-[repeat(13,minmax(0,1fr))] gap-4 items-stretch">
+                <div className="grid grid-cols-12 lg:grid-cols-[repeat(13,minmax(0,1fr))] gap-4 items-stretch">
                     {order.map((id) => {
                         const child = cardMap.get(id)
                         if (!child) return null

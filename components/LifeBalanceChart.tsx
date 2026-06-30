@@ -235,7 +235,7 @@ export function LifeBalanceChart({ data: initialData }: { data?: { category: str
                 </div>
             </div>
 
-            <div className="h-[300px] sm:h-[400px] min-h-[300px] min-w-0 relative outline-none focus:outline-none [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none *:focus:outline-none" style={{ width: '100%', minWidth: '100%' }}>
+            <div className="relative h-[300px] min-h-[300px] w-full min-w-0 overflow-hidden outline-none focus:outline-none sm:h-[400px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none *:focus:outline-none">
                 {/* 背景のグロー効果 */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-indigo-500/10 rounded-2xl blur-2xl opacity-50"></div>
 

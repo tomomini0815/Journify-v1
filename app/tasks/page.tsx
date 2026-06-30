@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import prisma from "@/lib/prisma"
 import { TasksClient } from "@/components/TasksClient"
 import { unstable_cache } from "next/cache"
+import { getPreviewUser, isPreviewAuthEnabled } from "@/lib/previewAuth"
 
 // Revalidate every 30 seconds
 export const revalidate = 30
@@ -29,6 +30,10 @@ const getCachedTasks = unstable_cache(
 export default async function TasksPage() {
     const supabase = await createClient()
     let { data: { user } } = await supabase.auth.getUser()
+
+    if (!user && isPreviewAuthEnabled()) {
+        user = getPreviewUser() as any
+    }
 
     if (!user && process.env.NODE_ENV === 'development') {
         user = { id: 'mock-user-123' } as any

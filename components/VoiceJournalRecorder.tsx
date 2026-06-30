@@ -494,6 +494,18 @@ export default function VoiceJournalRecorder({
             }
 
             const result = await createRes.json();
+            window.sessionStorage.setItem(
+                "journify:pending-voice-journal",
+                JSON.stringify({
+                    id: result.id,
+                    transcript: result.transcript ?? editableTranscript ?? transcript ?? "",
+                    aiSummary: result.aiSummary ?? result.summary ?? "",
+                    sentiment: result.sentiment ?? null,
+                    mood: result.mood ?? localMood,
+                    tags: result.tags ?? localTags,
+                    createdAt: result.createdAt ?? new Date().toISOString()
+                })
+            );
 
             setAudioBlob(null);
             setRecordingTime(0);
@@ -506,6 +518,7 @@ export default function VoiceJournalRecorder({
             }
 
             router.push("/journal?tab=voice");
+            router.refresh();
 
         } catch (error: any) {
             console.error("Failed to process voice journal:", error);

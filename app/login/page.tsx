@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { motion } from "framer-motion"
 import { ArrowRight, Mail, Lock, Loader2 } from "lucide-react"
+import { isPreviewAuthEnabled } from "@/lib/previewAuth"
 
 export default function LoginPage() {
     const router = useRouter()
@@ -22,6 +23,12 @@ export default function LoginPage() {
         setIsLoading(true)
 
         try {
+            if (isPreviewAuthEnabled()) {
+                router.push("/dashboard")
+                router.refresh()
+                return
+            }
+
             const { createClient } = await import("@/lib/supabase/client")
             const supabase = createClient()
 
@@ -50,6 +57,12 @@ export default function LoginPage() {
 
     const handleGoogleSignIn = async () => {
         try {
+            if (isPreviewAuthEnabled()) {
+                router.push("/dashboard")
+                router.refresh()
+                return
+            }
+
             const { createClient } = await import("@/lib/supabase/client")
             const supabase = createClient()
 

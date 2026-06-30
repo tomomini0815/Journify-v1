@@ -6,7 +6,7 @@ import { Search, Plus, Calendar, Filter, ChevronDown, ChevronUp, Mic, PenTool, B
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import MindMapViewer from "@/components/MindMapViewer"
 import { UnifiedTabs } from "@/components/ui/unified-tabs"
@@ -55,6 +55,56 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
     const [journals, setJournals] = useState<Journal[]>(initialJournals)
     const [voiceJournals, setVoiceJournals] = useState<VoiceJournal[]>(initialVoiceJournals)
     const [expandedMonths, setExpandedMonths] = useState<string[]>([])
+    const pendingWrittenJournalIdsRef = useRef(new Set<string>())
+    const pendingVoiceJournalIdsRef = useRef(new Set<string>())
+
+    useEffect(() => {
+        setJournals(prev => {
+            const initialIds = new Set(initialJournals.map(journal => journal.id))
+            const pendingJournals = prev.filter(journal =>
+                pendingWrittenJournalIdsRef.current.has(journal.id) && !initialIds.has(journal.id)
+            )
+            return [...pendingJournals, ...initialJournals]
+        })
+    }, [initialJournals])
+
+    useEffect(() => {
+        setVoiceJournals(prev => {
+            const initialIds = new Set(initialVoiceJournals.map(journal => journal.id))
+            const pendingVoiceJournals = prev.filter(journal =>
+                pendingVoiceJournalIdsRef.current.has(journal.id) && !initialIds.has(journal.id)
+            )
+            return [...pendingVoiceJournals, ...initialVoiceJournals]
+        })
+    }, [initialVoiceJournals])
+
+    useEffect(() => {
+        const pendingWritten = window.sessionStorage.getItem("journify:pending-written-journal")
+        if (pendingWritten) {
+            try {
+                const journal = JSON.parse(pendingWritten) as Journal
+                pendingWrittenJournalIdsRef.current.add(journal.id)
+                setJournals(prev => prev.some(item => item.id === journal.id) ? prev : [journal, ...prev])
+            } catch (error) {
+                console.warn("Failed to restore pending written journal:", error)
+            } finally {
+                window.sessionStorage.removeItem("journify:pending-written-journal")
+            }
+        }
+
+        const pendingVoice = window.sessionStorage.getItem("journify:pending-voice-journal")
+        if (pendingVoice) {
+            try {
+                const voiceJournal = JSON.parse(pendingVoice) as VoiceJournal
+                pendingVoiceJournalIdsRef.current.add(voiceJournal.id)
+                setVoiceJournals(prev => prev.some(item => item.id === voiceJournal.id) ? prev : [voiceJournal, ...prev])
+            } catch (error) {
+                console.warn("Failed to restore pending voice journal:", error)
+            } finally {
+                window.sessionStorage.removeItem("journify:pending-voice-journal")
+            }
+        }
+    }, [])
 
 
     // Filter States
@@ -65,20 +115,20 @@ export default function JournalClient({ initialJournals, initialVoiceJournals }:
     const [selectedTags, setSelectedTags] = useState<string[]>([])
 
     // Get unique tags from all journals
-    const allTags = Array.from(new Set(initialJournals.flatMap(j => j.tags))).sort()
+    const allTags = Array.from(new Set(journals.flatMap(j => j.tags))).sort()
 
     // Initialize expanded months
     useEffect(() => {
-        if (activeTab === 'written' && initialJournals.length > 0) {
-            const date = new Date(initialJournals[0].createdAt)
+        if (activeTab === 'written' && journals.length > 0) {
+            const date = new Date(journals[0].createdAt)
             const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
             setExpandedMonths([key])
-        } else if (activeTab === 'voice' && initialVoiceJournals.length > 0) {
-            const date = new Date(initialVoiceJournals[0].createdAt)
+        } else if (activeTab === 'voice' && voiceJournals.length > 0) {
+            const date = new Date(voiceJournals[0].createdAt)
             const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
             setExpandedMonths([key])
         }
-    }, [activeTab])
+    }, [activeTab, journals, voiceJournals])
 
     const stripHtml = (html: string) => {
         const tmp = document.createElement("DIV")

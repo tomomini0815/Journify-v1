@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import NotificationBell from "@/components/NotificationBell"
 import { WeatherWidget } from "@/components/WeatherWidget"
 import { DashboardGreeting } from "@/components/DashboardGreeting"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface DashboardLayoutProps {
     children: ReactNode
@@ -75,6 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [navigation, setNavigation] = useState(defaultNavigation)
     const [wellnessMenuOpen, setWellnessMenuOpen] = useState(false)
+    const isDesktop = useMediaQuery("(min-width: 768px)")
 
     const wellnessItems = [
         { name: "身体的健康", href: "/wellness/physical-health", icon: "💪", color: "#10b981" },
@@ -315,7 +317,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </Link>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <WeatherWidget />
+                        {!isDesktop && <WeatherWidget />}
                         <NotificationBell />
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -461,7 +463,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </div>
                         <div className="flex shrink-0 items-center gap-3">
                             {pathname === "/dashboard" && <div id="dashboard-layout-actions" className="flex items-center" />}
-                            <WeatherWidget />
+                            {isDesktop && <WeatherWidget />}
                             <NotificationBell />
                         </div>
                     </div>

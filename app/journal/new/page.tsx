@@ -95,6 +95,19 @@ function NewJournalContent() {
 
 
             // Life Balanceスコアを再計算
+            const savedJournal = await response.json()
+            window.sessionStorage.setItem(
+                "journify:pending-written-journal",
+                JSON.stringify({
+                    id: savedJournal.id,
+                    title: savedJournal.title ?? title,
+                    content: savedJournal.content ?? content,
+                    mood: savedJournal.mood ?? mood,
+                    tags: savedJournal.tags ?? tags,
+                    createdAt: savedJournal.createdAt ?? new Date().toISOString()
+                })
+            )
+
             try {
                 await fetch("/api/calculate-life-balance", {
                     method: "POST"
