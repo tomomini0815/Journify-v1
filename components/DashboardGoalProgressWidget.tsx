@@ -54,7 +54,7 @@ export default function DashboardGoalProgressWidget({ goals }: { goals: Dashboar
 
     const filteredGoals = goals
         .filter((goal) => (goal.timeframe || "short") === activeTab)
-        .slice(0, 3);
+        .slice(0, 5);
 
     return (
         <div className="dashboard-panel p-4 h-full flex flex-col">

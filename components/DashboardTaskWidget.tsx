@@ -140,7 +140,7 @@ export default function DashboardTaskWidget({ tasks, projects = [] }: { tasks: T
         return (pMap[b.priority] || 0) - (pMap[a.priority] || 0);
     });
 
-    const displayTasks = sortedTasks.slice(0, 5);
+    const displayTasks = sortedTasks.slice(0, 8);
 
     const handleTaskClick = (task: Task) => {
         router.push(`/tasks?taskId=${encodeURIComponent(task.id)}`);

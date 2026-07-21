@@ -57,3 +57,25 @@ This will create all the necessary tables in your Supabase database.
 - If you see "Module '@prisma/client' has no exported member 'PrismaClient'", run `npx prisma generate`
 - If login fails, check the browser console for error messages
 - Verify your environment variables are correct
+
+## 6. Supabase 自動停止（7日間非アクティブ制限）の防止対策
+
+Supabase の無料プランは **7日間アクティビティがないと自動的にデータベースが一時停止（Pause）** されます。
+Journify ではこれを自動的に回避するための以下の仕組みが導入されています：
+
+### 1. Vercel Cron（デプロイ済み環境向け）
+`vercel.json` に設定された Cron が毎日自動的に `/api/keep-alive` を実行し、データベースへアクティビティを記録します。
+
+### 2. GitHub Actions 自動 Ping（最も推奨・独立動作）
+GitHub リポジトリの Secret に環境変数を登録しておくことで、GitHub Actions が毎日午前9:00(JST)に Supabase API へ ping を送信します。
+
+**設定手順:**
+1. GitHub リポジトリを開く > **Settings** > **Secrets and variables** > **Actions**
+2. **New repository secret** をクリックし、以下を登録：
+   - Name: `SUPABASE_URL` / Value: （例: `https://xxxx.supabase.co`）
+   - Name: `SUPABASE_ANON_KEY` / Value: （Supabaseの anon public key）
+   - Name: `NEXT_PUBLIC_APP_URL` (任意) / Value: （デプロイ先のURL 例: `https://your-app.vercel.app`）
+
+### 3. API エンドポイントの手動/外部Cron呼び出し
+`https://<YOUR-APP-DOMAIN>/api/keep-alive` へ GET リクエストを送信することでも手動で生存確認 ping を実行できます。（UptimeRobot や Cron-Job.org などの外部無料サービスから登録して呼び出すことも可能です）
+

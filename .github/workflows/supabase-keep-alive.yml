@@ -1,0 +1,39 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # 毎日 UTC 0:00 (JST 9:00 AM) に実行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # GitHub から手動で実行可能
+
+jobs:
+  ping:
+    name: Ping Supabase & Keep Alive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
+            echo "Sending keep-alive ping to Supabase REST API..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              "$SUPABASE_URL/rest/v1/")
+            echo "Response HTTP Status: $HTTP_STATUS"
+          else
+            echo "⚠️ SUPABASE_URL or SUPABASE_ANON_KEY is not configured in GitHub Secrets."
+          fi
+
+      - name: Ping App Keep-Alive Endpoint (Optional)
+        env:
+          APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        run: |
+          if [ -n "$APP_URL" ]; then
+            echo "Sending ping to $APP_URL/api/keep-alive ..."
+            curl -s -f "$APP_URL/api/keep-alive" || echo "App keep-alive ping failed or not reached."
+          else
+            echo "NEXT_PUBLIC_APP_URL not set, skipping app endpoint ping."
+          fi

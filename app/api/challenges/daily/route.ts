@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PrismaClient } from "@prisma/client";
+import { isPreviewAuthEnabled, getPreviewUser } from "@/lib/previewAuth";
 
 const prisma = new PrismaClient();
 
 // GET - 今日のチャレンジを取得
 export async function GET(req: Request) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    let user;
+    if (isPreviewAuthEnabled()) {
+        user = getPreviewUser();
+    } else {
+        const supabase = await createClient();
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
+    }
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -89,6 +96,28 @@ export async function GET(req: Request) {
 
     } catch (error: any) {
         console.error("Daily challenge fetch error:", error);
+
+        if (isPreviewAuthEnabled() || process.env.NODE_ENV === 'development') {
+            console.log("Using preview mock data for daily challenges API");
+            return NextResponse.json({
+                challenge: {
+                    id: "mock-challenge-id",
+                    journalCreated: true,
+                    tasksCompleted: 1,
+                    meetingCreated: false,
+                    xpEarned: 45,
+                    completed: false,
+                    badgeEarned: null
+                },
+                userStats: {
+                    level: 4,
+                    totalXP: 370,
+                    currentStreak: 5,
+                    totalCrystals: 280
+                }
+            });
+        }
+
         return NextResponse.json(
             { error: "Failed to fetch daily challenge", details: error.message },
             { status: 500 }
@@ -100,8 +129,14 @@ export async function GET(req: Request) {
 
 // POST - チャレンジ進捗を更新
 export async function POST(req: Request) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    let user;
+    if (isPreviewAuthEnabled()) {
+        user = getPreviewUser();
+    } else {
+        const supabase = await createClient();
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
+    }
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -145,11 +180,6 @@ export async function POST(req: Request) {
             case "task_completed":
                 updateData.tasksCompleted = (challenge.tasksCompleted || 0) + 1;
                 xpGained = 25;
-                // 2つ完了でボーナス (合計50になるように調整)
-                if (updateData.tasksCompleted === 2 && challenge.tasksCompleted < 2) {
-                    // すでに1つ目で25得ているので、2つ目も25であれば合計50
-                    // もし1つ目が以前のロジック(5)だった場合でも、ここで補正
-                }
                 break;
             case "meeting_created":
                 if (!challenge.meetingCreated) {
@@ -172,7 +202,7 @@ export async function POST(req: Request) {
             if (allCompleted && !challenge.completed) {
                 updateData.completed = true;
                 updateData.badgeEarned = "daily_hero";
-                xpGained += 25; // 完了ボーナス (25 crystals)
+                xpGained += 25; // 完了ボーナス
                 updateData.xpEarned = challenge.xpEarned + xpGained;
             }
 
@@ -187,16 +217,16 @@ export async function POST(req: Request) {
                 create: {
                     userId: user.id,
                     totalXP: xpGained,
-                    crystals: xpGained, // Initialize crystals
+                    crystals: xpGained,
                     level: 1
                 },
                 update: {
                     totalXP: { increment: xpGained },
-                    crystals: { increment: xpGained } // Increment crystals
+                    crystals: { increment: xpGained }
                 }
             });
 
-            // レベルアップチェック（100XPごとに1レベル）
+            // レベルアップチェック
             const newLevel = Math.floor(userStats.totalXP / 100) + 1;
             let leveledUp = false;
 
@@ -234,6 +264,26 @@ export async function POST(req: Request) {
 
     } catch (error: any) {
         console.error("Daily challenge update error:", error);
+
+        if (isPreviewAuthEnabled() || process.env.NODE_ENV === 'development') {
+            console.log("Using preview mock data for daily challenges update API");
+            return NextResponse.json({
+                challenge: {
+                    id: "mock-challenge-id",
+                    journalCreated: true,
+                    tasksCompleted: 2,
+                    meetingCreated: true,
+                    xpEarned: 100,
+                    completed: true,
+                    badgeEarned: "daily_hero"
+                },
+                xpGained: 25,
+                leveledUp: false,
+                newLevel: 4,
+                badgeEarned: "daily_hero"
+            });
+        }
+
         return NextResponse.json(
             { error: "Failed to update daily challenge", details: error.message },
             { status: 500 }

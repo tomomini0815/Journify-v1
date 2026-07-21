@@ -104,7 +104,7 @@ export const CyberneticBentoGrid = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-auto lg:auto-rows-[minmax(160px,auto)]">
         {/* Journal */}
-        <BentoItem className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 flex flex-col justify-between group border-cyan-500/5 p-6 md:p-8">
+        <BentoItem className="col-span-1 md:col-span-2 row-span-1 md:row-span-2 lg:col-start-1 lg:row-start-1 flex flex-col justify-between group border-cyan-500/5 p-6 md:p-8">
           <div className="space-y-4 md:space-y-6 relative z-20">
             <h3 className="text-2xl md:text-3xl font-bold text-white group-hover:text-cyan-400 transition-colors tracking-tight">
               ジャーナル
@@ -141,7 +141,7 @@ export const CyberneticBentoGrid = () => {
         </BentoItem>
 
         {/* Goal Management */}
-        <BentoItem className="group border-emerald-500/5 p-6 md:p-8" showDots>
+        <BentoItem className="lg:col-start-3 lg:row-start-1 group border-emerald-500/5 p-6 md:p-8" showDots>
           <div className="h-full flex flex-col relative z-20">
             <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-emerald-400 transition-colors mb-2 md:mb-3 tracking-tight">
               目標管理
@@ -167,7 +167,7 @@ export const CyberneticBentoGrid = () => {
         </BentoItem>
 
         {/* Task Management */}
-        <BentoItem className="group border-blue-500/5 p-6 md:p-8">
+        <BentoItem className="lg:col-start-4 lg:row-start-1 group border-blue-500/5 p-6 md:p-8">
           <div className="h-full flex flex-col relative z-20">
             <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-blue-400 transition-colors mb-2 md:mb-3 tracking-tight">
               タスク管理
@@ -190,7 +190,7 @@ export const CyberneticBentoGrid = () => {
         </BentoItem>
 
         {/* Voice Journal */}
-        <BentoItem className="row-span-1 md:row-span-2 group border-cyan-500/5 flex flex-col overflow-hidden p-6 md:p-8">
+        <BentoItem className="row-span-1 md:row-span-2 lg:col-start-3 lg:row-start-2 group border-cyan-500/5 flex flex-col overflow-hidden p-6 md:p-8">
           <div className="relative z-20">
             <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-cyan-300 transition-colors mb-2 md:mb-3 tracking-tight">
               音声ジャーナル
@@ -229,8 +229,32 @@ export const CyberneticBentoGrid = () => {
           </div>
         </BentoItem>
 
+        {/* Project Management */}
+        <BentoItem className="row-span-1 md:row-span-2 lg:col-start-4 lg:row-start-2 group border-slate-500/5 flex flex-col overflow-hidden p-6 md:p-8">
+          <div className="relative z-20">
+            <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-slate-300 transition-colors mb-2 md:mb-3 tracking-tight">
+              プロジェクト管理
+            </h3>
+            <p className="text-xs md:text-sm text-gray-400 leading-relaxed mb-4 md:mb-6">
+              複雑なタスクをプロジェクト単位で整理。ガントチャートで進捗を視覚的に把握。
+            </p>
+          </div>
+          <div className="mt-auto relative h-48 md:h-[320px] -mx-4 -mb-4 md:-mx-8 md:-mb-8 rounded-t-3xl overflow-hidden border-t border-white/5">
+            <img 
+              src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&q=80&w=1200" 
+              alt="Project Planning"
+              className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            <div className="absolute bottom-3 left-3 flex gap-1 z-10">
+               <div className="w-12 h-1 bg-slate-500/50 rounded-full" />
+               <div className="w-8 h-1 bg-slate-500/30 rounded-full" />
+            </div>
+          </div>
+        </BentoItem>
+
         {/* Dashboard & Analysis */}
-        <BentoItem className="col-span-1 md:col-span-2 group border-indigo-500/5 p-6 md:p-8" showDots>
+        <BentoItem className="col-span-1 md:col-span-2 lg:col-start-1 lg:row-start-3 group border-indigo-500/5 p-6 md:p-8" showDots>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 h-full items-center relative z-20">
             <div className="space-y-2 md:space-y-4">
               <h3 className="text-xl md:text-2xl font-bold text-white group-hover:text-indigo-400 transition-colors tracking-tight">
@@ -254,30 +278,6 @@ export const CyberneticBentoGrid = () => {
                   className="w-full bg-gradient-to-t from-indigo-600 to-cyan-400 rounded-sm group-hover:opacity-100 opacity-60 transition-opacity"
                 />
               ))}
-            </div>
-          </div>
-        </BentoItem>
-
-        {/* Project Management */}
-        <BentoItem className="group border-slate-500/5 flex flex-col p-6 md:p-8">
-          <div className="relative z-20">
-            <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-slate-300 transition-colors mb-2 md:mb-3 tracking-tight">
-              プロジェクト管理
-            </h3>
-            <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
-              複雑なタスクをプロジェクト単位で整理。ガントチャートで進捗を視覚的に把握。
-            </p>
-          </div>
-          <div className="mt-4 md:mt-6 relative h-48 md:h-full min-h-[120px] md:min-h-[140px] rounded-xl overflow-hidden border border-white/5 bg-black/20 group-hover:border-slate-500/20 transition-all">
-            <img 
-              src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&q=80&w=1200" 
-              alt="Project Planning"
-              className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            <div className="absolute bottom-3 left-3 flex gap-1">
-               <div className="w-12 h-1 bg-slate-500/50 rounded-full" />
-               <div className="w-8 h-1 bg-slate-500/30 rounded-full" />
             </div>
           </div>
         </BentoItem>

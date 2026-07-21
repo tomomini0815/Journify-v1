@@ -231,15 +231,8 @@ const getCachedGoalData = unstable_cache(
                 })
             ])
         } catch (error) {
-            console.warn("DB Error in getCachedGoalData, returning mocks");
-            return [
-                5,
-                [
-                    { id: '1', title: '毎日ジャーナルを書く', progress: 60 },
-                    { id: '2', title: 'ランニングを続ける', progress: 30 },
-                    { id: '3', title: '読書完了', progress: 80 },
-                ] as any
-            ] as any
+            console.warn("DB Error in getCachedGoalData, returning empty list");
+            return [0, []] as any
         }
     },
     ['dashboard-goal-data'],
@@ -260,12 +253,17 @@ const getCachedLifeBalanceData = unstable_cache(
                 take: 100,
             })
         } catch (error) {
-            console.warn("DB Error in getCachedLifeBalanceData, returning mocks");
+            console.warn("DB Error in getCachedLifeBalanceData, returning zero scores");
             return [
-                { category: "身体的健康", score: 8, createdAt: new Date() },
-                { category: "精神的健康", score: 7, createdAt: new Date() },
-                { category: "仕事・キャリア", score: 6, createdAt: new Date() },
-                { category: "学習・成長", score: 9, createdAt: new Date() },
+                { category: "身体的健康", score: 0, createdAt: new Date() },
+                { category: "精神的健康", score: 0, createdAt: new Date() },
+                { category: "人間関係", score: 0, createdAt: new Date() },
+                { category: "社会貢献", score: 0, createdAt: new Date() },
+                { category: "仕事・キャリア", score: 0, createdAt: new Date() },
+                { category: "経済的安定", score: 0, createdAt: new Date() },
+                { category: "学習・成長", score: 0, createdAt: new Date() },
+                { category: "自己実現", score: 0, createdAt: new Date() },
+                { category: "趣味・余暇", score: 0, createdAt: new Date() },
             ] as any
         }
     },
@@ -674,11 +672,8 @@ const getCachedDashboardTasks = unstable_cache(
                 take: 50 // Limit total fetched tasks
             });
         } catch (error) {
-            console.warn("DB Error in getCachedDashboardTasks, returning mocks");
-            return [
-                { id: '1', title: '週次レビュー', priority: 'high', scheduledDate: new Date(), completed: false, createdAt: new Date(), updatedAt: new Date() },
-                { id: '2', title: '買い物に行く', priority: 'medium', scheduledDate: new Date(Date.now() + 86400000), completed: false, createdAt: new Date(), updatedAt: new Date() },
-            ] as any
+            console.warn("DB Error in getCachedDashboardTasks, returning empty list");
+            return [] as any
         }
     },
     ['dashboard-tasks-list'],
@@ -694,6 +689,7 @@ async function TasksSection({ userId }: { userId: string }) {
     // Serialize for client component
     const serializedTasks = tasks.map((t: any) => ({
         ...t,
+        text: t.text || t.title || "タスク",
         priority: (['low', 'medium', 'high', 'urgent'].includes(t.priority) ? t.priority : 'medium'),
         scheduledDate: t.scheduledDate ? (typeof t.scheduledDate === 'string' ? t.scheduledDate : t.scheduledDate.toISOString()) : null,
         startDate: t.startDate ? (typeof t.startDate === 'string' ? t.startDate : t.startDate.toISOString()) : null,

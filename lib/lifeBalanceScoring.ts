@@ -243,6 +243,20 @@ export function calculateLifeBalanceScores(
     goals: GoalData[],
     days: number = 30
 ): LifeBalanceScores {
+    if ((!journals || journals.length === 0) && (!tasks || tasks.length === 0) && (!goals || goals.length === 0)) {
+        return {
+            physical: 0,
+            mental: 0,
+            relationships: 0,
+            social: 0,
+            career: 0,
+            financial: 0,
+            learning: 0,
+            selfActualization: 0,
+            leisure: 0
+        }
+    }
+
     const { analysis, journalCount } = analyzeJournals(journals, days)
     const taskAnalysis = analyzeTasks(tasks)
     const goalAnalysis = analyzeGoals(goals)

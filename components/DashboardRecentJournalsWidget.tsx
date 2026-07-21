@@ -80,7 +80,7 @@ export default function DashboardRecentJournalsWidget({ journals }: { journals: 
         .slice(0, 3);
 
     return (
-        <div className="dashboard-panel p-4 h-full flex flex-col justify-between">
+        <div className="dashboard-panel p-4 h-full flex flex-col justify-start gap-3">
             <div>
                 <div className="flex items-center justify-between mb-3">
                     <div>
